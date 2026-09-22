@@ -5,7 +5,6 @@ type AmmoKind = 'iron'|'chain';
 type CannonKind = 'cast'|'long'|'rapid'|'heavy';
 type Shot = Vec & { vx:number; vy:number; life:number; owner:'player'|'enemy'; damage:number; hit:boolean; ammo:AmmoKind; target?:Target };
 type SalvoRound = { delay:number; target:Target; side:number; slot:number; damage:number; ammo:AmmoKind };
-type Loot = Vec & { kind:'gold'|'wood'; value:number; bob:number };
 type Enemy = Vec & { kind:'ship'; angle:number; hp:number; maxHp:number; cooldown:number; speed:number; name:string; tier:number; aggro:boolean; wander:number; slowTimer:number; homeX:number; homeY:number; combatTimer:number };
 type Particle = Vec & { vx:number; vy:number; life:number; maxLife:number; kind:'foam'|'smoke'|'spark'|'damage'; text?:string };
 type Monster = Vec & { kind:'monster'; phase:number; radius:number; name:string; hp:number; maxHp:number; cooldown:number; aggro:boolean; slowTimer:number; homeX:number; homeY:number; combatTimer:number };
@@ -29,6 +28,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <div class="panel actionbar"><button class="action" id="cannonType"><b>♜</b><span id="cannonName">Döküm</span><small>TOP</small></button><button class="action active" data-ammo="iron"><b>●</b><span>Demir</span><small id="ironAmmo">∞</small></button><button class="action" data-ammo="chain"><b>⛓</b><span>Zincir</span><small id="chainAmmo">40</small></button><button class="action fire" id="attack"><b>⚔</b><span>SALDIR</span><small id="reloadText">HAZIR</small></button><button class="action" id="repair"><b>✚</b><span>TAMİR</span><small>F</small></button></div>
       <div class="panel zoom-controls"><button id="zoomOut" aria-label="Uzaklaştır">−</button><span id="zoomValue">70%</span><button id="zoomIn" aria-label="Yakınlaştır">+</button></div>
       <canvas id="minimap" width="170" height="125"></canvas>
+      <div class="reward-toast" id="rewardToast"></div>
       <div class="toast" id="toast"></div>
     </section>
   </main>`;
@@ -55,7 +55,7 @@ const player = { x:WORLD/2, y:WORLD/2, angle:-Math.PI/2, speed:0, cooldown:0 };
 let destination:Vec|null=null;
 let selected:Target|null=null;
 const camera = { x:player.x, y:player.y, zoom:.7, targetZoom:.7 };
-const shots:Shot[]=[]; const loot:Loot[]=[]; const enemies:Enemy[]=[];
+const shots:Shot[]=[]; const enemies:Enemy[]=[];
 const salvoQueue:SalvoRound[]=[];
 const particles:Particle[]=[];
 const monsters:Monster[]=[{kind:'monster',x:1980,y:1530,phase:0,radius:52,name:'Derinlik Leviathanı',hp:180,maxHp:180,cooldown:0,aggro:false,slowTimer:0,homeX:1980,homeY:1530,combatTimer:0}];
@@ -157,6 +157,8 @@ function burst(x:number,y:number,large=false){for(let n=0;n<(large?18:7);n++){co
 function damageText(x:number,y:number,value:number){particles.push({x,y,vx:0,vy:-24,life:1,maxLife:1,kind:'damage',text:`-${Math.round(value)}`});}
 let toastTimer=0;
 function toast(msg:string){ui('toast').textContent=msg;ui('toast').classList.add('show');toastTimer=2.2;}
+let rewardTimer=0;
+function rewardNotice(msg:string){ui('rewardToast').textContent=msg;ui('rewardToast').classList.remove('show');void ui('rewardToast').offsetWidth;ui('rewardToast').classList.add('show');rewardTimer=2.6;}
 function updateUI(){
   ui('gold').textContent=String(state.gold).padStart(3,'0');ui('wood').textContent=String(state.wood).padStart(3,'0');ui('fame').textContent=String(state.fame).padStart(3,'0');
   ui('hpText').textContent=`${Math.ceil(state.hp)} / ${state.maxHp}`; (ui('hpBar') as HTMLElement).style.width=`${state.hp/state.maxHp*100}%`;
@@ -219,22 +221,21 @@ function update(dt:number){
       for(let j=enemies.length-1;j>=0&&s.life>0;j--){
         const e=enemies[j];
         if(dist(s,e)<25){const hit=s.damage;s.hit=true;e.aggro=true;e.combatTimer=12;if(s.ammo==='chain')e.slowTimer=3;e.hp-=hit;damageText(e.x,e.y,hit);burst(e.x,e.y);s.life=0;
-          if(e.hp<=0){burst(e.x,e.y,true);enemies.splice(j,1);if(selected===e){selected=null;state.attacking=false;ui('attack').classList.remove('active');}state.fame+=20;state.kills++;loot.push({x:e.x-12,y:e.y,kind:'gold',value:12+e.tier*5,bob:Math.random()*6},{x:e.x+15,y:e.y+8,kind:'wood',value:4+e.tier,bob:Math.random()*6});toast(`${e.name} batırıldı — ganimeti topla`);setTimeout(spawnEnemy,1400);}
+          if(e.hp<=0){const gold=12+e.tier*5,wood=4+e.tier;burst(e.x,e.y,true);enemies.splice(j,1);if(selected===e){selected=null;state.attacking=false;ui('attack').classList.remove('active');}state.gold+=gold;state.wood+=wood;state.fame+=20;state.kills++;rewardNotice(`+${gold} Altın   +${wood} Kereste   +20 Şöhret`);toast(`${e.name} batırıldı`);setTimeout(spawnEnemy,1400);}
         }
       }
       for(let j=monsters.length-1;j>=0&&s.life>0;j--){
         const m=monsters[j];
         if(dist(s,m)<m.radius){const hit=s.damage;s.hit=true;m.aggro=true;m.combatTimer=12;if(s.ammo==='chain')m.slowTimer=3;m.hp-=hit;damageText(m.x,m.y,hit);burst(m.x,m.y);s.life=0;
-          if(m.hp<=0){const dropX=m.x,dropY=m.y;state.fame+=80;loot.push({x:dropX-18,y:dropY,kind:'gold',value:100,bob:Math.random()*6},{x:dropX+18,y:dropY+8,kind:'wood',value:15,bob:Math.random()*6});m.hp=m.maxHp;m.aggro=false;m.x=160+Math.random()*(WORLD-320);m.y=160+Math.random()*(WORLD-320);m.homeX=m.x;m.homeY=m.y;m.combatTimer=0;selected=null;state.attacking=false;toast(`${m.name} yenildi — değerli ganimet düştü`);}
+          if(m.hp<=0){state.gold+=100;state.wood+=15;state.fame+=80;rewardNotice('+100 Altın   +15 Kereste   +80 Şöhret');m.hp=m.maxHp;m.aggro=false;m.x=160+Math.random()*(WORLD-320);m.y=160+Math.random()*(WORLD-320);m.homeX=m.x;m.homeY=m.y;m.combatTimer=0;selected=null;state.attacking=false;toast(`${m.name} yenildi`);}
         }
       }
     }else if(state.invulnerable<=0&&dist(s,player)<22){s.hit=true;state.repairing=false;state.hp-=s.damage;damageText(player.x,player.y,s.damage);burst(player.x,player.y);s.life=0;if(state.hp<=0)respawn();}
     if(s.life<=0)shots.splice(i,1);
   }
   for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.97;p.vy*=.97;p.life-=dt;if(p.life<=0)particles.splice(i,1);}
-  for(let i=loot.length-1;i>=0;i--){const item=loot[i];item.bob+=dt*3;if(dist(item,player)<46){if(item.kind==='gold')state.gold+=item.value;else state.wood+=item.value;loot.splice(i,1);toast(`${item.kind==='gold'?'Altın':'Kereste'} +${item.value}`);}}
-  const need=state.level*100;if(state.fame>=need){state.fame-=need;state.level++;state.maxHp+=15;state.hp=state.maxHp;toast(`Seviye ${state.level}!`);} if(state.kills===5){state.gold+=100;state.kills++;toast('Görev tamamlandı: +100 altın');}
-  if(toastTimer>0){toastTimer-=dt;if(toastTimer<=0)ui('toast').classList.remove('show');} updateUI();
+  const need=state.level*100;if(state.fame>=need){state.fame-=need;state.level++;state.maxHp+=15;state.hp=state.maxHp;rewardNotice(`SEVİYE ${state.level}   +15 Azami Gövde`);toast(`Seviye ${state.level}!`);} if(state.kills===5){state.gold+=100;state.kills++;rewardNotice('GÖREV TAMAMLANDI   +100 Altın');toast('Kızıl Sular tamamlandı');}
+  if(toastTimer>0){toastTimer-=dt;if(toastTimer<=0)ui('toast').classList.remove('show');}if(rewardTimer>0){rewardTimer-=dt;if(rewardTimer<=0)ui('rewardToast').classList.remove('show');} updateUI();
 }
 
 function worldToScreen(v:Vec){return{x:v.x-camera.x+innerWidth/2,y:v.y-camera.y+innerHeight/2};}
@@ -276,7 +277,7 @@ function draw(){
   ctx.strokeStyle='#74b3b40b';ctx.lineWidth=1;const grid=80,ox=(-camera.x+innerWidth/2)%grid,oy=(-camera.y+innerHeight/2)%grid;for(let x=ox;x<w;x+=grid){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();}for(let y=oy;y<h;y+=grid){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke();}
   ctx.strokeStyle='#87c8ca22';for(let n=0;n<30;n++){const x=(n*193-camera.x*.12)%(w+120)-60,y=(n*97-camera.y*.1)%(h+100);ctx.beginPath();ctx.arc(x,y,28+n%4*8,.2,2.8);ctx.stroke();}
   ctx.globalAlpha=.12;ctx.fillStyle='#b7d9d1';ctx.font='700 42px Cinzel';ctx.textAlign='center';ctx.fillText('KIZIL SULAR',worldToScreen({x:1500,y:1040}).x,worldToScreen({x:1500,y:1040}).y);ctx.fillText('SİS DENİZİ',worldToScreen({x:610,y:1800}).x,worldToScreen({x:610,y:1800}).y);ctx.globalAlpha=1;
-  islands.forEach(drawIsland);monsters.forEach(drawMonster);loot.forEach(l=>{const s=worldToScreen(l),y=s.y+Math.sin(l.bob)*3;ctx.shadowColor=l.kind==='gold'?'#ffd65c':'#d39a56';ctx.shadowBlur=9;if(l.kind==='gold'){ctx.fillStyle='#e4ad32';ctx.beginPath();ctx.arc(s.x,y,7,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#ffe49a';ctx.stroke();ctx.fillStyle='#7b5117';ctx.font='700 8px Inter';ctx.textAlign='center';ctx.fillText('G',s.x,y+3);}else{ctx.fillStyle='#8b5532';ctx.fillRect(s.x-8,y-7,16,14);ctx.strokeStyle='#e0ad68';ctx.strokeRect(s.x-8,y-7,16,14);ctx.beginPath();ctx.moveTo(s.x-8,y);ctx.lineTo(s.x+8,y);ctx.stroke();}ctx.shadowBlur=0;});
+  islands.forEach(drawIsland);monsters.forEach(drawMonster);
   particles.forEach(p=>{const s=worldToScreen(p),a=Math.max(0,p.life/p.maxLife);ctx.globalAlpha=a;if(p.kind==='damage'){ctx.fillStyle='#ffd878';ctx.font='700 14px Inter';ctx.textAlign='center';ctx.fillText(p.text||'',s.x,s.y);}else{ctx.fillStyle=p.kind==='foam'?'#b9e2df':p.kind==='spark'?'#ffb340':'#3f4545';ctx.beginPath();ctx.arc(s.x,s.y,p.kind==='smoke'?7*(1-a)+3:p.kind==='foam'?4:2,0,7);ctx.fill();}ctx.globalAlpha=1;});
   shots.forEach(s=>{const p=worldToScreen(s);ctx.fillStyle=s.owner==='player'?'#ffd889':'#ff7450';ctx.shadowColor=ctx.fillStyle;ctx.shadowBlur=9;ctx.beginPath();ctx.arc(p.x,p.y,4,0,7);ctx.fill();ctx.shadowBlur=0;});
   enemies.forEach(e=>{drawShip(e,e.angle,'#732f2b');const s=worldToScreen(e);ctx.fillStyle='#07161c';ctx.fillRect(s.x-25,s.y-42,50,5);ctx.fillStyle='#c64f3d';ctx.fillRect(s.x-25,s.y-42,50*e.hp/e.maxHp,5);ctx.fillStyle='#d7cbb5';ctx.font='10px Inter';ctx.textAlign='center';ctx.fillText(e.name,s.x,s.y-49);});
