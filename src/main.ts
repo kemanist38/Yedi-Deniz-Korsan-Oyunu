@@ -200,7 +200,12 @@ function drawPlayerShip(){
   if(directionalShipImage.complete&&directionalShipImage.naturalWidth){
     const heading=Math.atan2(-Math.cos(player.angle),Math.sin(player.angle));
     const compass=(Math.round((heading+Math.PI/2)/(Math.PI/4))+8)%8;
-    const sx=(compass%4)*256,sy=Math.floor(compass/4)*256;
+    // Üretilen sprite sayfasındaki gerçek pruva yönlerini pusula yönleriyle eşleştir.
+    // Sıra: K, KD, D, GD, G, GB, B, KB.
+    const frames=[4,3,6,5,0,1,2,3];
+    const frame=frames[compass],mirror=compass===7;
+    const sx=(frame%4)*256,sy=Math.floor(frame/4)*256;
+    if(mirror)ctx.scale(-1,1);
     ctx.drawImage(directionalShipImage,sx,sy,256,256,-58,-58,116,116);
   }else ctx.drawImage(playerShipImage,-49,-49,98,98);
   ctx.restore();
