@@ -71,8 +71,8 @@ addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
 canvas.addEventListener('pointerdown',e=>{
   const world={x:(e.clientX-innerWidth/2)/camera.zoom+camera.x,y:(e.clientY-innerHeight/2)/camera.zoom+camera.y};
   const hit=[...enemies,...monsters].filter(n=>dist(n,world)<Math.max(42,n.kind==='monster'?n.radius:0)).sort((a,b)=>dist(a,world)-dist(b,world))[0];
-  if(hit){selected=hit;state.attacking=false;toast(`${hit.name} hedef seçildi`);}
-  else{destination=navigablePoint(world);state.attacking=false;}
+  if(hit){selected=hit;state.attacking=false;ui('attack').classList.remove('active');toast(`${hit.name} hedef seçildi`);}
+  else{destination=navigablePoint(world);state.attacking=false;ui('attack').classList.remove('active');}
 });
 ui('closePort').onclick=()=>togglePort(false);
 ui('attack').onclick=toggleAttack;
@@ -100,6 +100,11 @@ function resolveIslandCollision(){
 }
 function setZoom(value:number){camera.targetZoom=clamp(value,.5,1.15);ui('zoomValue').textContent=`${Math.round(camera.targetZoom*100)}%`;}
 function targetExists(t:Target){return t.kind==='ship'?enemies.includes(t):monsters.includes(t);}
+function angleDelta(target:number,current:number){return Math.atan2(Math.sin(target-current),Math.cos(target-current));}
+function broadsideCourse(target:Target){
+  const bearing=Math.atan2(target.y-player.y,target.x-player.x),right=bearing,left=bearing+Math.PI;
+  return Math.abs(angleDelta(right,player.angle))<=Math.abs(angleDelta(left,player.angle))?right:left;
+}
 
 function fire(side:string){
   if(player.cooldown>0||state.portOpen)return;
@@ -161,7 +166,7 @@ function updateUI(){
   const need=state.level*100;ui('xpText').textContent=`${state.fame} / ${need}`;(ui('xpBar') as HTMLElement).style.width=`${Math.min(100,state.fame/need*100)}%`;ui('level').textContent=`SEVİYE ${state.level}`;ui('quest').textContent=`${Math.min(state.kills,5)} / 5 Düşman`;ui('chainAmmo').textContent=String(state.chainAmmo);
   ui('reloadText').textContent=player.cooldown>0?`${player.cooldown.toFixed(1)} sn`:'HAZIR';ui('attack').classList.toggle('reloading',player.cooldown>0);
   const valid=selected&&targetExists(selected);ui('targetCard').classList.toggle('visible',!!valid);
-  if(valid&&selected){ui('targetName').textContent=selected.name;ui('targetRange').textContent=`${Math.round(dist(player,selected))} menzil`;ui('targetTier').textContent=selected.kind==='ship'?`Sınıf ${selected.tier}`:'Deniz Canavarı';(ui('targetHp') as HTMLElement).style.width=`${selected.hp/selected.maxHp*100}%`;}
+  if(valid&&selected){const range=Math.round(dist(player,selected)),liningUp=state.attacking&&range<=345&&Math.abs(angleDelta(broadsideCourse(selected),player.angle))>=.16;ui('targetName').textContent=selected.name;ui('targetRange').textContent=liningUp?'Borda alınıyor…':`${range} menzil`;ui('targetTier').textContent=selected.kind==='ship'?`Sınıf ${selected.tier}`:'Deniz Canavarı';(ui('targetHp') as HTMLElement).style.width=`${selected.hp/selected.maxHp*100}%`;}
 }
 
 function update(dt:number){
@@ -190,7 +195,18 @@ function update(dt:number){
   if(state.repairing){state.hp=Math.min(state.maxHp,state.hp+state.maxHp*.035*dt);if(state.hp>=state.maxHp){state.repairing=false;toast('Gövde tamamen onarıldı');}}
   wakeClock-=dt;if(Math.abs(player.speed)>8&&wakeClock<=0){wakeClock=.1;particles.push({x:player.x-Math.sin(player.angle)*22,y:player.y+Math.cos(player.angle)*22,vx:-Math.sin(player.angle)*8,vy:Math.cos(player.angle)*8,life:.75,maxLife:.75,kind:'foam'});}
   monsters.forEach(m=>{m.phase+=dt;m.cooldown-=dt;if(!isSafeHarbor()&&m.aggro&&dist(m,player)<430&&m.cooldown<=0)monsterFire(m);});
-  if(state.attacking&&selected){const d=dist(player,selected);if(d>330){destination={x:selected.x+Math.cos(Math.atan2(player.y-selected.y,player.x-selected.x))*290,y:selected.y+Math.sin(Math.atan2(player.y-selected.y,player.x-selected.x))*290};}else{destination=null;fireAtTarget();}}
+  if(state.attacking&&selected){
+    const d=dist(player,selected);
+    if(d>345){
+      const away=Math.atan2(player.y-selected.y,player.x-selected.x);
+      destination=navigablePoint({x:selected.x+Math.cos(away)*305,y:selected.y+Math.sin(away)*305});
+    }else{
+      destination=null;player.speed+=(0-player.speed)*Math.min(1,dt*5);
+      const course=broadsideCourse(selected),delta=angleDelta(course,player.angle);
+      player.angle+=clamp(delta,-2.6*dt,2.6*dt);
+      if(Math.abs(delta)<.16&&player.speed<9)fireAtTarget();
+    }
+  }
   for(const e of enemies){
     const d=dist(e,player);e.wander+=dt;
     const target=e.aggro?Math.atan2(player.y-e.y,player.x-e.x)+Math.PI/2:e.angle+Math.sin(e.wander*.35)*.008;
