@@ -32,6 +32,11 @@ const shipChunks=['aa','ab','ac','ad','ae','af','ag','ah','ai'];
 Promise.all(shipChunks.map(part=>fetch(`/assets/player-flagship-game-v1.b64.${part}`).then(r=>r.text())))
   .then(parts=>{playerShipImage.src=`data:image/png;base64,${parts.join('')}`;})
   .catch(()=>{playerShipImage.src='/assets/player-flagship-game-v1.png';});
+const portIslandImage=new Image();
+const islandChunks=['aa','ab','ac','ad'];
+Promise.all(islandChunks.map(part=>fetch(`/assets/kul-limani-v1.b64.${part}`).then(r=>r.text())))
+  .then(parts=>{portIslandImage.src=`data:image/webp;base64,${parts.join('')}`;})
+  .catch(()=>{portIslandImage.src='/assets/kul-limani-v1.webp';});
 const ui = (id:string) => document.getElementById(id)!;
 const WORLD = 2800;
 const keys = new Set<string>();
@@ -159,7 +164,7 @@ function drawPlayerShip(){
   ctx.save();ctx.translate(s.x,s.y);ctx.rotate(player.angle-Math.PI*1.25);
   ctx.shadowColor='#000b';ctx.shadowBlur=16;ctx.drawImage(playerShipImage,-70,-70,140,140);ctx.restore();
 }
-function drawIsland(i:typeof islands[number]){const s=worldToScreen(i);const g=ctx.createRadialGradient(s.x-20,s.y-30,10,s.x,s.y,i.r);g.addColorStop(0,'#617c4e');g.addColorStop(.5,'#3c593e');g.addColorStop(.66,'#b9a16b');g.addColorStop(.72,'#17434a');g.addColorStop(1,'#0b2b35');ctx.fillStyle=g;ctx.beginPath();for(let n=0;n<18;n++){const a=n/18*Math.PI*2,r=i.r*(.78+Math.sin(n*4.7)*.09);const x=s.x+Math.cos(a)*r,y=s.y+Math.sin(a)*r;n?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.closePath();ctx.fill();for(let n=0;n<7;n++){const a=n*2.1,r=i.r*.38;ctx.fillStyle='#213c2d';ctx.beginPath();ctx.arc(s.x+Math.cos(a)*r,s.y+Math.sin(a)*r,7+n%3*2,0,7);ctx.fill();}ctx.fillStyle='#d7c697';ctx.font='600 11px Cinzel';ctx.textAlign='center';ctx.fillText(i.name,s.x,s.y+i.r*.76);if(i.port){ctx.fillStyle='#d7ad5d';ctx.fillRect(s.x-4,s.y-22,8,40);ctx.fillRect(s.x-22,s.y+10,44,8);ctx.fillStyle='#653426';ctx.fillRect(s.x-10,s.y-34,20,16);ctx.fillStyle='#ffd46a';ctx.beginPath();ctx.arc(s.x,s.y-36,4,0,7);ctx.fill();}}
+function drawIsland(i:typeof islands[number]){const s=worldToScreen(i);if(i.port&&portIslandImage.complete&&portIslandImage.naturalWidth){ctx.save();ctx.shadowColor='#0008';ctx.shadowBlur=22;ctx.drawImage(portIslandImage,s.x-280,s.y-190,560,373);ctx.restore();ctx.fillStyle='#f3d59b';ctx.font='700 13px Cinzel';ctx.textAlign='center';ctx.fillText(i.name,s.x,s.y+178);return;}const g=ctx.createRadialGradient(s.x-20,s.y-30,10,s.x,s.y,i.r);g.addColorStop(0,'#617c4e');g.addColorStop(.5,'#3c593e');g.addColorStop(.66,'#b9a16b');g.addColorStop(.72,'#17434a');g.addColorStop(1,'#0b2b35');ctx.fillStyle=g;ctx.beginPath();for(let n=0;n<18;n++){const a=n/18*Math.PI*2,r=i.r*(.78+Math.sin(n*4.7)*.09);const x=s.x+Math.cos(a)*r,y=s.y+Math.sin(a)*r;n?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.closePath();ctx.fill();for(let n=0;n<7;n++){const a=n*2.1,r=i.r*.38;ctx.fillStyle='#213c2d';ctx.beginPath();ctx.arc(s.x+Math.cos(a)*r,s.y+Math.sin(a)*r,7+n%3*2,0,7);ctx.fill();}ctx.fillStyle='#d7c697';ctx.font='600 11px Cinzel';ctx.textAlign='center';ctx.fillText(i.name,s.x,s.y+i.r*.76);}
 function drawMonster(m:Monster){const s=worldToScreen(m);ctx.save();ctx.translate(s.x,s.y);ctx.strokeStyle='#477f72';ctx.lineWidth=9;ctx.lineCap='round';for(let n=0;n<6;n++){const a=n/6*Math.PI*2+m.phase*.12;ctx.beginPath();ctx.moveTo(Math.cos(a)*12,Math.sin(a)*12);ctx.quadraticCurveTo(Math.cos(a+.5)*50,Math.sin(a+.5)*50,Math.cos(a+Math.sin(m.phase+n)*.35)*m.radius,Math.sin(a+Math.sin(m.phase+n)*.35)*m.radius);ctx.stroke();}ctx.fillStyle='#38675f';ctx.beginPath();ctx.arc(0,0,25,0,7);ctx.fill();ctx.fillStyle='#d5cc71';ctx.beginPath();ctx.arc(-8,-5,4,0,7);ctx.arc(8,-5,4,0,7);ctx.fill();ctx.restore();ctx.fillStyle='#89b0a8';ctx.font='600 10px Cinzel';ctx.textAlign='center';ctx.fillText(m.name,s.x,s.y-66);}
 function draw(){
   const w=innerWidth,h=innerHeight;const sea=ctx.createLinearGradient(0,0,0,h);sea.addColorStop(0,'#0e3b48');sea.addColorStop(1,'#071f2a');ctx.fillStyle=sea;ctx.fillRect(0,0,w,h);
