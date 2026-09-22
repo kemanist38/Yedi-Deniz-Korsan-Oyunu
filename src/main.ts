@@ -1,12 +1,13 @@
 import './style.css';
 
 type Vec = { x: number; y: number };
-type Shot = Vec & { vx:number; vy:number; life:number; owner:'player'|'enemy'; damage:number; hit:boolean; target?:Target };
-type SalvoRound = { delay:number; target:Target; side:number; slot:number; damage:number };
+type AmmoKind = 'iron'|'chain';
+type Shot = Vec & { vx:number; vy:number; life:number; owner:'player'|'enemy'; damage:number; hit:boolean; ammo:AmmoKind; target?:Target };
+type SalvoRound = { delay:number; target:Target; side:number; slot:number; damage:number; ammo:AmmoKind };
 type Loot = Vec & { kind:'gold'|'wood'; value:number; bob:number };
-type Enemy = Vec & { kind:'ship'; angle:number; hp:number; maxHp:number; cooldown:number; speed:number; name:string; tier:number; aggro:boolean; wander:number };
+type Enemy = Vec & { kind:'ship'; angle:number; hp:number; maxHp:number; cooldown:number; speed:number; name:string; tier:number; aggro:boolean; wander:number; slowTimer:number };
 type Particle = Vec & { vx:number; vy:number; life:number; maxLife:number; kind:'foam'|'smoke'|'spark'|'damage'; text?:string };
-type Monster = Vec & { kind:'monster'; phase:number; radius:number; name:string; hp:number; maxHp:number; cooldown:number; aggro:boolean };
+type Monster = Vec & { kind:'monster'; phase:number; radius:number; name:string; hp:number; maxHp:number; cooldown:number; aggro:boolean; slowTimer:number };
 type Target = Enemy|Monster;
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
@@ -42,7 +43,7 @@ Promise.all(directionalChunks.map(part=>fetch(`/assets/player-flagship-direction
 const ui = (id:string) => document.getElementById(id)!;
 const WORLD = 2800;
 const keys = new Set<string>();
-const state = { gold:40, wood:10, fame:0, level:1, hp:100, maxHp:100, cannon:18, kills:0, ammo:'iron' as 'iron'|'chain', chainAmmo:40, attacking:false, repairing:false, invulnerable:0 };
+const state = { gold:40, wood:10, fame:0, level:1, hp:100, maxHp:100, cannon:18, kills:0, ammo:'iron' as AmmoKind, chainAmmo:40, attacking:false, repairing:false, invulnerable:0 };
 const player = { x:WORLD/2, y:WORLD/2, angle:-Math.PI/2, speed:0, cooldown:0 };
 let destination:Vec|null=null;
 let selected:Target|null=null;
@@ -50,7 +51,7 @@ const camera = { x:player.x, y:player.y, zoom:.7, targetZoom:.7 };
 const shots:Shot[]=[]; const loot:Loot[]=[]; const enemies:Enemy[]=[];
 const salvoQueue:SalvoRound[]=[];
 const particles:Particle[]=[];
-const monsters:Monster[]=[{kind:'monster',x:1980,y:1530,phase:0,radius:52,name:'Derinlik Leviathanı',hp:180,maxHp:180,cooldown:0,aggro:false}];
+const monsters:Monster[]=[{kind:'monster',x:1980,y:1530,phase:0,radius:52,name:'Derinlik Leviathanı',hp:180,maxHp:180,cooldown:0,aggro:false,slowTimer:0}];
 let wakeClock=0;
 let collisionNotice=0;
 const islands = [
@@ -73,11 +74,11 @@ ui('repair').onclick=toggleRepair;
 ui('zoomOut').onclick=()=>setZoom(camera.targetZoom-.1);
 ui('zoomIn').onclick=()=>setZoom(camera.targetZoom+.1);
 canvas.addEventListener('wheel',e=>{e.preventDefault();setZoom(camera.targetZoom+(e.deltaY<0?.1:-.1));},{passive:false});
-document.querySelectorAll<HTMLButtonElement>('[data-ammo]').forEach(b=>b.onclick=()=>{state.ammo=b.dataset.ammo as 'iron'|'chain';document.querySelectorAll('[data-ammo]').forEach(x=>x.classList.toggle('active',x===b));});
+document.querySelectorAll<HTMLButtonElement>('[data-ammo]').forEach(b=>b.onclick=()=>{state.ammo=b.dataset.ammo as AmmoKind;document.querySelectorAll('[data-ammo]').forEach(x=>x.classList.toggle('active',x===b));});
 
 function spawnEnemy(){
   const a=Math.random()*Math.PI*2,d=500+Math.random()*650,tier=1+Math.floor(state.level/3);
-  enemies.push({kind:'ship',x:clamp(player.x+Math.cos(a)*d,80,WORLD-80),y:clamp(player.y+Math.sin(a)*d,80,WORLD-80),angle:a+Math.PI,hp:42+tier*12,maxHp:42+tier*12,cooldown:Math.random()*2,speed:35+Math.random()*15,name:['Yağmacı','Kaçakçı','Kızıl Korsan'][Math.floor(Math.random()*3)],tier,aggro:false,wander:Math.random()*6});
+  enemies.push({kind:'ship',x:clamp(player.x+Math.cos(a)*d,80,WORLD-80),y:clamp(player.y+Math.sin(a)*d,80,WORLD-80),angle:a+Math.PI,hp:42+tier*12,maxHp:42+tier*12,cooldown:Math.random()*2,speed:35+Math.random()*15,name:['Yağmacı','Kaçakçı','Kızıl Korsan'][Math.floor(Math.random()*3)],tier,aggro:false,wander:Math.random()*6,slowTimer:0});
 }
 for(let i=0;i<7;i++) spawnEnemy();
 function clamp(n:number,a:number,b:number){return Math.max(a,Math.min(b,n));}
@@ -104,7 +105,7 @@ function fire(side:string){
   const sides=side===' '?[-1,1]:[side==='q'?-1:1];
   for(const s of sides) for(let i=-1;i<=1;i++){
     const a=player.angle+s*Math.PI/2+i*.07, speed=430;
-    shots.push({x:player.x+Math.cos(a)*24,y:player.y+Math.sin(a)*24,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,life:1.1,owner:'player',damage:state.cannon/3,hit:false});
+    shots.push({x:player.x+Math.cos(a)*24,y:player.y+Math.sin(a)*24,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,life:1.1,owner:'player',damage:state.cannon/3,hit:false,ammo:state.ammo});
   }
 }
 function toggleAttack(){if(!selected||!targetExists(selected)){toast('Önce bir hedef seç');return;}state.attacking=!state.attacking;if(state.attacking)state.repairing=false;ui('attack').classList.toggle('active',state.attacking);toast(state.attacking?'Otomatik saldırı başladı':'Saldırı durduruldu');}
@@ -119,7 +120,7 @@ function fireAtTarget(){
   if(state.ammo==='chain'&&state.chainAmmo<=0){state.ammo='iron';toast('Zincir güllesi tükendi');}
   const fx=Math.sin(player.angle),fy=-Math.cos(player.angle),tx=selected.x-player.x,ty=selected.y-player.y;
   const side=fx*ty-fy*tx>0?-1:1,damage=state.cannon*5*(state.ammo==='chain'?1.45:1);
-  salvoQueue.push({delay:0,target:selected,side,slot:0,damage});
+  salvoQueue.push({delay:0,target:selected,side,slot:0,damage,ammo:state.ammo});
   if(state.ammo==='chain')state.chainAmmo-=5;
   player.cooldown=state.ammo==='chain'?2.2:1.65;
 }
@@ -129,14 +130,14 @@ function releaseSalvo(round:SalvoRound){
   const a=Math.atan2(round.target.y-player.y,round.target.x-player.x);
   const fx=Math.sin(player.angle),fy=-Math.cos(player.angle),rx=Math.cos(player.angle),ry=Math.sin(player.angle),speed=510;
   const x=player.x+rx*round.side*(17+Math.abs(round.slot)*1.5)+fx*round.slot*11,y=player.y+ry*round.side*(17+Math.abs(round.slot)*1.5)+fy*round.slot*11;
-  shots.push({x,y,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,life:Math.max(1.1,d/speed+.5),owner:'player',damage:round.damage,hit:false,target:round.target});
+  shots.push({x,y,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,life:Math.max(1.1,d/speed+.5),owner:'player',damage:round.damage,hit:false,ammo:round.ammo,target:round.target});
   particles.push({x,y,vx:rx*round.side*12,vy:ry*round.side*12,life:.38,maxLife:.38,kind:'smoke'});
 }
 function enemyFire(e:Enemy){
   const a=Math.atan2(player.y-e.y,player.x-e.x);
-  shots.push({x:e.x,y:e.y,vx:Math.cos(a)*260,vy:Math.sin(a)*260,life:2.2,owner:'enemy',damage:8,hit:false}); e.cooldown=2.2+Math.random();
+  shots.push({x:e.x,y:e.y,vx:Math.cos(a)*260,vy:Math.sin(a)*260,life:2.2,owner:'enemy',damage:8,hit:false,ammo:'iron'}); e.cooldown=2.2+Math.random();
 }
-function monsterFire(m:Monster){const a=Math.atan2(player.y-m.y,player.x-m.x);shots.push({x:m.x,y:m.y,vx:Math.cos(a)*210,vy:Math.sin(a)*210,life:2.4,owner:'enemy',damage:10,hit:false});m.cooldown=2.8;}
+function monsterFire(m:Monster){const a=Math.atan2(player.y-m.y,player.x-m.x);shots.push({x:m.x,y:m.y,vx:Math.cos(a)*210,vy:Math.sin(a)*210,life:2.4,owner:'enemy',damage:10,hit:false,ammo:'iron'});m.cooldown=2.8;}
 function respawn(){
   let spot={x:WORLD/2,y:WORLD/2};
   for(let tries=0;tries<40;tries++){const candidate={x:160+Math.random()*(WORLD-320),y:160+Math.random()*(WORLD-320)};if(islands.every(i=>dist(candidate,i)>i.r+170)&&monsters.every(m=>dist(candidate,m)>260)){spot=candidate;break;}}
@@ -179,7 +180,7 @@ function update(dt:number){
   for(let i=salvoQueue.length-1;i>=0;i--){salvoQueue[i].delay-=dt;if(salvoQueue[i].delay<=0){releaseSalvo(salvoQueue[i]);salvoQueue.splice(i,1);}}
   if(state.repairing){state.hp=Math.min(state.maxHp,state.hp+state.maxHp*.035*dt);if(state.hp>=state.maxHp){state.repairing=false;ui('repair').classList.remove('active');toast('Gövde tamamen onarıldı');}}
   wakeClock-=dt;if(Math.abs(player.speed)>8&&wakeClock<=0){wakeClock=.1;particles.push({x:player.x-Math.sin(player.angle)*22,y:player.y+Math.cos(player.angle)*22,vx:-Math.sin(player.angle)*8,vy:Math.cos(player.angle)*8,life:.75,maxLife:.75,kind:'foam'});}
-  monsters.forEach(m=>{m.phase+=dt;m.cooldown-=dt;if(m.aggro&&dist(m,player)<430&&m.cooldown<=0)monsterFire(m);});
+  monsters.forEach(m=>{m.phase+=dt;m.cooldown-=dt;m.slowTimer=Math.max(0,m.slowTimer-dt);if(m.aggro&&dist(m,player)<430&&m.cooldown<=0)monsterFire(m);});
   if(state.attacking&&selected){
     const d=dist(player,selected);
     if(d>345){
@@ -193,12 +194,12 @@ function update(dt:number){
     }
   }
   for(const e of enemies){
-    const d=dist(e,player);e.wander+=dt;
+    const d=dist(e,player);e.wander+=dt;e.slowTimer=Math.max(0,e.slowTimer-dt);
     const target=e.aggro?Math.atan2(player.y-e.y,player.x-e.x)+Math.PI/2:e.angle+Math.sin(e.wander*.35)*.008;
     e.angle+=Math.atan2(Math.sin(target-e.angle),Math.cos(target-e.angle))*dt*(e.aggro?.8:.25);
-    if(!e.aggro||d>240){e.x=clamp(e.x+Math.sin(e.angle)*e.speed*(e.aggro?1:.45)*dt,40,WORLD-40);e.y=clamp(e.y-Math.cos(e.angle)*e.speed*(e.aggro?1:.45)*dt,40,WORLD-40);if(Math.random()<dt*3)particles.push({x:e.x-Math.sin(e.angle)*18,y:e.y+Math.cos(e.angle)*18,vx:0,vy:0,life:.55,maxLife:.55,kind:'foam'});} if(e.aggro&&d<440&&e.cooldown<=0)enemyFire(e);e.cooldown-=dt;
+    if(!e.aggro||d>240){const slow=e.slowTimer>0?.55:1;e.x=clamp(e.x+Math.sin(e.angle)*e.speed*(e.aggro?1:.45)*slow*dt,40,WORLD-40);e.y=clamp(e.y-Math.cos(e.angle)*e.speed*(e.aggro?1:.45)*slow*dt,40,WORLD-40);if(Math.random()<dt*3)particles.push({x:e.x-Math.sin(e.angle)*18,y:e.y+Math.cos(e.angle)*18,vx:0,vy:0,life:.55,maxLife:.55,kind:'foam'});} if(e.aggro&&d<440&&e.cooldown<=0)enemyFire(e);e.cooldown-=dt;
   }
-  for(let i=shots.length-1;i>=0;i--){const s=shots[i];if(s.owner==='player'&&s.target&&targetExists(s.target)){const a=Math.atan2(s.target.y-s.y,s.target.x-s.x),speed=Math.hypot(s.vx,s.vy);s.vx=Math.cos(a)*speed;s.vy=Math.sin(a)*speed;s.life=Math.max(s.life,.12);}s.x+=s.vx*dt;s.y+=s.vy*dt;s.life-=dt;if(s.owner==='player'){for(let j=enemies.length-1;j>=0&&s.life>0;j--){const e=enemies[j];if(dist(s,e)<25){const hit=s.damage;s.hit=true;e.aggro=true;e.hp-=hit;damageText(e.x,e.y,hit);burst(e.x,e.y);s.life=0;if(e.hp<=0){burst(e.x,e.y,true);enemies.splice(j,1);if(selected===e){selected=null;state.attacking=false;ui('attack').classList.remove('active');}state.gold+=12+e.tier*5;state.fame+=20;state.kills++;loot.push({x:e.x+18,y:e.y,kind:'wood',value:5,bob:Math.random()*6});toast(`${e.name} batırıldı`);setTimeout(spawnEnemy,1400);}}}for(let j=monsters.length-1;j>=0&&s.life>0;j--){const m=monsters[j];if(dist(s,m)<m.radius){const hit=s.damage;s.hit=true;m.aggro=true;m.hp-=hit;damageText(m.x,m.y,hit);burst(m.x,m.y);s.life=0;if(m.hp<=0){state.gold+=100;state.fame+=80;m.hp=m.maxHp;m.aggro=false;m.x=160+Math.random()*(WORLD-320);m.y=160+Math.random()*(WORLD-320);selected=null;state.attacking=false;toast(`${m.name} yenildi`);}}}}else if(state.invulnerable<=0&&dist(s,player)<22){s.hit=true;state.repairing=false;state.hp-=s.damage;damageText(player.x,player.y,s.damage);burst(player.x,player.y);s.life=0;if(state.hp<=0)respawn();}if(s.life<=0)shots.splice(i,1);}
+  for(let i=shots.length-1;i>=0;i--){const s=shots[i];if(s.owner==='player'&&s.target&&targetExists(s.target)){const a=Math.atan2(s.target.y-s.y,s.target.x-s.x),speed=Math.hypot(s.vx,s.vy);s.vx=Math.cos(a)*speed;s.vy=Math.sin(a)*speed;s.life=Math.max(s.life,.12);}s.x+=s.vx*dt;s.y+=s.vy*dt;s.life-=dt;if(s.owner==='player'){for(let j=enemies.length-1;j>=0&&s.life>0;j--){const e=enemies[j];if(dist(s,e)<25){const hit=s.damage;s.hit=true;e.aggro=true;if(s.ammo==='chain')e.slowTimer=3;e.hp-=hit;damageText(e.x,e.y,hit);burst(e.x,e.y);s.life=0;if(e.hp<=0){burst(e.x,e.y,true);enemies.splice(j,1);if(selected===e){selected=null;state.attacking=false;ui('attack').classList.remove('active');}state.gold+=12+e.tier*5;state.fame+=20;state.kills++;loot.push({x:e.x+18,y:e.y,kind:'wood',value:5,bob:Math.random()*6});toast(`${e.name} batırıldı`);setTimeout(spawnEnemy,1400);}}}for(let j=monsters.length-1;j>=0&&s.life>0;j--){const m=monsters[j];if(dist(s,m)<m.radius){const hit=s.damage;s.hit=true;m.aggro=true;if(s.ammo==='chain')m.slowTimer=3;m.hp-=hit;damageText(m.x,m.y,hit);burst(m.x,m.y);s.life=0;if(m.hp<=0){state.gold+=100;state.fame+=80;m.hp=m.maxHp;m.aggro=false;m.x=160+Math.random()*(WORLD-320);m.y=160+Math.random()*(WORLD-320);selected=null;state.attacking=false;toast(`${m.name} yenildi`);}}}}else if(state.invulnerable<=0&&dist(s,player)<22){s.hit=true;state.repairing=false;state.hp-=s.damage;damageText(player.x,player.y,s.damage);burst(player.x,player.y);s.life=0;if(state.hp<=0)respawn();}if(s.life<=0)shots.splice(i,1);}
   for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.97;p.vy*=.97;p.life-=dt;if(p.life<=0)particles.splice(i,1);}
   for(let i=loot.length-1;i>=0;i--){loot[i].bob+=dt*3;if(dist(loot[i],player)<42){state.wood+=loot[i].value;loot.splice(i,1);toast('Kereste toplandı');}}
   const need=state.level*100;if(state.fame>=need){state.fame-=need;state.level++;state.maxHp+=15;state.hp=state.maxHp;toast(`Seviye ${state.level}!`);} if(state.kills===5){state.gold+=100;state.kills++;toast('Görev tamamlandı: +100 altın');}
