@@ -57,9 +57,14 @@ Promise.all(directionalChunks.map(part=>fetch(`/assets/player-flagship-direction
 const ui = (id:string) => document.getElementById(id)!;
 const WORLD = 2800;
 const keys = new Set<string>();
-const state = { gold:40, wood:10, fame:0, level:1, hp:100, maxHp:100, cannon:18, cannonType:'cast' as CannonKind, activeQuest:null as number|null, ammo:'iron' as AmmoKind, chainAmmo:40, attacking:false, repairing:false, invulnerable:0 };
-const questProgress=QUESTS.map(()=>0);
-const completedQuests=new Set<number>();
+const QUEST_STORAGE='kara-yelken-quests-v1';
+let storedQuests:{activeQuest:number|null;progress:number[];cooldowns:number[]}|null=null;
+try{storedQuests=JSON.parse(localStorage.getItem(QUEST_STORAGE)||'null');}catch{storedQuests=null;}
+const storedActive=storedQuests?.activeQuest;
+const state = { gold:40, wood:10, fame:0, level:1, hp:100, maxHp:100, cannon:18, cannonType:'cast' as CannonKind, activeQuest:Number.isInteger(storedActive)&&storedActive!>=0&&storedActive!<QUESTS.length?storedActive!:null as number|null, ammo:'iron' as AmmoKind, chainAmmo:40, attacking:false, repairing:false, invulnerable:0 };
+const questProgress=QUESTS.map((_,index)=>Math.max(0,Number(storedQuests?.progress?.[index])||0));
+const questCooldownUntil=QUESTS.map((_,index)=>Math.max(0,Number(storedQuests?.cooldowns?.[index])||0));
+if(state.activeQuest!==null&&questCooldownUntil[state.activeQuest]>Date.now())state.activeQuest=null;
 const player = { x:WORLD/2, y:WORLD/2, angle:-Math.PI/2, speed:0, cooldown:0 };
 let destination:Vec|null=null;
 let selected:Target|null=null;
@@ -173,35 +178,42 @@ let rewardTimer=0;
 const rewardQueue:string[]=[];
 function showReward(msg:string){ui('rewardToast').textContent=msg;ui('rewardToast').classList.remove('show');void ui('rewardToast').offsetWidth;ui('rewardToast').classList.add('show');rewardTimer=2.6;}
 function rewardNotice(msg:string){if(rewardTimer>0){rewardQueue.push(msg);return;}showReward(msg);}
+function saveQuestState(){localStorage.setItem(QUEST_STORAGE,JSON.stringify({activeQuest:state.activeQuest,progress:questProgress,cooldowns:questCooldownUntil}));}
+function cooldownText(until:number){const minutes=Math.max(1,Math.ceil((until-Date.now())/60000)),hours=Math.floor(minutes/60),mins=minutes%60;return hours>0?`${hours} sa ${mins} dk`:`${mins} dk`;}
 function openQuestLog(){renderQuestLog();ui('questOverlay').classList.add('open');}
 function closeQuestLog(){ui('questOverlay').classList.remove('open');}
 function renderQuestLog(){
   ui('questList').innerHTML=QUESTS.map((quest,index)=>{
-    const completed=completedQuests.has(index),active=state.activeQuest===index,progress=questProgress[index];
-    const status=completed?'TAMAMLANDI':active?'AKTİF GÖREV':progress>0?'DEVAM ET':'GÖREVİ BAŞLAT';
-    return `<article class="quest-entry ${active?'active':''} ${completed?'completed':''}"><div class="quest-number">${String(index+1).padStart(2,'0')}</div><div class="quest-copy"><span>${quest.target==='ship'?'GEMİ AVI':'DENİZ CANAVARI'}</span><h3>${quest.title}</h3><p>${quest.description}</p><div class="quest-rewards"><b>${quest.gold} ALTIN</b><b>${quest.wood} KERESTE</b><b>${quest.fame} ŞÖHRET</b></div><small>${Math.min(progress,quest.required)} / ${quest.required} ${quest.target==='ship'?'Düşman':'Canavar'}</small></div><button data-quest="${index}" ${completed?'disabled':''}>${status}</button></article>`;
+    const cooling=questCooldownUntil[index]>Date.now(),active=state.activeQuest===index,progress=questProgress[index];
+    const status=cooling?cooldownText(questCooldownUntil[index]):active?'GÖREVİ İPTAL ET':progress>0?'DEVAM ET':'GÖREVİ BAŞLAT';
+    return `<article class="quest-entry ${active?'active':''} ${cooling?'completed':''}"><div class="quest-number">${String(index+1).padStart(2,'0')}</div><div class="quest-copy"><span>${quest.target==='ship'?'GEMİ AVI':'DENİZ CANAVARI'}</span><h3>${quest.title}</h3><p>${quest.description}</p><div class="quest-rewards"><b>${quest.gold} ALTIN</b><b>${quest.wood} KERESTE</b><b>${quest.fame} ŞÖHRET</b></div><small>${cooling?'Yeniden açılmasına: '+cooldownText(questCooldownUntil[index]):`${Math.min(progress,quest.required)} / ${quest.required} ${quest.target==='ship'?'Düşman':'Canavar'}`}</small></div><button data-quest="${index}" ${cooling?'disabled':''}>${status}</button></article>`;
   }).join('');
-  document.querySelectorAll<HTMLButtonElement>('[data-quest]').forEach(button=>button.onclick=()=>startQuest(Number(button.dataset.quest)));
+  document.querySelectorAll<HTMLButtonElement>('[data-quest]').forEach(button=>button.onclick=()=>{const index=Number(button.dataset.quest);state.activeQuest===index?cancelQuest(index):startQuest(index);});
 }
 function startQuest(index:number){
-  if(completedQuests.has(index))return;
-  state.activeQuest=index;closeQuestLog();toast(`${QUESTS[index].title} görevi başladı`);updateUI();
+  if(questCooldownUntil[index]>Date.now())return;
+  if(state.activeQuest!==null){toast(`Önce ${QUESTS[state.activeQuest].title} görevini iptal et`);return;}
+  state.activeQuest=index;saveQuestState();closeQuestLog();toast(`${QUESTS[index].title} görevi başladı`);updateUI();
+}
+function cancelQuest(index:number){
+  if(state.activeQuest!==index)return;
+  state.activeQuest=null;questProgress[index]=0;saveQuestState();renderQuestLog();toast(`${QUESTS[index].title} görevi iptal edildi`);updateUI();
 }
 function recordQuestProgress(target:'ship'|'monster'){
   if(state.activeQuest===null)return;
   const index=state.activeQuest,quest=QUESTS[index];
   if(!quest||quest.target!==target)return;
-  questProgress[index]++;
+  questProgress[index]++;saveQuestState();
   if(questProgress[index]<quest.required)return;
   state.gold+=quest.gold;state.wood+=quest.wood;state.fame+=quest.fame;
   rewardNotice(`GÖREV TAMAMLANDI   +${quest.gold} Altın   +${quest.wood} Kereste   +${quest.fame} Şöhret`);
-  toast(`${quest.title} tamamlandı`);completedQuests.add(index);state.activeQuest=null;
+  toast(`${quest.title} tamamlandı`);questProgress[index]=0;questCooldownUntil[index]=Date.now()+8*60*60*1000;state.activeQuest=null;saveQuestState();
 }
 function updateUI(){
   ui('gold').textContent=String(state.gold).padStart(3,'0');ui('wood').textContent=String(state.wood).padStart(3,'0');ui('fame').textContent=String(state.fame).padStart(3,'0');
   ui('hpText').textContent=`${Math.ceil(state.hp)} / ${state.maxHp}`; (ui('hpBar') as HTMLElement).style.width=`${state.hp/state.maxHp*100}%`;
   const need=state.level*100;ui('xpText').textContent=`${state.fame} / ${need}`;(ui('xpBar') as HTMLElement).style.width=`${Math.min(100,state.fame/need*100)}%`;ui('level').textContent=`SEVİYE ${state.level}`;ui('chainAmmo').textContent=String(state.chainAmmo);
-  const quest=state.activeQuest===null?null:QUESTS[state.activeQuest];ui('questTitle').textContent=quest?.title||'Görev seçilmedi';ui('questDescription').textContent=quest?.description||'Kaptan, yapmak istediğin görevi görev defterinden seçebilirsin.';ui('quest').textContent=quest?`${questProgress[state.activeQuest!]} / ${quest.required} ${quest.target==='ship'?'Düşman':'Canavar'}`:completedQuests.size===QUESTS.length?'Tüm görevler tamamlandı':'Hazır olduğunda bir görev başlat';
+  const quest=state.activeQuest===null?null:QUESTS[state.activeQuest];ui('questTitle').textContent=quest?.title||'Görev seçilmedi';ui('questDescription').textContent=quest?.description||'Kaptan, yapmak istediğin görevi görev defterinden seçebilirsin.';ui('quest').textContent=quest?`${questProgress[state.activeQuest!]} / ${quest.required} ${quest.target==='ship'?'Düşman':'Canavar'}`:'Hazır olduğunda bir görev başlat';
   ui('reloadText').textContent=player.cooldown>0?`${player.cooldown.toFixed(1)} sn`:'HAZIR';ui('attack').classList.toggle('reloading',player.cooldown>0);
   ui('repair').classList.toggle('active',state.repairing);
   ui('cannonName').textContent=CANNONS[state.cannonType].name;
