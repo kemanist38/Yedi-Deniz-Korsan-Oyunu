@@ -115,15 +115,15 @@ function fireAtTarget(){
   if(!selected||player.cooldown>0||dist(player,selected)>390)return;
   if(state.ammo==='chain'&&state.chainAmmo<=0){state.ammo='iron';toast('Zincir güllesi tükendi');}
   const fx=Math.sin(player.angle),fy=-Math.cos(player.angle),tx=selected.x-player.x,ty=selected.y-player.y;
-  const side=fx*ty-fy*tx>0?-1:1,damage=state.cannon*(state.ammo==='chain'?1.45:1)/5;
+  const side=fx*ty-fy*tx>0?-1:1,damage=state.cannon*(state.ammo==='chain'?1.45:1);
   for(let i=0;i<5;i++)salvoQueue.push({delay:i*.085,target:selected,side,slot:i-2,damage});
   if(state.ammo==='chain')state.chainAmmo-=5;
   player.cooldown=state.ammo==='chain'?2.2:1.65;
 }
 function releaseSalvo(round:SalvoRound){
   if(!targetExists(round.target))return;
-  const d=dist(player,round.target),accuracy=clamp(.96-d/1500,.68,.94),miss=Math.random()>accuracy;
-  const spread=miss?(24+Math.random()*34)*(Math.random()<.5?-1:1):(Math.random()-.5)*10;
+  const d=dist(player,round.target),accuracy=clamp(.995-d/6000,.93,.99),miss=Math.random()>accuracy;
+  const spread=miss?(20+Math.random()*22)*(Math.random()<.5?-1:1):(Math.random()-.5)*5;
   const a=Math.atan2(round.target.y-player.y,round.target.x-player.x)+spread/Math.max(120,d);
   const fx=Math.sin(player.angle),fy=-Math.cos(player.angle),rx=Math.cos(player.angle),ry=Math.sin(player.angle),speed=510;
   const x=player.x+rx*round.side*20+fx*round.slot*7,y=player.y+ry*round.side*20+fy*round.slot*7;
