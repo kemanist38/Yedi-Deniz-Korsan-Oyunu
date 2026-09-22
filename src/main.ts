@@ -177,7 +177,12 @@ function drawPlayerShip(){
   const s=worldToScreen(player);
   if(!playerShipImage.complete||!playerShipImage.naturalWidth){drawShip(player,player.angle,'#173f48',1.1);return;}
   const bob=Math.sin(performance.now()/420)*1.8;
-  ctx.save();ctx.translate(s.x,s.y+bob);ctx.rotate(player.angle-Math.PI*1.25+Math.sin(performance.now()/700)*.012);
+  // İzometrik gemiyi 360° çevirmek direkleri baş aşağı gösterir. Seafight benzeri
+  // görünüm için gemi dik kalır; doğu/batı yönünde aynalanır ve hafifçe yatar.
+  const headingX=Math.sin(player.angle),headingY=-Math.cos(player.angle);
+  const facing=headingX>0?-1:1;
+  const courseLean=clamp(headingX*.13+headingY*.045,-.16,.16);
+  ctx.save();ctx.translate(s.x,s.y+bob);ctx.rotate(courseLean+Math.sin(performance.now()/700)*.01);ctx.scale(facing,1);
   ctx.shadowColor='#000b';ctx.shadowBlur=16;ctx.globalAlpha=state.invulnerable&&Math.floor(performance.now()/120)%2?.55:1;ctx.drawImage(playerShipImage,-49,-49,98,98);ctx.restore();
 }
 function drawIsland(i:typeof islands[number]){const s=worldToScreen(i);if(i.port&&portIslandImage.complete&&portIslandImage.naturalWidth){ctx.save();ctx.shadowColor='#0008';ctx.shadowBlur=22;ctx.drawImage(portIslandImage,s.x-280,s.y-190,560,373);ctx.restore();ctx.fillStyle='#f3d59b';ctx.font='700 13px Cinzel';ctx.textAlign='center';ctx.fillText(i.name,s.x,s.y+178);return;}const g=ctx.createRadialGradient(s.x-20,s.y-30,10,s.x,s.y,i.r);g.addColorStop(0,'#617c4e');g.addColorStop(.5,'#3c593e');g.addColorStop(.66,'#b9a16b');g.addColorStop(.72,'#17434a');g.addColorStop(1,'#0b2b35');ctx.fillStyle=g;ctx.beginPath();for(let n=0;n<18;n++){const a=n/18*Math.PI*2,r=i.r*(.78+Math.sin(n*4.7)*.09);const x=s.x+Math.cos(a)*r,y=s.y+Math.sin(a)*r;n?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.closePath();ctx.fill();for(let n=0;n<7;n++){const a=n*2.1,r=i.r*.38;ctx.fillStyle='#213c2d';ctx.beginPath();ctx.arc(s.x+Math.cos(a)*r,s.y+Math.sin(a)*r,7+n%3*2,0,7);ctx.fill();}ctx.fillStyle='#d7c697';ctx.font='600 11px Cinzel';ctx.textAlign='center';ctx.fillText(i.name,s.x,s.y+i.r*.76);}
