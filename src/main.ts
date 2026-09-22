@@ -28,7 +28,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     <section class="hud">
       <div class="brand">KARA YELKEN<small>GÖLGELER DENİZİ</small></div>
       <div class="resources"><div class="resource">ALTIN<b id="gold">000</b></div><div class="resource">KERESTE<b id="wood">000</b></div><div class="resource">ŞÖHRET<b id="fame">000</b></div></div>
-      <div class="panel quest"><span class="eyebrow">Aktif görev</span><h3 id="questTitle">Kızıl Sular</h3><p id="questDescription">Yağmacı filonun devriyelerini batır ve bölgeyi güvenli hâle getir.</p><div class="progress" id="quest">0 / 5 Düşman</div></div>
+      <div class="panel quest"><span class="eyebrow">Aktif görev</span><h3 id="questTitle">Görev seçilmedi</h3><p id="questDescription">Kaptan, yapmak istediğin görevi görev defterinden seçebilirsin.</p><div class="progress" id="quest">Hazır olduğunda bir görev başlat</div><button class="quest-open" id="openQuests">GÖREVLERİ AÇ</button></div>
       <div class="panel captain"><div class="name-row"><strong>Kaptan Yasin</strong><span class="level" id="level">SEVİYE 1</span></div><div class="bar-label"><span>GÖVDE</span><span id="hpText">100 / 100</span></div><div class="bar hp"><i id="hpBar" style="width:100%"></i></div><div class="bar-label"><span>ŞÖHRET</span><span id="xpText">0 / 100</span></div><div class="bar xp"><i id="xpBar" style="width:0%"></i></div></div>
       <div class="panel target-card" id="targetCard"><span class="eyebrow">HEDEF YOK</span><h3 id="targetName">Denizde bir gemi seç</h3><div class="bar hp"><i id="targetHp" style="width:0%"></i></div><div class="target-meta"><span id="targetRange">— menzil</span><span id="targetTier">—</span></div></div>
       <div class="panel actionbar"><button class="action" id="cannonType"><b>♜</b><span id="cannonName">Döküm</span><small>TOP</small></button><button class="action active" data-ammo="iron"><b>●</b><span>Demir</span><small id="ironAmmo">∞</small></button><button class="action" data-ammo="chain"><b>⛓</b><span>Zincir</span><small id="chainAmmo">40</small></button><button class="action fire" id="attack"><b>⚔</b><span>SALDIR</span><small id="reloadText">HAZIR</small></button><button class="action" id="repair"><b>✚</b><span>TAMİR</span><small>F</small></button></div>
@@ -36,6 +36,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <canvas id="minimap" width="170" height="125"></canvas>
       <div class="reward-toast" id="rewardToast"></div>
       <div class="toast" id="toast"></div>
+      <div class="quest-overlay" id="questOverlay"><section class="quest-log"><header><div><span class="eyebrow">Kaptanın görev defteri</span><h2>DENİZ GÖREVLERİ</h2></div><button id="closeQuests" aria-label="Görevleri kapat">×</button></header><p class="quest-intro">İstediğin görevi seç. Görevler arasında geçiş yaptığında mevcut ilerlemen korunur.</p><div class="quest-list" id="questList"></div></section></div>
     </section>
   </main>`;
 
@@ -56,7 +57,9 @@ Promise.all(directionalChunks.map(part=>fetch(`/assets/player-flagship-direction
 const ui = (id:string) => document.getElementById(id)!;
 const WORLD = 2800;
 const keys = new Set<string>();
-const state = { gold:40, wood:10, fame:0, level:1, hp:100, maxHp:100, cannon:18, cannonType:'cast' as CannonKind, questIndex:0, questProgress:0, ammo:'iron' as AmmoKind, chainAmmo:40, attacking:false, repairing:false, invulnerable:0 };
+const state = { gold:40, wood:10, fame:0, level:1, hp:100, maxHp:100, cannon:18, cannonType:'cast' as CannonKind, activeQuest:null as number|null, ammo:'iron' as AmmoKind, chainAmmo:40, attacking:false, repairing:false, invulnerable:0 };
+const questProgress=QUESTS.map(()=>0);
+const completedQuests=new Set<number>();
 const player = { x:WORLD/2, y:WORLD/2, angle:-Math.PI/2, speed:0, cooldown:0 };
 let destination:Vec|null=null;
 let selected:Target|null=null;
@@ -74,7 +77,7 @@ const islands = [
 
 function resize(){ const d=Math.min(devicePixelRatio,2); canvas.width=innerWidth*d; canvas.height=innerHeight*d; ctx.setTransform(d,0,0,d,0,0); }
 addEventListener('resize',resize); resize();
-addEventListener('keydown',e=>{ keys.add(e.key.toLowerCase()); if(['q','e',' '].includes(e.key.toLowerCase())) fire(e.key.toLowerCase()); if(e.key.toLowerCase()==='r') toggleAttack(); if(e.key.toLowerCase()==='f')toggleRepair(); });
+addEventListener('keydown',e=>{ keys.add(e.key.toLowerCase()); if(['q','e',' '].includes(e.key.toLowerCase())) fire(e.key.toLowerCase()); if(e.key.toLowerCase()==='r') toggleAttack(); if(e.key.toLowerCase()==='f')toggleRepair();if(e.key==='Escape')closeQuestLog(); });
 addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
 canvas.addEventListener('pointerdown',e=>{
   const world={x:(e.clientX-innerWidth/2)/camera.zoom+camera.x,y:(e.clientY-innerHeight/2)/camera.zoom+camera.y};
@@ -87,6 +90,9 @@ ui('repair').onclick=toggleRepair;
 ui('cannonType').onclick=()=>{const types=Object.keys(CANNONS) as CannonKind[];state.cannonType=types[(types.indexOf(state.cannonType)+1)%types.length];toast(`${CANNONS[state.cannonType].name} topları hazır`);};
 ui('zoomOut').onclick=()=>setZoom(camera.targetZoom-.1);
 ui('zoomIn').onclick=()=>setZoom(camera.targetZoom+.1);
+ui('openQuests').onclick=openQuestLog;
+ui('closeQuests').onclick=closeQuestLog;
+ui('questOverlay').addEventListener('pointerdown',e=>{if(e.target===ui('questOverlay'))closeQuestLog();});
 canvas.addEventListener('wheel',e=>{e.preventDefault();setZoom(camera.targetZoom+(e.deltaY<0?.1:-.1));},{passive:false});
 document.querySelectorAll<HTMLButtonElement>('[data-ammo]').forEach(b=>b.onclick=()=>{state.ammo=b.dataset.ammo as AmmoKind;document.querySelectorAll('[data-ammo]').forEach(x=>x.classList.toggle('active',x===b));});
 
@@ -167,20 +173,35 @@ let rewardTimer=0;
 const rewardQueue:string[]=[];
 function showReward(msg:string){ui('rewardToast').textContent=msg;ui('rewardToast').classList.remove('show');void ui('rewardToast').offsetWidth;ui('rewardToast').classList.add('show');rewardTimer=2.6;}
 function rewardNotice(msg:string){if(rewardTimer>0){rewardQueue.push(msg);return;}showReward(msg);}
+function openQuestLog(){renderQuestLog();ui('questOverlay').classList.add('open');}
+function closeQuestLog(){ui('questOverlay').classList.remove('open');}
+function renderQuestLog(){
+  ui('questList').innerHTML=QUESTS.map((quest,index)=>{
+    const completed=completedQuests.has(index),active=state.activeQuest===index,progress=questProgress[index];
+    const status=completed?'TAMAMLANDI':active?'AKTİF GÖREV':progress>0?'DEVAM ET':'GÖREVİ BAŞLAT';
+    return `<article class="quest-entry ${active?'active':''} ${completed?'completed':''}"><div class="quest-number">${String(index+1).padStart(2,'0')}</div><div class="quest-copy"><span>${quest.target==='ship'?'GEMİ AVI':'DENİZ CANAVARI'}</span><h3>${quest.title}</h3><p>${quest.description}</p><div class="quest-rewards"><b>${quest.gold} ALTIN</b><b>${quest.wood} KERESTE</b><b>${quest.fame} ŞÖHRET</b></div><small>${Math.min(progress,quest.required)} / ${quest.required} ${quest.target==='ship'?'Düşman':'Canavar'}</small></div><button data-quest="${index}" ${completed?'disabled':''}>${status}</button></article>`;
+  }).join('');
+  document.querySelectorAll<HTMLButtonElement>('[data-quest]').forEach(button=>button.onclick=()=>startQuest(Number(button.dataset.quest)));
+}
+function startQuest(index:number){
+  if(completedQuests.has(index))return;
+  state.activeQuest=index;closeQuestLog();toast(`${QUESTS[index].title} görevi başladı`);updateUI();
+}
 function recordQuestProgress(target:'ship'|'monster'){
-  const quest=QUESTS[state.questIndex];
+  if(state.activeQuest===null)return;
+  const index=state.activeQuest,quest=QUESTS[index];
   if(!quest||quest.target!==target)return;
-  state.questProgress++;
-  if(state.questProgress<quest.required)return;
+  questProgress[index]++;
+  if(questProgress[index]<quest.required)return;
   state.gold+=quest.gold;state.wood+=quest.wood;state.fame+=quest.fame;
   rewardNotice(`GÖREV TAMAMLANDI   +${quest.gold} Altın   +${quest.wood} Kereste   +${quest.fame} Şöhret`);
-  toast(`${quest.title} tamamlandı`);state.questIndex++;state.questProgress=0;
+  toast(`${quest.title} tamamlandı`);completedQuests.add(index);state.activeQuest=null;
 }
 function updateUI(){
   ui('gold').textContent=String(state.gold).padStart(3,'0');ui('wood').textContent=String(state.wood).padStart(3,'0');ui('fame').textContent=String(state.fame).padStart(3,'0');
   ui('hpText').textContent=`${Math.ceil(state.hp)} / ${state.maxHp}`; (ui('hpBar') as HTMLElement).style.width=`${state.hp/state.maxHp*100}%`;
   const need=state.level*100;ui('xpText').textContent=`${state.fame} / ${need}`;(ui('xpBar') as HTMLElement).style.width=`${Math.min(100,state.fame/need*100)}%`;ui('level').textContent=`SEVİYE ${state.level}`;ui('chainAmmo').textContent=String(state.chainAmmo);
-  const quest=QUESTS[state.questIndex];ui('questTitle').textContent=quest?.title||'Sefer Tamamlandı';ui('questDescription').textContent=quest?.description||'Yeni görevler yakında kaptan. Şimdilik denizlerde şöhret kazanmaya devam et.';ui('quest').textContent=quest?`${state.questProgress} / ${quest.required} ${quest.target==='ship'?'Düşman':'Canavar'}`:'Tüm görevler tamamlandı';
+  const quest=state.activeQuest===null?null:QUESTS[state.activeQuest];ui('questTitle').textContent=quest?.title||'Görev seçilmedi';ui('questDescription').textContent=quest?.description||'Kaptan, yapmak istediğin görevi görev defterinden seçebilirsin.';ui('quest').textContent=quest?`${questProgress[state.activeQuest!]} / ${quest.required} ${quest.target==='ship'?'Düşman':'Canavar'}`:completedQuests.size===QUESTS.length?'Tüm görevler tamamlandı':'Hazır olduğunda bir görev başlat';
   ui('reloadText').textContent=player.cooldown>0?`${player.cooldown.toFixed(1)} sn`:'HAZIR';ui('attack').classList.toggle('reloading',player.cooldown>0);
   ui('repair').classList.toggle('active',state.repairing);
   ui('cannonName').textContent=CANNONS[state.cannonType].name;
