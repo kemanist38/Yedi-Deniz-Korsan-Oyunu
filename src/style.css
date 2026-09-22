@@ -1,0 +1,47 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;600;700&display=swap');
+
+:root { color: #f6edda; font-family: Inter, system-ui, sans-serif; background: #061219; }
+* { box-sizing: border-box; }
+html, body, #app { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+button { font: inherit; }
+
+.game-shell { position: relative; width: 100%; height: 100%; background: #071c25; }
+#sea { display: block; width: 100%; height: 100%; cursor: crosshair; }
+.grain { pointer-events: none; position: absolute; inset: 0; opacity: .14; mix-blend-mode: overlay; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.34'/%3E%3C/svg%3E"); }
+.hud { pointer-events: none; position: absolute; inset: 0; }
+.brand { position: absolute; left: 24px; top: 20px; font: 700 26px Cinzel, serif; letter-spacing: .13em; color: #f5d594; text-shadow: 0 2px 12px #000; }
+.brand small { display: block; font: 600 9px Inter; letter-spacing: .42em; color: #7eb2b5; margin-top: 2px; }
+.resources { position: absolute; top: 18px; right: 22px; display: flex; gap: 8px; }
+.resource, .panel { background: linear-gradient(180deg, rgba(9,31,39,.92), rgba(4,17,23,.92)); border: 1px solid rgba(216,178,104,.25); box-shadow: 0 8px 30px #0007, inset 0 1px #ffffff10; backdrop-filter: blur(8px); }
+.resource { min-width: 96px; padding: 9px 13px; border-radius: 7px; font-size: 12px; color: #88a8aa; }
+.resource b { color: #f5d594; display: block; font-size: 15px; margin-top: 2px; }
+.panel { position: absolute; border-radius: 8px; }
+.captain { left: 22px; bottom: 22px; width: 280px; padding: 15px; }
+.name-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+.name-row strong { font-family: Cinzel; color:#f2d59b; }
+.level { border:1px solid #b8904e66; border-radius:99px; padding:3px 8px; font-size:10px; color:#d6bc87; }
+.bar { height: 8px; background:#071218; border-radius:99px; overflow:hidden; margin:7px 0; border:1px solid #ffffff0b; }
+.bar i { display:block; height:100%; transition:width .2s; }
+.hp i { background:linear-gradient(90deg,#9d2e2a,#e15b3d); }
+.xp i { background:linear-gradient(90deg,#b88a34,#f0d37a); }
+.bar-label { display:flex; justify-content:space-between; font-size:10px; color:#8ea1a2; }
+.quest { right:22px; top:87px; width:250px; padding:15px; }
+.eyebrow { text-transform:uppercase; letter-spacing:.18em; color:#9b7b45; font-weight:700; font-size:9px; }
+.quest h3 { font:700 15px Cinzel; margin:6px 0 8px; color:#f0d3a1; }
+.quest p { margin:0; color:#9eb1b2; font-size:11px; line-height:1.5; }
+.progress { color:#f0d37a; font-weight:700; margin-top:8px; font-size:11px; }
+.controls { left:50%; transform:translateX(-50%); bottom:22px; display:flex; gap:8px; padding:8px; }
+.key { min-width:58px; padding:7px 9px; text-align:center; font-size:9px; color:#89a3a5; }
+.key b { display:block; margin:auto auto 4px; color:#edd39f; font-size:11px; }
+.port-card { pointer-events:auto; display:none; left:50%; top:50%; transform:translate(-50%,-50%); width:min(440px,90vw); padding:24px; }
+.port-card.open { display:block; }
+.port-card h2 { font:700 24px Cinzel; color:#f3d69f; margin:5px 0; }
+.port-card p { color:#91aaac; font-size:12px; line-height:1.6; }
+.upgrade-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:18px; }
+.upgrade { border:1px solid #b88b4555; background:#0c242c; color:#ecd3a4; padding:13px; border-radius:7px; cursor:pointer; text-align:left; }
+.upgrade:hover { background:#12333b; border-color:#d2a85c; }
+.upgrade small { display:block; color:#80999b; margin-top:4px; }
+.close { float:right; background:none; color:#b4c2c1; border:0; cursor:pointer; font-size:20px; }
+.toast { position:absolute; left:50%; top:18%; transform:translate(-50%,-10px); opacity:0; padding:10px 18px; border-radius:6px; background:#071820e8; border:1px solid #d5aa5e66; color:#f1d59f; font:600 12px Cinzel; transition:.25s; }
+.toast.show { opacity:1; transform:translate(-50%,0); }
+@media (max-width:760px) { .brand {font-size:18px}.resources{top:65px;right:10px;flex-direction:column}.resource{min-width:80px;padding:5px 9px}.quest{display:none}.captain{left:10px;bottom:10px;width:210px}.controls{right:8px;left:auto;transform:none;bottom:10px;flex-direction:column}.key{min-width:50px}.upgrade-grid{grid-template-columns:1fr} }
