@@ -2,6 +2,7 @@ import './style.css';
 
 type Vec = { x: number; y: number };
 type AmmoKind = 'iron'|'chain';
+type CannonKind = 'cast'|'long'|'rapid'|'heavy';
 type Shot = Vec & { vx:number; vy:number; life:number; owner:'player'|'enemy'; damage:number; hit:boolean; ammo:AmmoKind; target?:Target };
 type SalvoRound = { delay:number; target:Target; side:number; slot:number; damage:number; ammo:AmmoKind };
 type Loot = Vec & { kind:'gold'|'wood'; value:number; bob:number };
@@ -9,6 +10,12 @@ type Enemy = Vec & { kind:'ship'; angle:number; hp:number; maxHp:number; cooldow
 type Particle = Vec & { vx:number; vy:number; life:number; maxLife:number; kind:'foam'|'smoke'|'spark'|'damage'; text?:string };
 type Monster = Vec & { kind:'monster'; phase:number; radius:number; name:string; hp:number; maxHp:number; cooldown:number; aggro:boolean; slowTimer:number; homeX:number; homeY:number; combatTimer:number };
 type Target = Enemy|Monster;
+const CANNONS:Record<CannonKind,{name:string;damage:number;range:number;reload:number}>={
+  cast:{name:'Döküm',damage:1,range:390,reload:1.65},
+  long:{name:'Uzun',damage:.82,range:470,reload:2.05},
+  rapid:{name:'Seri',damage:.68,range:340,reload:1.05},
+  heavy:{name:'Ağır',damage:1.38,range:365,reload:2.65}
+};
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <main class="game-shell">
@@ -19,7 +26,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <div class="panel quest"><span class="eyebrow">Aktif görev</span><h3>Kızıl Sular</h3><p>Yağmacı filonun devriyelerini batır ve bölgeyi güvenli hâle getir.</p><div class="progress" id="quest">0 / 5 Düşman</div></div>
       <div class="panel captain"><div class="name-row"><strong>Kaptan Yasin</strong><span class="level" id="level">SEVİYE 1</span></div><div class="bar-label"><span>GÖVDE</span><span id="hpText">100 / 100</span></div><div class="bar hp"><i id="hpBar" style="width:100%"></i></div><div class="bar-label"><span>ŞÖHRET</span><span id="xpText">0 / 100</span></div><div class="bar xp"><i id="xpBar" style="width:0%"></i></div></div>
       <div class="panel target-card" id="targetCard"><span class="eyebrow">HEDEF YOK</span><h3 id="targetName">Denizde bir gemi seç</h3><div class="bar hp"><i id="targetHp" style="width:0%"></i></div><div class="target-meta"><span id="targetRange">— menzil</span><span id="targetTier">—</span></div></div>
-      <div class="panel actionbar"><button class="action active" data-ammo="iron"><b>●</b><span>Demir</span><small id="ironAmmo">∞</small></button><button class="action" data-ammo="chain"><b>⛓</b><span>Zincir</span><small id="chainAmmo">40</small></button><button class="action fire" id="attack"><b>⚔</b><span>SALDIR</span><small id="reloadText">HAZIR</small></button><button class="action" id="repair"><b>✚</b><span>TAMİR</span><small>F</small></button></div>
+      <div class="panel actionbar"><button class="action" id="cannonType"><b>♜</b><span id="cannonName">Döküm</span><small>TOP</small></button><button class="action active" data-ammo="iron"><b>●</b><span>Demir</span><small id="ironAmmo">∞</small></button><button class="action" data-ammo="chain"><b>⛓</b><span>Zincir</span><small id="chainAmmo">40</small></button><button class="action fire" id="attack"><b>⚔</b><span>SALDIR</span><small id="reloadText">HAZIR</small></button><button class="action" id="repair"><b>✚</b><span>TAMİR</span><small>F</small></button></div>
       <div class="panel zoom-controls"><button id="zoomOut" aria-label="Uzaklaştır">−</button><span id="zoomValue">70%</span><button id="zoomIn" aria-label="Yakınlaştır">+</button></div>
       <canvas id="minimap" width="170" height="125"></canvas>
       <div class="toast" id="toast"></div>
@@ -43,7 +50,7 @@ Promise.all(directionalChunks.map(part=>fetch(`/assets/player-flagship-direction
 const ui = (id:string) => document.getElementById(id)!;
 const WORLD = 2800;
 const keys = new Set<string>();
-const state = { gold:40, wood:10, fame:0, level:1, hp:100, maxHp:100, cannon:18, kills:0, ammo:'iron' as AmmoKind, chainAmmo:40, attacking:false, repairing:false, invulnerable:0 };
+const state = { gold:40, wood:10, fame:0, level:1, hp:100, maxHp:100, cannon:18, cannonType:'cast' as CannonKind, kills:0, ammo:'iron' as AmmoKind, chainAmmo:40, attacking:false, repairing:false, invulnerable:0 };
 const player = { x:WORLD/2, y:WORLD/2, angle:-Math.PI/2, speed:0, cooldown:0 };
 let destination:Vec|null=null;
 let selected:Target|null=null;
@@ -71,6 +78,7 @@ canvas.addEventListener('pointerdown',e=>{
 });
 ui('attack').onclick=toggleAttack;
 ui('repair').onclick=toggleRepair;
+ui('cannonType').onclick=()=>{const types=Object.keys(CANNONS) as CannonKind[];state.cannonType=types[(types.indexOf(state.cannonType)+1)%types.length];toast(`${CANNONS[state.cannonType].name} topları hazır`);};
 ui('zoomOut').onclick=()=>setZoom(camera.targetZoom-.1);
 ui('zoomIn').onclick=()=>setZoom(camera.targetZoom+.1);
 canvas.addEventListener('wheel',e=>{e.preventDefault();setZoom(camera.targetZoom+(e.deltaY<0?.1:-.1));},{passive:false});
@@ -117,13 +125,14 @@ function toggleRepair(){
   state.repairing=!state.repairing;toast(state.repairing?'Açık deniz tamiri başladı':'Tamir durduruldu');
 }
 function fireAtTarget(){
-  if(!selected||player.cooldown>0||dist(player,selected)>390)return;
+  const cannon=CANNONS[state.cannonType];
+  if(!selected||player.cooldown>0||dist(player,selected)>cannon.range)return;
   if(state.ammo==='chain'&&state.chainAmmo<=0){state.ammo='iron';toast('Zincir güllesi tükendi');}
   const fx=Math.sin(player.angle),fy=-Math.cos(player.angle),tx=selected.x-player.x,ty=selected.y-player.y;
-  const side=fx*ty-fy*tx>0?-1:1,damage=state.cannon*5*(state.ammo==='chain'?1.45:1);
+  const side=fx*ty-fy*tx>0?-1:1,damage=state.cannon*5*cannon.damage*(state.ammo==='chain'?1.45:1);
   salvoQueue.push({delay:0,target:selected,side,slot:0,damage,ammo:state.ammo});
   if(state.ammo==='chain')state.chainAmmo-=5;
-  player.cooldown=state.ammo==='chain'?2.2:1.65;
+  player.cooldown=cannon.reload*(state.ammo==='chain'?1.18:1);
 }
 function releaseSalvo(round:SalvoRound){
   if(!targetExists(round.target))return;
@@ -154,8 +163,9 @@ function updateUI(){
   const need=state.level*100;ui('xpText').textContent=`${state.fame} / ${need}`;(ui('xpBar') as HTMLElement).style.width=`${Math.min(100,state.fame/need*100)}%`;ui('level').textContent=`SEVİYE ${state.level}`;ui('quest').textContent=`${Math.min(state.kills,5)} / 5 Düşman`;ui('chainAmmo').textContent=String(state.chainAmmo);
   ui('reloadText').textContent=player.cooldown>0?`${player.cooldown.toFixed(1)} sn`:'HAZIR';ui('attack').classList.toggle('reloading',player.cooldown>0);
   ui('repair').classList.toggle('active',state.repairing);
+  ui('cannonName').textContent=CANNONS[state.cannonType].name;
   const valid=selected&&targetExists(selected);ui('targetCard').classList.toggle('visible',!!valid);
-  if(valid&&selected){const range=Math.round(dist(player,selected)),liningUp=state.attacking&&range<=345&&Math.abs(angleDelta(broadsideCourse(selected),player.angle))>=.16;ui('targetName').textContent=selected.name;ui('targetRange').textContent=liningUp?'Borda alınıyor…':`${range} menzil`;ui('targetTier').textContent=selected.kind==='ship'?`Sınıf ${selected.tier}`:'Deniz Canavarı';(ui('targetHp') as HTMLElement).style.width=`${selected.hp/selected.maxHp*100}%`;}
+  if(valid&&selected){const range=Math.round(dist(player,selected)),liningUp=state.attacking&&range<=CANNONS[state.cannonType].range-45&&Math.abs(angleDelta(broadsideCourse(selected),player.angle))>=.16;ui('targetName').textContent=selected.name;ui('targetRange').textContent=liningUp?'Borda alınıyor…':`${range} menzil`;ui('targetTier').textContent=selected.kind==='ship'?`Sınıf ${selected.tier}`:'Deniz Canavarı';(ui('targetHp') as HTMLElement).style.width=`${selected.hp/selected.maxHp*100}%`;}
 }
 
 function update(dt:number){
@@ -183,10 +193,10 @@ function update(dt:number){
   wakeClock-=dt;if(Math.abs(player.speed)>8&&wakeClock<=0){wakeClock=.1;particles.push({x:player.x-Math.sin(player.angle)*22,y:player.y+Math.cos(player.angle)*22,vx:-Math.sin(player.angle)*8,vy:Math.cos(player.angle)*8,life:.75,maxLife:.75,kind:'foam'});}
   monsters.forEach(m=>{m.phase+=dt;m.cooldown-=dt;m.slowTimer=Math.max(0,m.slowTimer-dt);if(m.aggro){m.combatTimer-=dt;if(m.combatTimer<=0||Math.hypot(m.x-m.homeX,m.y-m.homeY)>720)m.aggro=false;}if(m.aggro&&dist(m,player)<430&&m.cooldown<=0)monsterFire(m);});
   if(state.attacking&&selected){
-    const d=dist(player,selected);
-    if(d>345){
+    const d=dist(player,selected),cannonRange=CANNONS[state.cannonType].range;
+    if(d>cannonRange-45){
       const away=Math.atan2(player.y-selected.y,player.x-selected.x);
-      destination=navigablePoint({x:selected.x+Math.cos(away)*305,y:selected.y+Math.sin(away)*305});
+      destination=navigablePoint({x:selected.x+Math.cos(away)*(cannonRange-85),y:selected.y+Math.sin(away)*(cannonRange-85)});
     }else{
       destination=null;player.speed+=(0-player.speed)*Math.min(1,dt*5);
       const course=broadsideCourse(selected),delta=angleDelta(course,player.angle);
@@ -254,7 +264,7 @@ function draw(){
   if(selected&&targetExists(selected)){const t=worldToScreen(selected);ctx.strokeStyle='#f1c662';ctx.lineWidth=2;ctx.beginPath();ctx.arc(t.x,t.y,selected.kind==='monster'?selected.radius+10:34,0,7);ctx.stroke();}
   drawPlayerShip();
   if(destination){const d=worldToScreen(destination),p=worldToScreen(player);ctx.strokeStyle='#e7cf8d55';ctx.setLineDash([3,8]);ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(d.x,d.y);ctx.stroke();ctx.setLineDash([]);ctx.strokeStyle='#e7cf8d';ctx.beginPath();ctx.arc(d.x,d.y,9,0,7);ctx.stroke();}
-  const ps=worldToScreen(player);ctx.strokeStyle=selected?'#e8cf934d':'#e8cf9328';ctx.setLineDash([4,7]);ctx.beginPath();ctx.arc(ps.x,ps.y,selected?390:115,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+  const ps=worldToScreen(player);ctx.strokeStyle=selected?'#e8cf934d':'#e8cf9328';ctx.setLineDash([4,7]);ctx.beginPath();ctx.arc(ps.x,ps.y,selected?CANNONS[state.cannonType].range:115,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
   ctx.restore();drawMinimap();
 }
 function drawMinimap(){mini.fillStyle='#061820';mini.fillRect(0,0,170,125);mini.strokeStyle='#9fc2bd22';mini.strokeRect(.5,.5,169,124);for(const i of islands){mini.fillStyle='#536d4b';mini.beginPath();mini.arc(i.x/WORLD*170,i.y/WORLD*125,Math.max(3,i.r/WORLD*170),0,7);mini.fill();}for(const e of enemies){mini.fillStyle='#c34e3d';mini.fillRect(e.x/WORLD*170-1,e.y/WORLD*125-1,3,3);}mini.fillStyle='#f4dd9d';mini.beginPath();mini.arc(player.x/WORLD*170,player.y/WORLD*125,3,0,7);mini.fill();}
