@@ -27,6 +27,11 @@ const canvas = document.querySelector<HTMLCanvasElement>('#sea')!;
 const ctx = canvas.getContext('2d')!;
 const minimap = document.querySelector<HTMLCanvasElement>('#minimap')!;
 const mini = minimap.getContext('2d')!;
+const playerShipImage=new Image();
+const shipChunks=['aa','ab','ac','ad','ae','af','ag','ah','ai'];
+Promise.all(shipChunks.map(part=>fetch(`/assets/player-flagship-game-v1.b64.${part}`).then(r=>r.text())))
+  .then(parts=>{playerShipImage.src=`data:image/png;base64,${parts.join('')}`;})
+  .catch(()=>{playerShipImage.src='/assets/player-flagship-game-v1.png';});
 const ui = (id:string) => document.getElementById(id)!;
 const WORLD = 2800;
 const keys = new Set<string>();
@@ -148,6 +153,12 @@ function drawShip(p:Vec,angle:number,color:string,scale=1){
   ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(1,-29);ctx.lineTo(14,-24);ctx.lineTo(1,-19);ctx.closePath();ctx.fill();
   ctx.fillStyle='#171817';for(const x of [-15,15])for(const y of [-8,3,14]){ctx.beginPath();ctx.arc(x,y,2.2,0,7);ctx.fill();}ctx.restore();
 }
+function drawPlayerShip(){
+  const s=worldToScreen(player);
+  if(!playerShipImage.complete||!playerShipImage.naturalWidth){drawShip(player,player.angle,'#173f48',1.1);return;}
+  ctx.save();ctx.translate(s.x,s.y);ctx.rotate(player.angle-Math.PI*1.25);
+  ctx.shadowColor='#000b';ctx.shadowBlur=16;ctx.drawImage(playerShipImage,-70,-70,140,140);ctx.restore();
+}
 function drawIsland(i:typeof islands[number]){const s=worldToScreen(i);const g=ctx.createRadialGradient(s.x-20,s.y-30,10,s.x,s.y,i.r);g.addColorStop(0,'#617c4e');g.addColorStop(.5,'#3c593e');g.addColorStop(.66,'#b9a16b');g.addColorStop(.72,'#17434a');g.addColorStop(1,'#0b2b35');ctx.fillStyle=g;ctx.beginPath();for(let n=0;n<18;n++){const a=n/18*Math.PI*2,r=i.r*(.78+Math.sin(n*4.7)*.09);const x=s.x+Math.cos(a)*r,y=s.y+Math.sin(a)*r;n?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.closePath();ctx.fill();for(let n=0;n<7;n++){const a=n*2.1,r=i.r*.38;ctx.fillStyle='#213c2d';ctx.beginPath();ctx.arc(s.x+Math.cos(a)*r,s.y+Math.sin(a)*r,7+n%3*2,0,7);ctx.fill();}ctx.fillStyle='#d7c697';ctx.font='600 11px Cinzel';ctx.textAlign='center';ctx.fillText(i.name,s.x,s.y+i.r*.76);if(i.port){ctx.fillStyle='#d7ad5d';ctx.fillRect(s.x-4,s.y-22,8,40);ctx.fillRect(s.x-22,s.y+10,44,8);ctx.fillStyle='#653426';ctx.fillRect(s.x-10,s.y-34,20,16);ctx.fillStyle='#ffd46a';ctx.beginPath();ctx.arc(s.x,s.y-36,4,0,7);ctx.fill();}}
 function drawMonster(m:Monster){const s=worldToScreen(m);ctx.save();ctx.translate(s.x,s.y);ctx.strokeStyle='#477f72';ctx.lineWidth=9;ctx.lineCap='round';for(let n=0;n<6;n++){const a=n/6*Math.PI*2+m.phase*.12;ctx.beginPath();ctx.moveTo(Math.cos(a)*12,Math.sin(a)*12);ctx.quadraticCurveTo(Math.cos(a+.5)*50,Math.sin(a+.5)*50,Math.cos(a+Math.sin(m.phase+n)*.35)*m.radius,Math.sin(a+Math.sin(m.phase+n)*.35)*m.radius);ctx.stroke();}ctx.fillStyle='#38675f';ctx.beginPath();ctx.arc(0,0,25,0,7);ctx.fill();ctx.fillStyle='#d5cc71';ctx.beginPath();ctx.arc(-8,-5,4,0,7);ctx.arc(8,-5,4,0,7);ctx.fill();ctx.restore();ctx.fillStyle='#89b0a8';ctx.font='600 10px Cinzel';ctx.textAlign='center';ctx.fillText(m.name,s.x,s.y-66);}
 function draw(){
@@ -160,7 +171,7 @@ function draw(){
   shots.forEach(s=>{const p=worldToScreen(s);ctx.fillStyle=s.owner==='player'?'#ffd889':'#ff7450';ctx.shadowColor=ctx.fillStyle;ctx.shadowBlur=9;ctx.beginPath();ctx.arc(p.x,p.y,4,0,7);ctx.fill();ctx.shadowBlur=0;});
   enemies.forEach(e=>{drawShip(e,e.angle,'#732f2b');const s=worldToScreen(e);ctx.fillStyle='#07161c';ctx.fillRect(s.x-25,s.y-42,50,5);ctx.fillStyle='#c64f3d';ctx.fillRect(s.x-25,s.y-42,50*e.hp/e.maxHp,5);ctx.fillStyle='#d7cbb5';ctx.font='10px Inter';ctx.textAlign='center';ctx.fillText(e.name,s.x,s.y-49);});
   if(selected&&enemies.includes(selected)){const t=worldToScreen(selected);ctx.strokeStyle='#f1c662';ctx.lineWidth=2;ctx.beginPath();ctx.arc(t.x,t.y,34,0,7);ctx.stroke();ctx.fillStyle='#f1c662';for(let a=0;a<4;a++){ctx.save();ctx.translate(t.x,t.y);ctx.rotate(a*Math.PI/2);ctx.fillRect(-1,-43,2,9);ctx.restore();}}
-  drawShip(player,player.angle,'#173f48',1.1);
+  drawPlayerShip();
   if(destination){const d=worldToScreen(destination),p=worldToScreen(player);ctx.strokeStyle='#e7cf8d55';ctx.setLineDash([3,8]);ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(d.x,d.y);ctx.stroke();ctx.setLineDash([]);ctx.strokeStyle='#e7cf8d';ctx.beginPath();ctx.arc(d.x,d.y,9,0,7);ctx.stroke();}
   const ps=worldToScreen(player);ctx.strokeStyle='#e8cf9366';ctx.setLineDash([4,6]);ctx.beginPath();ctx.arc(ps.x,ps.y,115,0,7);ctx.stroke();ctx.setLineDash([]);
   drawMinimap();
