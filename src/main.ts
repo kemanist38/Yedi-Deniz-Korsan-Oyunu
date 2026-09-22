@@ -34,6 +34,11 @@ const shipChunks=['aa','ab','ac','ad','ae','af','ag','ah','ai'];
 Promise.all(shipChunks.map(part=>fetch(`/assets/player-flagship-game-v1.b64.${part}`).then(r=>r.text())))
   .then(parts=>{playerShipImage.src=`data:image/png;base64,${parts.join('')}`;})
   .catch(()=>{playerShipImage.src='/assets/player-flagship-game-v1.png';});
+const directionalShipImage=new Image();
+const directionalChunks=['aa','ab','ac','ad'];
+Promise.all(directionalChunks.map(part=>fetch(`/assets/player-flagship-directions-v1.b64.${part}`).then(r=>r.text())))
+  .then(parts=>{directionalShipImage.src=`data:image/webp;base64,${parts.join('')}`;})
+  .catch(()=>{directionalShipImage.src='/assets/player-flagship-directions-v1.webp';});
 const portIslandImage=new Image();
 const islandChunks=['aa','ab','ac','ad'];
 Promise.all(islandChunks.map(part=>fetch(`/assets/kul-limani-v1.b64.${part}`).then(r=>r.text())))
@@ -139,9 +144,21 @@ function update(dt:number){
   if(!state.portOpen){
     const turn=(keys.has('a')||keys.has('arrowleft')?-1:0)+(keys.has('d')||keys.has('arrowright')?1:0);
     const thrust=(keys.has('w')||keys.has('arrowup')?1:0)-(keys.has('s')||keys.has('arrowdown')?1:0);
-    if(destination&&!thrust&&!turn){const d=dist(player,destination),desired=Math.atan2(destination.y-player.y,destination.x-player.x)+Math.PI/2;const delta=Math.atan2(Math.sin(desired-player.angle),Math.cos(desired-player.angle));player.angle+=clamp(delta,-2.2*dt,2.2*dt);player.speed+=(d>24?92-player.speed*.8:-player.speed*2.5)*dt;if(d<24)destination=null;}
-    else {player.angle+=turn*2.05*dt;const cruise=thrust?thrust*92:16;player.speed+=(cruise-player.speed)*dt*(thrust?1.1:.7);}
-    player.speed=clamp(player.speed,-38,108);
+    if(destination&&!thrust&&!turn){
+      const d=dist(player,destination),desired=Math.atan2(destination.y-player.y,destination.x-player.x)+Math.PI/2;
+      const delta=Math.atan2(Math.sin(desired-player.angle),Math.cos(desired-player.angle));
+      player.angle+=clamp(delta,-3.4*dt,3.4*dt);
+      const alignment=clamp(1-Math.abs(delta)/Math.PI,.28,1),arrival=clamp(d/135,0,1);
+      const targetSpeed=104*alignment*arrival;
+      player.speed+=(targetSpeed-player.speed)*Math.min(1,dt*(targetSpeed<player.speed?4.8:2.4));
+      if(d<7){destination=null;player.speed=0;}
+    }
+    else {
+      player.angle+=turn*2.45*dt;
+      const targetSpeed=thrust>0?104:thrust<0?0:0;
+      player.speed+=(targetSpeed-player.speed)*Math.min(1,dt*(thrust>0?2.2:3.8));
+    }
+    player.speed=clamp(player.speed,0,108);
     player.x=clamp(player.x+Math.sin(player.angle)*player.speed*dt,25,WORLD-25);player.y=clamp(player.y-Math.cos(player.angle)*player.speed*dt,25,WORLD-25);
   }
   player.cooldown=Math.max(0,player.cooldown-dt);state.invulnerable=Math.max(0,state.invulnerable-dt);camera.x+=(player.x-camera.x)*Math.min(1,dt*3);camera.y+=(player.y-camera.y)*Math.min(1,dt*3);camera.zoom+=(camera.targetZoom-camera.zoom)*Math.min(1,dt*7);
@@ -175,15 +192,18 @@ function drawShip(p:Vec,angle:number,color:string,scale=1){
 }
 function drawPlayerShip(){
   const s=worldToScreen(player);
-  if(!playerShipImage.complete||!playerShipImage.naturalWidth){drawShip(player,player.angle,'#173f48',1.1);return;}
+  if(!directionalShipImage.complete||!directionalShipImage.naturalWidth){
+    if(!playerShipImage.complete||!playerShipImage.naturalWidth){drawShip(player,player.angle,'#173f48',1.1);return;}
+  }
   const bob=Math.sin(performance.now()/420)*1.8;
-  // İzometrik gemiyi 360° çevirmek direkleri baş aşağı gösterir. Seafight benzeri
-  // görünüm için gemi dik kalır; doğu/batı yönünde aynalanır ve hafifçe yatar.
-  const headingX=Math.sin(player.angle),headingY=-Math.cos(player.angle);
-  const facing=headingX>0?-1:1;
-  const courseLean=clamp(headingX*.13+headingY*.045,-.16,.16);
-  ctx.save();ctx.translate(s.x,s.y+bob);ctx.rotate(courseLean+Math.sin(performance.now()/700)*.01);ctx.scale(facing,1);
-  ctx.shadowColor='#000b';ctx.shadowBlur=16;ctx.globalAlpha=state.invulnerable&&Math.floor(performance.now()/120)%2?.55:1;ctx.drawImage(playerShipImage,-49,-49,98,98);ctx.restore();
+  ctx.save();ctx.translate(s.x,s.y+bob);ctx.shadowColor='#000b';ctx.shadowBlur=13;ctx.globalAlpha=state.invulnerable&&Math.floor(performance.now()/120)%2?.55:1;
+  if(directionalShipImage.complete&&directionalShipImage.naturalWidth){
+    const heading=Math.atan2(-Math.cos(player.angle),Math.sin(player.angle));
+    const compass=(Math.round((heading+Math.PI/2)/(Math.PI/4))+8)%8;
+    const sx=(compass%4)*256,sy=Math.floor(compass/4)*256;
+    ctx.drawImage(directionalShipImage,sx,sy,256,256,-58,-58,116,116);
+  }else ctx.drawImage(playerShipImage,-49,-49,98,98);
+  ctx.restore();
 }
 function drawIsland(i:typeof islands[number]){const s=worldToScreen(i);if(i.port&&portIslandImage.complete&&portIslandImage.naturalWidth){ctx.save();ctx.shadowColor='#0008';ctx.shadowBlur=22;ctx.drawImage(portIslandImage,s.x-280,s.y-190,560,373);ctx.restore();ctx.fillStyle='#f3d59b';ctx.font='700 13px Cinzel';ctx.textAlign='center';ctx.fillText(i.name,s.x,s.y+178);return;}const g=ctx.createRadialGradient(s.x-20,s.y-30,10,s.x,s.y,i.r);g.addColorStop(0,'#617c4e');g.addColorStop(.5,'#3c593e');g.addColorStop(.66,'#b9a16b');g.addColorStop(.72,'#17434a');g.addColorStop(1,'#0b2b35');ctx.fillStyle=g;ctx.beginPath();for(let n=0;n<18;n++){const a=n/18*Math.PI*2,r=i.r*(.78+Math.sin(n*4.7)*.09);const x=s.x+Math.cos(a)*r,y=s.y+Math.sin(a)*r;n?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.closePath();ctx.fill();for(let n=0;n<7;n++){const a=n*2.1,r=i.r*.38;ctx.fillStyle='#213c2d';ctx.beginPath();ctx.arc(s.x+Math.cos(a)*r,s.y+Math.sin(a)*r,7+n%3*2,0,7);ctx.fill();}ctx.fillStyle='#d7c697';ctx.font='600 11px Cinzel';ctx.textAlign='center';ctx.fillText(i.name,s.x,s.y+i.r*.76);}
 function drawMonster(m:Monster){const s=worldToScreen(m);ctx.save();ctx.translate(s.x,s.y);ctx.strokeStyle='#477f72';ctx.lineWidth=9;ctx.lineCap='round';for(let n=0;n<6;n++){const a=n/6*Math.PI*2+m.phase*.12;ctx.beginPath();ctx.moveTo(Math.cos(a)*12,Math.sin(a)*12);ctx.quadraticCurveTo(Math.cos(a+.5)*50,Math.sin(a+.5)*50,Math.cos(a+Math.sin(m.phase+n)*.35)*m.radius,Math.sin(a+Math.sin(m.phase+n)*.35)*m.radius);ctx.stroke();}ctx.fillStyle='#38675f';ctx.beginPath();ctx.arc(0,0,25,0,7);ctx.fill();ctx.fillStyle='#d5cc71';ctx.beginPath();ctx.arc(-8,-5,4,0,7);ctx.arc(8,-5,4,0,7);ctx.fill();ctx.restore();ctx.fillStyle='#89b0a8';ctx.font='600 10px Cinzel';ctx.textAlign='center';ctx.fillText(m.name,s.x,s.y-66);}
