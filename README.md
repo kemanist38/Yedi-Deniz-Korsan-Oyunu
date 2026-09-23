@@ -37,12 +37,14 @@ Dünya haritası (`M` veya **DÜNYA**) 6 × 3 ızgaradır:
 - **Kenardan geçiş:** Denizin kenarına yanaşınca **HARİTA ATLA** istemi çıkar (`J`). Komşu denizlerin yanı sıra 1/1 ↔ 3/2 (yatay) ve 1/1 ↔ 7/1 (dikey) arasında da geçiş vardır.
 - **Temalar:** Her seviyenin kendi teması vardır: Zümrüt, Mercan, Sis, Kızıl, Buz, Zehir, Alev, Fırtına, Derinlik. Deniz rengi, adalar, hava efektleri (sis, kar, kor, spor, şimşek…) ve filo adası temaya göre değişir.
 - **NPC ve canavarlar:** Her denizin kendine özgü 2 NPC gemisi ve 1 canavarı vardır; toplam 36 gemi ve 18 canavar. Güçleri ve ödülleri seviyeyle artar.
-- **1/1 Sığınak Koyu savaşa kapalıdır:** Buradaki gemiler sen saldırmadıkça ateş etmez. Batan kaptanlar burada, kendi filo adasının lagününde doğar.
+- **1/1 Sığınak Koyu savaşa kapalıdır:** Buradaki gemiler sen saldırmadıkça ateş etmez.
+- **Batma ve yeniden doğma:** Batan gemi, hangi denizdeyse orada, düşmanlardan uzak rastgele bir noktada %10 gövdeyle yeniden doğar ve onarıma başlar.
+- **Koordinatlar:** Ekranın üstünde soldan sağa **00–60** sütunları, solda yukarıdan aşağı **AA–CZ** satırları vardır. Konumun harita rozetinde `1/1 - 35AJ` biçiminde görünür; oyuncular toplanma yerini bu koordinatla söyleyebilir.
 
 ### Filo adaları
 
-Her denizde surlarla çevrili, kuleli bir filo adası vardır.
-- **Kendi filonun adası:** Güneydeki girişten içine girilir; lagünde gövde kendiliğinden onarılır ve kuleler düşmanlara ateş eder.
+Her denizde bir filo adası vardır: düzensiz kumsallı ormanlık bir ada, koyu mazgallı taş sur halkası, surun üzerinde 8 sekizgen konik çatılı kule, ortada piramit ahşap çatılı taş burç ve güneydeki kanalla denize açılan iskeleli bir lagün.
+- **Kendi filonun adası:** Güneydeki kanaldan lagüne girilir (rota otomatik olarak kanal ağzından çizilir); lagünde gövde kendiliğinden onarılır ve kuleler düşmanlara ateş eder.
 - **Rakip ya da tarafsız ada:** İçine girilemez. Kuleleri yaklaşan gemiye ateş eder ve filo savaşı ölçeğinde dayanıklıdır; tek gemi yıkamaz.
 
 ### Seviye ve görevler

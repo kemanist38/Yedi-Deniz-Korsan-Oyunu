@@ -2,7 +2,7 @@ import './style.css';
 import {ACTIONS,loadSettings,saveSettings,keyLabel,normalizeKey,DEFAULT_BINDS,type ActionId} from './settings';
 import {setAudio,unlockAudio,playCannon,playEnemyCannon,playHit,playExplosion,playCoins,playWind,playShield,playSplash,playLevelUp,playMapJump,playClick} from './audio';
 import {drawNpcShip,drawMonsterSheet,drawBossSprite,drawChestSprite,drawIslandSprite,drawFleetBase,drawFleetTower,drawMineSprite,seaTilePattern,islandSheetUrl,shipLabelOffset,portraitStyle,preload,fleetBaseUrl,fleetTowerUrl,BOSS_LABEL_OFFSET,TOWER_LABEL_OFFSET,WORLD_CHART} from './sprites';
-import {MAPS,GRID,THEMES,NPCS,MONSTERS,QUESTS,QUEST_COOLDOWN_MS,FLEET,WORLD,MAX_LEVEL,xpNeed,neighbor,tierOf,fleetTower,fleetReward,BOSS_PORTRAIT,PORTRAIT_COUNT,PORTRAIT_COLS,PORTRAIT_ATLAS,type MapKey,type WorldIsland,type NpcDef,type MonsterDef,type Dir,type QuestDef} from './campaign';
+import {MAPS,GRID,THEMES,NPCS,MONSTERS,QUESTS,QUEST_COOLDOWN_MS,FLEET,WORLD,MAX_LEVEL,xpNeed,neighbor,tierOf,fleetTower,fleetReward,BOSS_PORTRAIT,PORTRAIT_COUNT,PORTRAIT_COLS,PORTRAIT_ATLAS,GRID_COLS,GRID_ROWS,CELL_W,CELL_H,colName,rowName,gridCell,coordLabel,type MapKey,type WorldIsland,type NpcDef,type MonsterDef,type Dir,type QuestDef} from './campaign';
 import {ABILITIES,SPECIAL_AMMO,MINE,SPEED_BOOST,SHIELD_FACTOR,ARSENAL_MARKET,loadArsenal,saveArsenal,type AbilityId} from './arsenal';
 import {BOSS,loadFleetOwners,saveFleetOwners} from './conquest';
 import {TALENTS,OFFICERS,OFFICER_MAX_RANK,officerCost,officerSlots,talentPoints,loadCrew,saveCrew,spentPoints,computeBonus,type TalentId,type OfficerId} from './crew';
@@ -54,7 +54,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <section class="combat-targets" id="combatTargets" aria-live="polite"></section>
       <div class="bottom-command"><div class="status-bars"><div class="status-pair"><div class="status-line xp-line"><span>TP</span><i><em id="xpHudBar"></em></i><b id="xpHudText">0 / 100</b></div><div class="status-line elite-line"><span>EP</span><i><em id="eliteBar"></em></i><b id="eliteText">0 / 100</b></div></div><button class="recenter" id="recenterShip" aria-label="Gemiyi haritada ortala">✥</button><div class="status-pair"><div class="status-line hp-line"><span>CP</span><i><em id="hpHudBar"></em></i><b id="hpHudText">100 / 100</b></div><div class="status-line battle-line"><span>SP</span><i><em id="battleBar"></em></i><b id="battleText">0 / 100</b></div></div></div><div class="quick-inventory" id="quickInventory"></div></div>
       <div class="combat-controls" id="combatControls"><button class="combat-action attack" id="attack" title="Saldır"><b><img src="/assets/icon-attack-v1.webp" alt="" draggable="false"/></b><span id="attackLabel">SALDIR</span><small id="reloadText">HAZIR</small></button><button class="combat-action repair" id="repair" title="Tamir et"><b><img src="/assets/icon-repair-v1.webp" alt="" draggable="false"/></b><span>TAMİR</span><small data-bind="repair"></small></button><button class="combat-action speed ability" id="ability-speed" title="Rüzgâr Hamlesi"><b><img src="/assets/icon-speed-v1.webp" alt="" draggable="false"/></b><span>HIZ</span><small data-bind="speed"></small></button><button class="combat-action shield ability" id="ability-shield" title="Demir Kalkan"><b><img src="/assets/icon-shield-v1.webp" alt="" draggable="false"/></b><span>KALKAN</span><small data-bind="shield"></small></button><button class="combat-action mine ability" id="ability-mine" title="Deniz Mayını"><b><img src="/assets/icon-mine-v1.webp" alt="" draggable="false"/></b><span>MAYIN</span><small data-bind="mine"></small></button></div>
-      <div class="map-cluster"><div class="map-badge" id="mapBadge"><strong id="mapName"></strong><small id="mapSubtitle"></small></div><canvas id="minimap" width="170" height="125"></canvas><button class="world-map-button" id="openWorldMap" aria-label="Dünya haritalarını görüntüle">◎<span>DÜNYA</span></button><div class="panel zoom-controls"><button id="zoomOut" aria-label="Uzaklaştır">−</button><span id="zoomValue">70%</span><button id="zoomIn" aria-label="Yakınlaştır">+</button></div></div>
+      <div class="map-cluster"><div class="map-badge" id="mapBadge"><strong id="mapName"></strong><small id="mapSubtitle"></small><b class="map-coord" id="mapCoord" title="Konum koordinatı">1/1 - 00AA</b></div><canvas id="minimap" width="170" height="125"></canvas><button class="world-map-button" id="openWorldMap" aria-label="Dünya haritalarını görüntüle">◎<span>DÜNYA</span></button><div class="panel zoom-controls"><button id="zoomOut" aria-label="Uzaklaştır">−</button><span id="zoomValue">70%</span><button id="zoomIn" aria-label="Yakınlaştır">+</button></div></div>
       <div class="reward-toast" id="rewardToast"></div>
       <div class="toast" id="toast"></div>
       <div class="portal-prompt" id="portalPrompt"></div><div class="event-panel" id="eventPanel"></div><div class="quest-overlay world-overlay" id="worldMapOverlay"><section class="quest-log world-log"><header><div><span class="eyebrow">Kaptanın deniz haritası</span><h2>DÜNYA HARİTASI</h2></div><button id="closeWorldMap" aria-label="Dünya haritasını kapat">×</button></header><div class="world-chart" id="worldChart"></div><div class="world-info" id="worldInfo"></div></section></div><div class="quest-overlay" id="questOverlay"><section class="quest-log"><header><div><span class="eyebrow">Kaptanın görev defteri</span><h2>DENİZ GÖREVLERİ</h2></div><button id="closeQuests" aria-label="Görevleri kapat">×</button></header><p class="quest-intro">Aynı anda yalnızca bir görev yürütülebilir. İptal edilen veya tamamlanan görev 8 saat sonra yeniden açılır.</p><div class="quest-list" id="questList"></div></section></div>
@@ -223,7 +223,7 @@ const regularEnemyCount=()=>enemies.filter(e=>!e.tower&&!e.boss).length;
 // Adalardan, filo adasından ve oyuncudan uzak rastgele deniz noktası
 function randomSeaPoint(minPlayerDist:number){
   for(let tries=0;tries<60;tries++){const p={x:160+Math.random()*(WORLD-320),y:160+Math.random()*(WORLD-320)};const f=mapDef().fleet;
-    if(dist(p,f)<FLEET.ringR+140)continue;if(islands.some(i=>dist(p,i)<i.r+60))continue;if(dist(p,player)<minPlayerDist)continue;return p;}
+    if(dist(p,f)<FLEET.islandR+100)continue;if(islands.some(i=>dist(p,i)<i.r+60))continue;if(dist(p,player)<minPlayerDist)continue;return p;}
   return{x:160+Math.random()*(WORLD-320),y:160+Math.random()*(WORLD-320)};
 }
 function setupFleetIsland(){
@@ -271,31 +271,39 @@ populateMap();
 if(!storedAccount||currentMap==='1/1'){player.x=mapDef().spawn.x;player.y=mapDef().spawn.y;camera.x=player.x;camera.y=player.y;}
 function clamp(n:number,a:number,b:number){return Math.max(a,Math.min(b,n));}
 function dist(a:Vec,b:Vec){return Math.hypot(a.x-b.x,a.y-b.y);}
-// Filo adası: sur halkası (açıklık güneyde) ve merkez ada
+// Filo adası: ada diski kara; kendi adanda yalnızca lagün ve güneydeki kanal suyu seyredilebilir.
+const FLEET_MARGIN=20;
 function fleetCollision(p:Vec):{x:number;y:number;name:string}|null{
-  const f=mapDef().fleet,dx=p.x-f.x,dy=p.y-f.y,d=Math.hypot(dx,dy),a=Math.atan2(dy,dx);
-  if(fleetOwner()!=='player'){const r=FLEET.ringR+FLEET.ringW/2+14;return d<r?{x:f.x+Math.cos(a)*r,y:f.y+Math.sin(a)*r,name:f.name}:null;}
-  if(d<FLEET.coreR+22){const r=FLEET.coreR+24;return{x:f.x+Math.cos(a)*r,y:f.y+Math.sin(a)*r,name:f.name};}
-  const inGap=Math.abs(angleDelta(a,Math.PI/2))<FLEET.gap/2-.04,half=FLEET.ringW/2+14;
-  if(!inGap&&Math.abs(d-FLEET.ringR)<half){const r=d<FLEET.ringR?FLEET.ringR-half:FLEET.ringR+half;return{x:f.x+Math.cos(a)*r,y:f.y+Math.sin(a)*r,name:f.name};}
-  return null;
+  const f=mapDef().fleet,dx=p.x-f.x,dy=p.y-f.y,d=Math.hypot(dx,dy),a=Math.atan2(dy,dx),outR=FLEET.islandR+14;
+  if(d>=outR)return null;
+  const out={x:f.x+Math.cos(a)*outR,y:f.y+Math.sin(a)*outR,name:f.name};if(fleetOwner()!=='player')return out;
+  const L=FLEET.lagoon,lx=dx-L.x,ly=dy-L.y,ld=Math.hypot(lx,ly),lr=L.r-FLEET_MARGIN,cw=FLEET.channelW-FLEET_MARGIN;
+  if(ld<lr||(Math.abs(dx)<cw&&dy>L.y))return null;
+  const options=[out,{x:f.x+L.x+(ld>.01?lx/ld:0)*lr,y:f.y+L.y+(ld>.01?ly/ld:1)*lr,name:f.name},{x:f.x+clamp(dx,-cw+1,cw-1),y:f.y+Math.max(dy,L.y+1),name:f.name}];
+  return options.reduce((best,o)=>dist(o,p)<dist(best,p)?o:best);
 }
-// Sur halkasının öbür yanındaki hedefe güneydeki girişten geçerek git
-function insideRing(p:Vec){return dist(p,mapDef().fleet)<FLEET.ringR;}
+function insideIsland(p:Vec){return dist(p,mapDef().fleet)<FLEET.islandR;}
+// Kendi adanın lagününe kanal ağzından gir/çık; adayı dolaşırken çember üzerinde ara noktalar kullan.
 function routeVia(target:Vec):Vec{
-  const f=mapDef().fleet,pin=insideRing(player),tin=insideRing(target);if(pin===tin||fleetOwner()!=='player')return target;
-  const outer={x:f.x,y:f.y+FLEET.ringR+90},inner={x:f.x,y:f.y+FLEET.ringR-110};
-  if(!pin)return dist(player,outer)>45&&player.y<outer.y-20?outer:inner;
-  return dist(player,inner)>45&&player.y<inner.y-20?inner:outer;
+  const f=mapDef().fleet;if(fleetOwner()!=='player')return target;
+  const pin=insideIsland(player),tin=insideIsland(target);if(pin===tin)return target;
+  const L=FLEET.lagoon,mouth={x:f.x,y:f.y+FLEET.islandR+80},lagoon={x:f.x+L.x,y:f.y+L.y},inCol=Math.abs(player.x-f.x)<FLEET.channelW-15&&player.y>f.y+L.y-10;
+  if(pin)return inCol?mouth:lagoon;
+  if(inCol)return lagoon;
+  const a=Math.atan2(player.y-f.y,player.x-f.x),rest=angleDelta(Math.PI/2,a);if(Math.abs(rest)<.3)return mouth;
+  const na=a+Math.sign(rest)*Math.min(.6,Math.abs(rest)),R=FLEET.islandR+150;return{x:f.x+Math.cos(na)*R,y:f.y+Math.sin(na)*R};
 }
-function insideOwnLagoon(p:Vec){const f=mapDef().fleet;return fleetOwner()==='player'&&dist(p,f)<FLEET.ringR-FLEET.ringW/2;}
+function insideOwnLagoon(p:Vec){
+  if(fleetOwner()!=='player')return false;const f=mapDef().fleet,L=FLEET.lagoon,dx=p.x-f.x,dy=p.y-f.y;
+  return Math.hypot(dx-L.x,dy-L.y)<L.r||(Math.abs(dx)<FLEET.channelW&&dy>L.y&&Math.hypot(dx,dy)<FLEET.islandR);
+}
 function navigablePoint(point:Vec){
   const fc=fleetCollision(point);if(fc)return{x:fc.x,y:fc.y};
   for(const island of islands){const shore=island.r*.72+38,d=dist(point,island);if(d<shore){const a=Math.atan2(point.y-island.y,point.x-island.x);return{x:island.x+Math.cos(a)*shore,y:island.y+Math.sin(a)*shore};}}
   return{x:clamp(point.x,25,WORLD-25),y:clamp(point.y,25,WORLD-25)};
 }
 function resolveIslandCollision(){
-  const fc=fleetCollision(player);if(fc){player.x=fc.x;player.y=fc.y;player.speed*=.28;destination=null;routeTarget=null;if(collisionNotice<=0){toast(fleetOwner()==='player'?`${fc.name} surlarından geçilemez — giriş güneyde`:`${fc.name} rakip filonun adası — içeri girilemez`);collisionNotice=2;}}
+  const fc=fleetCollision(player);if(fc){player.x=fc.x;player.y=fc.y;player.speed*=.28;destination=null;routeTarget=null;if(collisionNotice<=0){toast(fleetOwner()==='player'?`${fc.name} karasına çıkılamaz — lagün girişi güneydeki kanalda`:`${fc.name} rakip filonun adası — içeri girilemez`);collisionNotice=2;}}
   for(const island of islands){const shore=island.r*.72+28,d=dist(player,island);if(d<shore){const a=d>.01?Math.atan2(player.y-island.y,player.x-island.x):player.angle-Math.PI/2;player.x=island.x+Math.cos(a)*shore;player.y=island.y+Math.sin(a)*shore;player.speed*=.28;destination=null;if(collisionNotice<=0){toast(`${island.name} kıyısına daha fazla yaklaşamazsın`);collisionNotice=2;}}}
 }
 function setZoom(value:number){camera.targetZoom=clamp(value,.5,1.15);ui('zoomValue').textContent=`${Math.round(camera.targetZoom*100)}%`;}
@@ -343,9 +351,14 @@ function enemyFire(e:Enemy){
   shots.push({x:e.x,y:e.y,vx:Math.cos(a)*260,vy:Math.sin(a)*260,life:2.2,owner:'enemy',damage:e.damage,hit:false,ammo:'iron'}); e.cooldown=e.reload+Math.random()*.55;
 }
 function monsterFire(m:Monster){const a=Math.atan2(player.y-m.y,player.x-m.x);playSplash();for(const off of m.def.tier>=5?[-.12,0,.12]:[0])shots.push({x:m.x,y:m.y,vx:Math.cos(a+off)*210,vy:Math.sin(a+off)*210,life:2.4,owner:'enemy',damage:m.def.damage,hit:false,ammo:'iron'});m.cooldown=m.def.reload;}
+// Batınca bulunduğun denizde, düşmanlardan uzak rastgele bir noktada %10 gövdeyle yeniden doğ.
 function respawn(){
-  const spot={...MAPS['1/1'].spawn};enterMap('1/1',spot);
-  player.x=spot.x;player.y=spot.y;player.speed=18;destination=null;state.hp=Math.max(18,Math.round(state.maxHp*.2));state.repairing=true;state.invulnerable=4;state.attacking=false;selected=null;shots.length=0;enemies.forEach(e=>{e.aggro=false;e.combatTimer=0;});monsters.forEach(m=>{m.aggro=false;m.combatTimer=0;});ui('attack').classList.remove('active');toast('Sığınak Koyu’nda yeniden doğdun — gövde onarılıyor');
+  let spot=randomSeaPoint(0);
+  for(let tries=0;tries<40;tries++){const p=randomSeaPoint(0);if(!enemies.some(e=>!e.tower&&dist(e,p)<650)&&!monsters.some(m=>dist(m,p)<650)){spot=p;break;}}
+  player.x=spot.x;player.y=spot.y;player.speed=0;destination=null;routeTarget=null;camera.x=player.x;camera.y=player.y;
+  state.hp=Math.max(1,Math.round(state.maxHp*.1));state.repairing=true;state.invulnerable=4;state.attacking=false;selected=null;shots.length=0;salvoQueue.length=0;
+  enemies.forEach(e=>{e.aggro=false;e.combatTimer=0;});monsters.forEach(m=>{m.aggro=false;m.combatTimer=0;});ui('attack').classList.remove('active');
+  mapFade=1;playSplash();saveAccount();toast(`Gemin battı — ${mapDef().key} ${coordLabel(player)} konumunda %10 gövdeyle yeniden doğdun`);
 }
 function burst(x:number,y:number,large=false){for(let n=0;n<(large?18:7);n++){const a=Math.random()*Math.PI*2,s=15+Math.random()*(large?75:35);particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.35+Math.random()*.7,maxLife:1,kind:n%3?'smoke':'spark'});}}
 function damageText(x:number,y:number,value:number){particles.push({x,y,vx:0,vy:-24,life:1,maxLife:1,kind:'damage',text:`-${Math.round(value)}`});}
@@ -638,7 +651,7 @@ function update(dt:number){
   }
   updateLootChests(dt);updateArsenal(dt);updateEvents(dt);
   if(insideOwnLagoon(player)&&state.hp<state.maxHp){state.hp=Math.min(state.maxHp,state.hp+state.maxHp*.06*dt);if(state.hp>=state.maxHp)saveAccount();}
-  updateJumpPrompt();mapFade=Math.max(0,mapFade-dt*1.6);updateWeather(dt);
+  updateJumpPrompt();updateCoordBadge();mapFade=Math.max(0,mapFade-dt*1.6);updateWeather(dt);
   for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.97;p.vy*=.97;p.life-=dt;if(p.life<=0)particles.splice(i,1);}
   let need=xpNeed(state.level);while(state.fame>=need){state.fame-=need;state.level++;state.maxHp+=20;state.hp=state.maxHp;state.pearls+=10;saveAccount();playLevelUp();rewardNotice(`SEVİYE ${state.level}   +20 Azami Gövde   +10 İnci   +1 Yetenek Puanı   ${state.level}/1 AÇILDI`);toast(`Seviye ${state.level}! Yeni denizler açıldı`);need=xpNeed(state.level);}
   if(state.level>=MAX_LEVEL)state.fame=Math.min(state.fame,0);
@@ -711,7 +724,7 @@ function updateEvents(dt:number){
   const owned=fleetOwner()==='player',left=enemies.filter(e=>e.tower).length;
   rows.push(`<button class="event-row fort ${owned?'owned':''}" data-event-route="fort"><i class="event-art fleet-art" style="background-image:url(${fleetBaseUrl(theme().fleet)})"></i><span><small>${owned?'FİLO ADAN · İÇERİDE ONARIM':`RAKİP FİLO ADASI · FİLO SAVAŞI GEREKİR`}</small><strong>${map.fleet.name}</strong>${owned?'':`<i class="danger"><em style="width:${left/FLEET.towers.length*100}%"></em></i>`}</span></button>`);
   panel.innerHTML=rows.join('');panel.classList.toggle('visible',rows.length>0);
-  panel.querySelectorAll<HTMLButtonElement>('[data-event-route]').forEach(b=>b.onclick=()=>{const f=mapDef().fleet,target=b.dataset.eventRoute==='boss'?enemies.find(e=>e.boss):{x:f.x,y:f.y+FLEET.ringR+120};if(!target)return;routeTarget=navigablePoint({x:target.x,y:target.y});destination=routeVia(routeTarget);toast('Rota çizildi');});
+  panel.querySelectorAll<HTMLButtonElement>('[data-event-route]').forEach(b=>b.onclick=()=>{const f=mapDef().fleet,target=b.dataset.eventRoute==='boss'?enemies.find(e=>e.boss):fleetOwner()==='player'?{x:f.x+FLEET.lagoon.x,y:f.y+FLEET.lagoon.y}:{x:f.x,y:f.y+FLEET.islandR+120};if(!target)return;routeTarget=navigablePoint({x:target.x,y:target.y});destination=routeVia(routeTarget);toast('Rota çizildi');});
 }
 function formatClock(sec:number){const m=Math.floor(sec/60),s2=Math.floor(sec%60);return`${m}:${String(s2).padStart(2,'0')}`;}
 // Tema hava efektleri: ekran uzayında sürüklenen parçacıklar
@@ -827,16 +840,16 @@ function drawIsland(i:WorldIsland){const s=worldToScreen(i);if(drawIslandSprite(
 function drawMonster(m:Monster){const s=worldToScreen(m);if(drawMonsterSheet(ctx,m.def,s.x,s.y,m.phase)){ctx.fillStyle=theme().label;ctx.shadowColor='#000';ctx.shadowBlur=4;ctx.font='600 11px Cinzel';ctx.textAlign='center';ctx.fillText(m.name,s.x,s.y-m.radius-18);ctx.shadowBlur=0;if(m.hp<m.maxHp){ctx.fillStyle='#07161c';ctx.fillRect(s.x-30,s.y-m.radius-12,60,5);ctx.fillStyle='#b070ff';ctx.fillRect(s.x-30,s.y-m.radius-12,60*m.hp/m.maxHp,5);}return;}ctx.save();ctx.translate(s.x,s.y);ctx.strokeStyle='#477f72';ctx.lineWidth=9;ctx.lineCap='round';for(let n=0;n<6;n++){const a=n/6*Math.PI*2+m.phase*.12;ctx.beginPath();ctx.moveTo(Math.cos(a)*12,Math.sin(a)*12);ctx.quadraticCurveTo(Math.cos(a+.5)*50,Math.sin(a+.5)*50,Math.cos(a+Math.sin(m.phase+n)*.35)*m.radius,Math.sin(a+Math.sin(m.phase+n)*.35)*m.radius);ctx.stroke();}ctx.fillStyle='#38675f';ctx.beginPath();ctx.arc(0,0,25,0,7);ctx.fill();ctx.fillStyle='#d5cc71';ctx.beginPath();ctx.arc(-8,-5,4,0,7);ctx.arc(8,-5,4,0,7);ctx.fill();ctx.restore();ctx.fillStyle='#89b0a8';ctx.font='600 10px Cinzel';ctx.textAlign='center';ctx.fillText(m.name,s.x,s.y-66);}
 function drawFleetIsland(){
   const f=mapDef().fleet,s=worldToScreen(f),th=theme().fleet,owned=fleetOwner()==='player';
-  if(!drawFleetBase(ctx,th,s.x,s.y)){ctx.strokeStyle='#8a8574';ctx.lineWidth=FLEET.ringW*.5;ctx.beginPath();ctx.arc(s.x,s.y,FLEET.ringR,Math.PI/2+FLEET.gap/2,Math.PI/2-FLEET.gap/2+Math.PI*2);ctx.stroke();}
+  if(!drawFleetBase(ctx,th,s.x,s.y)){ctx.fillStyle='#4a7a3c';ctx.beginPath();ctx.arc(s.x,s.y,FLEET.islandR,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#3a3c42';ctx.lineWidth=18;ctx.beginPath();ctx.arc(s.x,s.y,FLEET.wallR,Math.PI/2+FLEET.gap/2,Math.PI/2-FLEET.gap/2+Math.PI*2);ctx.stroke();}
   if(owned)for(const tw of ownTowers){const p=worldToScreen(tw);drawFleetTower(ctx,th,'player',p.x,p.y);}
-  ctx.textAlign='center';ctx.font='700 14px Cinzel';ctx.fillStyle=owned?'#9fe8dc':'#f0b8a8';ctx.shadowColor='#000';ctx.shadowBlur=6;ctx.fillText(f.name,s.x,s.y+FLEET.coreR+46);ctx.font='700 9px Inter';ctx.fillText(owned?'FİLO ADAN · LAGÜNDE ONARIM':'RAKİP FİLO · GİRİŞ YASAK',s.x,s.y+FLEET.coreR+60);ctx.shadowBlur=0;
+  ctx.textAlign='center';ctx.font='700 14px Cinzel';ctx.fillStyle=owned?'#9fe8dc':'#f0b8a8';ctx.shadowColor='#000';ctx.shadowBlur=6;ctx.fillText(f.name,s.x,s.y-FLEET.islandR-24);ctx.font='700 9px Inter';ctx.fillText(owned?'FİLO ADAN · LAGÜNDE ONARIM':'RAKİP FİLO · GİRİŞ YASAK',s.x,s.y-FLEET.islandR-10);ctx.shadowBlur=0;
 }
 function draw(){
   const w=innerWidth,h=innerHeight,map=mapDef(),th=theme();const sea=ctx.createLinearGradient(0,0,0,h);sea.addColorStop(0,th.sea[0]);sea.addColorStop(1,th.sea[1]);ctx.fillStyle=sea;ctx.fillRect(0,0,w,h);
   ctx.save();ctx.translate(w/2,h/2);ctx.scale(camera.zoom,camera.zoom);ctx.translate(-w/2,-h/2);
   const pattern=seaTilePattern(ctx);if(pattern){const vw=w/camera.zoom,vh=h/camera.zoom;pattern.setTransform(new DOMMatrix().translateSelf(-camera.x+w/2+Math.sin(performance.now()/5200)*14,-camera.y+h/2+performance.now()/260%1024).scaleSelf(2,2));ctx.globalAlpha=.2;ctx.fillStyle=pattern;ctx.fillRect(w/2-vw/2,h/2-vh/2,vw,vh);ctx.globalAlpha=1;}
   ctx.globalAlpha=.12;ctx.fillStyle=th.label;ctx.font='700 42px Cinzel';ctx.textAlign='center';for(const label of map.labels){const p=worldToScreen(label);ctx.fillText(label.text,p.x,p.y);}ctx.globalAlpha=1;
-  drawMapEdges();islands.forEach(drawIsland);drawFleetIsland();lootChests.forEach(drawLootChest);mines.forEach(m=>{const p=worldToScreen(m);drawMineSprite(ctx,p.x,p.y,performance.now(),m.arm>0,m.life<5);});monsters.forEach(drawMonster);
+  drawCoordGrid();drawMapEdges();islands.forEach(drawIsland);drawFleetIsland();lootChests.forEach(drawLootChest);mines.forEach(m=>{const p=worldToScreen(m);drawMineSprite(ctx,p.x,p.y,performance.now(),m.arm>0,m.life<5);});monsters.forEach(drawMonster);
   particles.forEach(p=>{const s=worldToScreen(p),a=Math.max(0,p.life/p.maxLife);ctx.globalAlpha=a;if(p.kind==='damage'){ctx.fillStyle='#ffd878';ctx.font='700 14px Inter';ctx.textAlign='center';ctx.fillText(p.text||'',s.x,s.y);}else{ctx.fillStyle=p.kind==='foam'?'#b9e2df':p.kind==='spark'?'#ffb340':'#3f4545';ctx.beginPath();ctx.arc(s.x,s.y,p.kind==='smoke'?7*(1-a)+3:p.kind==='foam'?4:2,0,7);ctx.fill();}ctx.globalAlpha=1;});
   shots.forEach(s=>{const p=worldToScreen(s);ctx.fillStyle=s.owner==='player'?(s.ammo==='fire'?'#ff8a2a':s.ammo==='grape'?'#d8d2c0':'#ffd889'):'#ff7450';ctx.shadowColor=ctx.fillStyle;ctx.shadowBlur=9;ctx.beginPath();ctx.arc(p.x,p.y,4,0,7);ctx.fill();ctx.shadowBlur=0;});
   [...enemies].sort((a,b)=>a.y-b.y).forEach(e=>{const s=worldToScreen(e),raster=e.tower?drawFleetTower(ctx,th.fleet,'npc',s.x,s.y):e.boss?drawBossSprite(ctx,s.x,s.y,e.angle,performance.now()):e.def?drawNpcShip(ctx,e.def.sprite,e.def.span,s.x,s.y,e.angle,performance.now()):false;if(!raster)drawShip(e,e.angle,e.color);const top=raster?(e.tower?TOWER_LABEL_OFFSET:e.boss?BOSS_LABEL_OFFSET:shipLabelOffset(e.def!.span)):-42;ctx.fillStyle='#07161c';ctx.fillRect(s.x-25,s.y+top,50,5);ctx.fillStyle=e.tower?'#e0823f':e.role==='heavy'?'#e04b3f':'#50a8b4';ctx.fillRect(s.x-25,s.y+top,50*e.hp/e.maxHp,5);ctx.fillStyle='#d7cbb5';ctx.font='10px Inter';ctx.textAlign='center';ctx.fillText(e.name,s.x,s.y+top-7);});
@@ -846,17 +859,50 @@ function draw(){
   if(destination){const d=worldToScreen(destination),p=worldToScreen(player);ctx.strokeStyle='#e7cf8d55';ctx.setLineDash([3,8]);ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(d.x,d.y);ctx.stroke();ctx.setLineDash([]);ctx.strokeStyle='#e7cf8d';ctx.beginPath();ctx.arc(d.x,d.y,9,0,7);ctx.stroke();}
   const ps=worldToScreen(player);ctx.strokeStyle=selected?'#e8cf934d':'#e8cf9328';ctx.setLineDash([4,7]);ctx.beginPath();ctx.arc(ps.x,ps.y,selected?effectiveRange():115,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
   ctx.restore();
-  drawWeather();
+  drawWeather();drawCoordRulers();
   if(mapFade>0){ctx.fillStyle=`rgba(2,10,14,${Math.min(1,mapFade)})`;ctx.fillRect(0,0,w,h);}
   drawMinimap();
 }
+// Koordinat ızgarası: dünya içinde soluk çizgiler, ekran kenarında kamerayı izleyen cetveller.
+function drawCoordGrid(){
+  const a=worldToScreen({x:0,y:0});ctx.strokeStyle='rgba(210,240,235,.055)';ctx.lineWidth=1;ctx.beginPath();
+  for(let c=1;c<GRID_COLS;c++){const x=a.x+c*CELL_W;ctx.moveTo(x,a.y);ctx.lineTo(x,a.y+WORLD);}
+  for(let r=1;r<GRID_ROWS;r++){const y=a.y+r*CELL_H;ctx.moveTo(a.x,y);ctx.lineTo(a.x+WORLD,y);}
+  ctx.stroke();
+}
+let rulerTop=0;
+function measureRulerTop(){const nav=document.querySelector('.top-shortcuts')?.getBoundingClientRect();rulerTop=nav&&nav.height?Math.round(nav.bottom+4):0;}
+addEventListener('resize',measureRulerTop);measureRulerTop();setTimeout(measureRulerTop,600);document.fonts?.ready.then(measureRulerTop);
+function drawCoordRulers(){
+  const w=innerWidth,h=innerHeight,z=camera.zoom,T=16,L=26,top=rulerTop,here=gridCell(player);
+  const sx=(x:number)=>w/2+(x-camera.x)*z,sy=(y:number)=>h/2+(y-camera.y)*z;
+  ctx.save();ctx.fillStyle='rgba(4,16,20,.62)';ctx.fillRect(L,top,w-L,T);ctx.fillRect(0,top,L,h-top);
+  ctx.fillStyle='rgba(215,190,130,.35)';ctx.fillRect(L,top+T-1,w-L,1);ctx.fillRect(L-1,top+T,1,h-top-T);
+  ctx.font='700 9px Inter';ctx.textAlign='center';ctx.textBaseline='middle';
+  const c0=Math.max(0,Math.floor((camera.x-w/2/z)/CELL_W)),c1=Math.min(GRID_COLS-1,Math.ceil((camera.x+w/2/z)/CELL_W));
+  for(let c=c0;c<=c1;c++){const x=sx((c+.5)*CELL_W);if(x<L+8||x>w-6)continue;const cur=c===here.c;
+    if(cur){ctx.fillStyle='rgba(241,198,98,.28)';ctx.fillRect(sx(c*CELL_W),top,CELL_W*z,T-1);}
+    ctx.fillStyle=cur?'#ffd98a':'#b9cfc9';ctx.fillText(colName(c),x,top+T/2);
+    ctx.fillStyle='rgba(185,207,201,.35)';ctx.fillRect(Math.round(sx(c*CELL_W)),top+T-4,1,3);}
+  const r0=Math.max(0,Math.floor((camera.y-h/2/z)/CELL_H)),r1=Math.min(GRID_ROWS-1,Math.ceil((camera.y+h/2/z)/CELL_H));
+  for(let r=r0;r<=r1;r++){const y=sy((r+.5)*CELL_H);if(y<top+T+6||y>h-4)continue;const cur=r===here.r;
+    if(cur){ctx.fillStyle='rgba(241,198,98,.28)';ctx.fillRect(0,sy(r*CELL_H),L-1,CELL_H*z);}
+    ctx.fillStyle=cur?'#ffd98a':'#b9cfc9';ctx.fillText(rowName(r),L/2,y);
+    ctx.fillStyle='rgba(185,207,201,.35)';ctx.fillRect(L-4,Math.round(sy(r*CELL_H)),3,1);}
+  ctx.fillStyle='rgba(4,16,20,.9)';ctx.fillRect(0,top,L,T);ctx.fillStyle='#d4a64c';ctx.font='700 8px Inter';ctx.fillText('◎',L/2,top+T/2);
+  ctx.restore();
+}
+let lastCoord='';
+function updateCoordBadge(){const text=`${currentMap} - ${coordLabel(player)}`;if(text!==lastCoord){lastCoord=text;ui('mapCoord').textContent=text;}}
 function drawMinimap(){const W=170,H=125,sx=(x:number)=>x/WORLD*W,sy=(y:number)=>y/WORLD*H,th=theme();
   mini.fillStyle=th.sea[1];mini.fillRect(0,0,W,H);mini.strokeStyle='#9fc2bd22';mini.strokeRect(.5,.5,W-1,H-1);
   for(const dir of ['north','south','east','west'] as Dir[]){const to=neighbor(currentMap,dir);if(!to)continue;mini.fillStyle=state.level>=MAPS[to].tier?'#6fd6c4aa':'#e07a5f88';if(dir==='north')mini.fillRect(W/2-14,0,28,2);if(dir==='south')mini.fillRect(W/2-14,H-2,28,2);if(dir==='west')mini.fillRect(0,H/2-12,2,24);if(dir==='east')mini.fillRect(W-2,H/2-12,2,24);}
   for(const i of islands){mini.fillStyle='#536d4b';mini.beginPath();mini.arc(sx(i.x),sy(i.y),Math.max(3,i.r/WORLD*W),0,7);mini.fill();}
-  const f=mapDef().fleet,owned=fleetOwner()==='player';mini.strokeStyle=owned?'#3fd6c0':'#e0523f';mini.lineWidth=2.5;mini.beginPath();mini.arc(sx(f.x),sy(f.y),FLEET.ringR/WORLD*W,Math.PI/2+FLEET.gap/2,Math.PI*2.5-FLEET.gap/2);mini.stroke();mini.fillStyle=mini.strokeStyle;mini.beginPath();mini.arc(sx(f.x),sy(f.y),2.5,0,7);mini.fill();
+  const f=mapDef().fleet,owned=fleetOwner()==='player';mini.strokeStyle=owned?'#3fd6c0':'#e0523f';mini.lineWidth=2.5;mini.beginPath();mini.arc(sx(f.x),sy(f.y),FLEET.wallR/WORLD*W,Math.PI/2+FLEET.gap/2,Math.PI*2.5-FLEET.gap/2);mini.stroke();mini.globalAlpha=.25;mini.fillStyle=mini.strokeStyle;mini.beginPath();mini.arc(sx(f.x),sy(f.y),FLEET.islandR/WORLD*W,0,7);mini.fill();mini.globalAlpha=1;mini.fillStyle=mini.strokeStyle;mini.beginPath();mini.arc(sx(f.x),sy(f.y),2.5,0,7);mini.fill();
   for(const m of monsters){mini.fillStyle='#b070ff';mini.beginPath();mini.arc(sx(m.x),sy(m.y),2.5,0,7);mini.fill();}
   for(const c of lootChests){mini.fillStyle=c.kind==='gilded'?'#ffd46b':'#d9a95b';mini.fillRect(sx(c.x)-1,sy(c.y)-1,2,2);}
   for(const e of enemies){if(e.tower)continue;mini.fillStyle=e.boss?'#8dffd0':'#c34e3d';mini.fillRect(sx(e.x)-1,sy(e.y)-1,e.boss?4:3,e.boss?4:3);}
   mini.fillStyle='#f4dd9d';mini.beginPath();mini.arc(sx(player.x),sy(player.y),3,0,7);mini.fill();}
 let last=performance.now();function loop(now:number){const dt=Math.min(.033,(now-last)/1000);last=now;update(dt);draw();requestAnimationFrame(loop);}renderQuickSlots();updateUI();requestAnimationFrame(loop);
+// Yalnızca geliştirme sunucusunda: tarayıcı testleri için durum erişimi.
+if(import.meta.env.DEV)(window as any).__ky={state,player,camera,enemies,monsters,respawn,enterMap,mapDef,fleetOwner,get destination(){return destination;}};

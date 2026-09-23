@@ -317,3 +317,10 @@ button.event-row{cursor:pointer}
 .portrait-art.tower-art{background-size:200% 100%;background-position:0 0}
 .quest-tier{margin:10px 0 4px;font:700 11px Inter;letter-spacing:.12em;color:#9b7b45;text-transform:uppercase}
 @media (max-width:720px){.world-grid{gap:3px}.world-tile b{font-size:12px}.world-tile strong{font-size:7px}.world-tile small{display:none}}
+
+/* Koordinat rozeti (Seafight tarzı "1/1 - 35AJ") */
+.map-badge .map-coord{margin-top:2px;font:800 10px Inter;letter-spacing:.08em;color:#ffe2a0;text-shadow:0 1px 3px #000;font-variant-numeric:tabular-nums}
+/* Koordinat cetvelleri için sol üst küme cetvelin içine kaydırıldı */
+.map-cluster{left:34px;top:82px}.combat-targets{left:34px;top:268px}
+@media(max-width:900px){.map-cluster{top:78px}.combat-targets{top:262px}}
+@media(max-width:680px){.map-cluster{left:30px;top:74px}.combat-targets{left:30px;top:224px}}

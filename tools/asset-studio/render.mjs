@@ -32,7 +32,7 @@ for(const sp of SHIPS)jobs[`ship-${sp.id}`]=()=>page.evaluate(id=>renderCatalogS
 for(const m of MONSTERS)jobs[`monster-${m.id}`]=()=>page.evaluate(id=>renderCatalogMonster(id),m.id);
 const {FLEET_THEMES}=await import('./fleet.js');
 {const src=fs.readFileSync(path.resolve(here,'../../src/campaign.ts'),'utf8');const npcIds=[...src.matchAll(/npc\('(n\d-\d-(?:light|heavy))'/g)].map(m=>m[1]),monIds=[...src.matchAll(/mon\('(m\d-\d)'/g)].map(m=>m[1]);jobs['portraits-v2']=()=>page.evaluate(order=>renderPortraitsV2(order),[...npcIds,...monIds,'boss']);}
-for(const th of Object.keys(FLEET_THEMES)){jobs[`fleet-base-${th}-v1`]=()=>page.evaluate(t=>renderFleetBase(t),th);jobs[`fleet-towers-${th}-v1`]=()=>page.evaluate(t=>renderFleetTowers(t),th);}
+for(const th of Object.keys(FLEET_THEMES)){jobs[`fleet-base-${th}-v2`]=()=>page.evaluate(t=>renderFleetBase(t),th);jobs[`fleet-towers-${th}-v2`]=()=>page.evaluate(t=>renderFleetTowers(t),th);}
 for(const [look,a,b] of [['ice',71,72],['toxic',81,82],['lava',91,92],['abyss',101,102],['verdant',11,12],['misty',21,22],['coral',31,32],['haven',41,42],['crimson',51,52],['storm',61,62]])
   jobs[`islands-${look}-v1`]=()=>page.evaluate(([look,a,b])=>renderIslands([[look,a],[look,b]]),[look,a,b]);
 for(const [name,job] of Object.entries(jobs)){

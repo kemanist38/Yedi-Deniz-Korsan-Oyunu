@@ -93,9 +93,20 @@ export const PORTRAIT_COUNT=BOSS_PORTRAIT+1;
 export const PORTRAIT_COLS=10;
 export const PORTRAIT_ATLAS='/assets/portraits-v2.webp';
 
+// ---------------------------------------------------------------- Koordinat ızgarası
+// Seafight tarzı: üstte soldan sağa 00–60 sütun, solda yukarıdan aşağı AA–CZ satır. Konum "35AJ" gibi yazılır.
+export const GRID_COLS=61,GRID_ROWS=78,CELL_W=WORLD/GRID_COLS,CELL_H=WORLD/GRID_ROWS;
+export const colName=(c:number)=>String(c).padStart(2,'0');
+export const rowName=(r:number)=>String.fromCharCode(65+Math.floor(r/26))+String.fromCharCode(65+r%26);
+export const gridCell=(p:{x:number;y:number})=>({c:Math.max(0,Math.min(GRID_COLS-1,Math.floor(p.x/CELL_W))),r:Math.max(0,Math.min(GRID_ROWS-1,Math.floor(p.y/CELL_H)))});
+export function coordLabel(p:{x:number;y:number}){const g=gridCell(p);return`${colName(g.c)}${rowName(g.r)}`;}
+
 // ---------------------------------------------------------------- Filo adası
-export const FLEET={ringR:400,ringW:92,gap:.62,coreR:150,
-  towers:[[-282,284],[-395,-62],[-182,-356],[182,-356],[395,-62],[282,284],[-100,30],[100,30]] as [number,number][],
+// Seafight tarzı: düzensiz kumsallı ada (islandR), koyu sur halkası (wallR, açıklık güneyde),
+// sur içinde lagün (lagoon) ve lagünü denize bağlayan kanal (|x|<channelW). Burç lagünün kuzeyinde.
+// tools/asset-studio/fleet.js ile aynı tutulmalıdır.
+export const FLEET={islandR:440,wallR:340,gap:.56,lagoon:{x:0,y:95,r:150},channelW:60,keep:{x:0,y:-165},
+  towers:Array.from({length:8},(_,k)=>{const a=Math.PI/2+.28+(Math.PI*2-.56)*k/7;return[Math.round(Math.cos(a)*340),Math.round(Math.sin(a)*340)];}) as [number,number][],
   base:{frame:1024,span:1000},tower:{frame:256,span:120,anchorY:0}};
 // Kuleler filo savaşı ölçeğinde: tek gemi yıkamaz, saldırı kesilince hızla onarılır.
 export const fleetTower=(tier:number)=>{const t=tier-1;return{hp:Math.round(40000*(1+.6*t)),damage:Math.round(7*(1+.35*t)),reload:2.2,range:460,ownDamage:Math.round(24*(1+.5*t))};};
@@ -107,7 +118,7 @@ const I=(x:number,y:number,r:number,name:string,look:IslandLook,variant:0|1,flip
 function sea(key:MapKey,name:string,description:string,opts:{islands:[number,number,number,string,0|1,boolean?][];fleet:[number,number,string];labels?:[string,number,number][];safe?:boolean;look?:IslandLook;count?:number;heavy?:number}):MapDef{
   const tier=tierOf(key),look=opts.look??THEMES[tier].look,sub=key.split('/')[1];
   return{key,tier,name,description,safe:!!opts.safe,npcs:[`n${tier}-${sub}-light`,`n${tier}-${sub}-heavy`],monster:`m${tier}-${sub}`,npcCount:opts.count??(7+Math.min(4,tier-1)),heavyShare:opts.heavy??(.3+tier*.03),
-    islands:opts.islands.map(([x,y,r,n,v,f])=>I(x,y,r,n,look,v,!!f)),fleet:{x:opts.fleet[0],y:opts.fleet[1],name:opts.fleet[2]},labels:(opts.labels??[]).map(([text,x,y])=>({text,x,y})),spawn:{x:opts.fleet[0],y:opts.fleet[1]+300}};
+    islands:opts.islands.map(([x,y,r,n,v,f])=>I(x,y,r,n,look,v,!!f)),fleet:{x:opts.fleet[0],y:opts.fleet[1],name:opts.fleet[2]},labels:(opts.labels??[]).map(([text,x,y])=>({text,x,y})),spawn:{x:opts.fleet[0],y:opts.fleet[1]+530}};
 }
 export const MAPS:Record<MapKey,MapDef>={
   '1/1':{...sea('1/1','Sığınak Koyu','Savaşa kapalı başlangıç denizi. Filo adanın lagününde gövde kendiliğinden onarılır; buradaki gemiler sen saldırmadıkça ateş açmaz.',
