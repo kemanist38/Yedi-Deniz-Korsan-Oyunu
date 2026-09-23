@@ -84,3 +84,15 @@ const seaTile=load('/assets/sea-tile-v1.webp');let seaPattern:CanvasPattern|null
 export function seaTilePattern(ctx:CanvasRenderingContext2D){if(!seaPattern&&ready(seaTile))seaPattern=ctx.createPattern(seaTile,'repeat');return seaPattern;}
 
 export const WORLD_CHART='/assets/world-chart-v1.webp';
+
+// Deniz mayını: 128 px, yarısı suya gömülü.
+const MINE_SPRITE={frame:128,anchorX:64,anchorY:68.8,size:40};
+const mineSprite=load('/assets/sea-mine-v1.webp');
+export function drawMineSprite(ctx:CanvasRenderingContext2D,x:number,y:number,time:number,arming:boolean,expiring:boolean){
+  const bob=Math.sin(time/300+x)*1.2,k=MINE_SPRITE.size/MINE_SPRITE.frame;
+  ctx.save();if(expiring)ctx.globalAlpha=Math.floor(time/180)%2?.4:.9;
+  if(ready(mineSprite))ctx.drawImage(mineSprite,x-MINE_SPRITE.anchorX*k,y+bob-MINE_SPRITE.anchorY*k,MINE_SPRITE.size,MINE_SPRITE.size);
+  else{ctx.fillStyle='#1d1f22';ctx.beginPath();ctx.arc(x,y,9,0,Math.PI*2);ctx.fill();}
+  if(!arming){ctx.fillStyle=Math.floor(time/400)%2?'#ff5a3a':'#ff5a3a55';ctx.beginPath();ctx.arc(x,y-11+bob,2.4,0,Math.PI*2);ctx.fill();}
+  ctx.restore();
+}

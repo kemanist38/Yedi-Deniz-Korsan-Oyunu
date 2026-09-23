@@ -19,6 +19,9 @@ StackBlitz'te **Import from GitHub** ile depo adresini açın.
 - `Space`: iki bordadan ateş
 - `F`: tamir
 - `J`: geçidin içindeyken diğer denize geç
+- `Z`: Rüzgâr Hamlesi (7 sn %55 hız, 28 sn bekleme)
+- `X`: Demir Kalkan (6 sn %65 hasar azaltma, 40 sn bekleme)
+- `C`: Deniz Mayını bırak (yaklaşan düşmanlara alan hasarı)
 
 ## Dünya haritaları
 
@@ -31,6 +34,12 @@ StackBlitz'te **Import from GitHub** ile depo adresini açın.
 
 Denizler geçitlerle birbirine bağlıdır. Geçide tıklayınca rota çizilir; geçidin içindeyken `J` ya da ekrandaki butonla geçilir.
 Sol üstteki **DÜNYA** butonu parşömen haritayı açar; oradan bağlı bir denizin geçidine rota çizilebilir.
+
+## Özel mühimmat
+
+- **Ateş Güllesi:** ×1,2 hasar, hedefi 4 saniye yakar.
+- **Saçma:** ×1,6 hasar, menzil %35 kısa.
+- Ateş güllesi, saçma ve mayınlar marketten alınır; hızlı yuvalardan seçilir. İlk açılışta tanıtım stoğu verilir.
 
 ## Ganimet sandıkları
 

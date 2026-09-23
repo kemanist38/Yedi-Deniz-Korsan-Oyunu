@@ -23,6 +23,8 @@ const jobs={
   'sea-tile-v1':()=>page.evaluate(()=>renderSeaTile()),
   'world-chart-v1':()=>page.evaluate(()=>renderWorldChart()),
 };
+for(const name of ['ammo-fire','ammo-grape','icon-mine','icon-attack','icon-repair','icon-speed','icon-shield'])jobs[`${name}-v1`]=()=>page.evaluate(n=>renderIcon(n),name);
+jobs['sea-mine-v1']=()=>page.evaluate(()=>renderMineSprite());
 for(const [look,a,b] of [['verdant',11,12],['misty',21,22],['coral',31,32],['haven',41,42],['crimson',51,52],['storm',61,62]])
   jobs[`islands-${look}-v1`]=()=>page.evaluate(([look,a,b])=>renderIslands([[look,a],[look,b]]),[look,a,b]);
 for(const [name,job] of Object.entries(jobs)){
