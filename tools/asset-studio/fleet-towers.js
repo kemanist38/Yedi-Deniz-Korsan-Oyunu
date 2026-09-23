@@ -11,7 +11,7 @@ const hex=(h)=>new THREE.Color(h);
 function mix(a,b,t){const A=hex(a),B=hex(b);return'#'+A.lerp(B,t).getHexString();}
 
 // Boyalı taş: sıra sıra düzensiz bloklar, üst kenar ışığı, alt kenar gölgesi, harç, yosun ve kir izleri
-function paintedStone({seed,W=512,H=256,rows=4,cols=9,moss=.5}){
+export function paintedStone({seed,W=512,H=256,rows=4,cols=9,moss=.5}){
   const [c,x]=T.canvas(W,H),r=T.rng(seed);x.fillStyle='#24211c';x.fillRect(0,0,W,H);
   const rh=H/rows;
   for(let j=0;j<rows;j++){let px=-(r()*W/cols);while(px<W){const bw=W/cols*(.6+r()*.8),y0=j*rh+2.5,h=rh-5,x0=px+2.5,w=bw-5,t=r();
@@ -27,13 +27,13 @@ function paintedStone({seed,W=512,H=256,rows=4,cols=9,moss=.5}){
   T.grain(x,W,H,r,{alpha:.1,count:1400,light:'#d8c8a8',dark:'#0e0b06'});
   const tex=T.toTexture(c,{repeat:true});return tex;
 }
-function paintedPlanks({seed,W=256,H=256}){
+export function paintedPlanks({seed,W=256,H=256}){
   const [c,x]=T.canvas(W,H),r=T.rng(seed);x.fillStyle='#3a2414';x.fillRect(0,0,W,H);
   for(let i=0;i<10;i++){const y0=i*H/10;x.fillStyle=mix('#5a3a20','#8a6038',r());x.fillRect(0,y0+1,W,H/10-2);x.fillStyle='rgba(255,220,170,.12)';x.fillRect(0,y0+1,W,2);for(let k=0;k<30;k++){x.fillStyle=`rgba(30,18,8,${r()*.3})`;x.fillRect(r()*W,y0+2+r()*(H/10-4),10+r()*30,1);}}
   T.grain(x,W,H,r,{alpha:.12,count:800});return T.toTexture(c,{repeat:true});
 }
 // Filo sancağı: turkuaz kumaş, altın kenar ve pusula-çapa arması
-function fleetBannerTex(seed){
+export function fleetBannerTex(seed){
   const W=128,H=256,[c,x]=T.canvas(W,H),r=T.rng(seed);
   const g=x.createLinearGradient(0,0,W,0);g.addColorStop(0,'#123f44');g.addColorStop(.5,PAL.teal2);g.addColorStop(1,'#123f44');x.fillStyle=g;x.beginPath();x.moveTo(0,0);x.lineTo(W,0);x.lineTo(W,H*.84);x.lineTo(W/2,H);x.lineTo(0,H*.84);x.closePath();x.fill();
   x.strokeStyle=PAL.gold;x.lineWidth=7;x.beginPath();x.moveTo(6,4);x.lineTo(6,H*.82);x.lineTo(W/2,H-10);x.lineTo(W-6,H*.82);x.lineTo(W-6,4);x.stroke();

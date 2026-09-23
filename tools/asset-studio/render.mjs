@@ -11,6 +11,11 @@ const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'
 const page=await browser.newPage();page.on('console',m=>console.log('[studio]',m.text()));page.on('pageerror',e=>{console.error(e);process.exitCode=1;});
 await page.goto(`http://localhost:${port}/studio.html`);await page.waitForFunction(()=>window.studioReady);
 const only=process.argv.slice(2);
+// 3B ada: boyalı görsel, seyir maskesi ve kaide konumları (kule konumu + FLEET_BASTIONS px/py)
+function islandArgs(){const root=path.resolve(here,'../..'),src='data:image/webp;base64,'+fs.readFileSync(path.join(root,'public/assets/fleet-base-v3.b64'),'utf8').trim();
+  const rle=fs.readFileSync(path.join(root,'src/fleetMask.ts'),'utf8').match(/rle:'([^']+)'/)[1],fleet=fs.readFileSync(path.join(root,'src/campaign.ts'),'utf8'),towers=JSON.parse(fleet.match(/towers:(\[\[.*?\]\])/)[1]);
+  const offs=JSON.parse(fs.readFileSync(path.join(root,'src/fleetBastions.ts'),'utf8').match(/offsets:(\[.*\])\}/)[1]);
+  return{src,mask:{n:125,cell:8,rle},pads:towers.map(([x,y],i)=>[x,y,offs[i].px,offs[i].py])};}
 const jobs={
   'enemy-scout-v1':()=>page.evaluate(()=>renderShipSheet('scout')),
   'enemy-raider-v1':()=>page.evaluate(()=>renderShipSheet('raider')),
@@ -26,6 +31,8 @@ const jobs={
   'world-chart-v1':()=>page.evaluate(()=>renderWorldChart()),
   'sea-sparkle-v1':()=>page.evaluate(()=>renderSeaSparkle()),
   'fleet-towers-built-v1':()=>page.evaluate(()=>renderBuiltTowers()),
+  'fleet-island-3d-v1':()=>page.evaluate(a=>renderFleetIsland3D(a),islandArgs()),
+  'fleet-island-3d-map':()=>page.evaluate(a=>debugFleetMap(a),islandArgs()),
 };
 for(const name of ['ammo-fire','ammo-grape','icon-mine','icon-attack','icon-repair','icon-speed','icon-shield','icon-hat','icon-chest','officer-gunner','officer-helmsman','officer-carpenter','officer-lookout','officer-quartermaster','officer-surgeon','ui-ring','ui-ring-attack','ui-slot','icon-scroll','icon-gear','icon-anvil','gunner-vignette'])jobs[`${name}-v1`]=()=>page.evaluate(n=>renderIcon(n),name);
 jobs['sea-mine-v1']=()=>page.evaluate(()=>renderMineSprite());
