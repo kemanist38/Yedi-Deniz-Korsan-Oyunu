@@ -77,6 +77,15 @@ export function drawChestSprite(ctx:CanvasRenderingContext2D,kind:ChestKind,x:nu
   ctx.restore();
 }
 
+// Deniz pırıltısı: su yüzünde parlayan inci, 8 karelik döngü (4 × 2, 128 px).
+export function drawSeaSparkle(ctx:CanvasRenderingContext2D,x:number,y:number,time:number,seed:number,alpha=1){
+  const sheet=load('/assets/sea-sparkle-v1.webp'),size=58,frame=Math.floor(time/110+seed*8)%8;
+  ctx.save();ctx.globalAlpha=alpha;
+  if(ready(sheet))ctx.drawImage(sheet,(frame%4)*128,Math.floor(frame/4)*128,128,128,x-size/2,y-size/2,size,size);
+  else{ctx.fillStyle='#f4ecf4';ctx.beginPath();ctx.arc(x,y,5,0,7);ctx.fill();}
+  ctx.restore();
+}
+
 // Deniz mayını: 128 px, yarısı suya gömülü.
 export function drawMineSprite(ctx:CanvasRenderingContext2D,x:number,y:number,time:number,arming:boolean,expiring:boolean){
   const sheet=load('/assets/sea-mine-v1.webp'),size=40,k=size/128,bob=Math.sin(time/300+x)*1.2;

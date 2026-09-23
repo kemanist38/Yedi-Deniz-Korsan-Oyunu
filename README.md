@@ -54,15 +54,16 @@ Her denizde bir filo adası vardır: düzensiz kumsallı ormanlık bir ada, koyu
 - **Görevler:** Her seviyenin 4 görevi vardır: devriye avı, ağır filo, canavar avı ve ganimet avı. Görevler o seviyenin gemi ve canavarlarını hedefler; ödüller seviyeyle artar.
 - **Hayalet Amiral:** Savaşa açık denizlerde zamanlı olarak çıkan boss; gücü ve ödülü deniz seviyesine göre değişir.
 
-## Ganimet sandıkları
+## Ganimet ve inci pırıltıları
 
-- Batan her düşman gemisi, mevcut ödüllerine ek olarak bir ganimet sandığı bırakır; Derinlik Leviathanı yaldızlı sandık bırakır.
+- NPC gemisi batınca sandık düşmez: sandığın ganimeti (altın, kereste, zincir güllesi, bazen inci) TP ile birlikte doğrudan hesabına eklenir. Canavarlar ve Hayalet Amiral yaldızlı sandık bırakmaya devam eder.
+- **İnci pırıltıları:** Her denizde 12 parlayan inci vardır. Üzerinden geçince küçük ödül verir (seviyeye göre altın ve TP, %20 ihtimalle 1 inci). Yenisi 4 sn sonra haritada rastgele bir yerde çıkar. Pırıltıya tıklayınca rota çizilir; mini haritada beyaz noktalarla görünür.
 - Açık denizde en fazla 4 sürüklenen sandık bulunur. Sandığa tıklayınca rota çizilir, geminle üzerinden geçince toplanır.
 - Düşen sandıklar 45–60 saniye sonra kaybolur (son saniyelerde yanıp söner). Mini haritada altın noktalarla gösterilir.
 
 ## Raster assetler
 
-36 NPC gemisi (16 yön), 18 canavar (8 karelik animasyon), 10 ada teması, 9 filo adası ve kuleleri, ikonlar, deniz dokusu, ganimet sandıkları ve portre atlası
+36 NPC gemisi (16 yön), 18 canavar (8 karelik animasyon), 10 ada teması, 9 filo adası ve kuleleri, ikonlar, deniz dokusu, ganimet sandıkları, inci pırıltısı animasyonu, elit gemi görselleri (tersane tasarımıyla birebir aynı) ve portre atlası
 `tools/asset-studio` içindeki özgün 3B modellerden üretilir ve `public/assets` altına WebP olarak yazılır:
 
 ```bash
