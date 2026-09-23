@@ -324,3 +324,16 @@ button.event-row{cursor:pointer}
 .map-cluster{left:34px;top:82px}.combat-targets{left:34px;top:268px}
 @media(max-width:900px){.map-cluster{top:78px}.combat-targets{top:262px}}
 @media(max-width:680px){.map-cluster{left:30px;top:74px}.combat-targets{left:30px;top:224px}}
+
+/* Elit gemi hangarı */
+.elite-ship-window{width:min(1180px,94vw);height:min(760px,88vh);background:linear-gradient(145deg,#07191e 0%,#102a2c 56%,#21130f 100%)}
+.elite-ship-window>header{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid #bd914b66;background:linear-gradient(90deg,#071216ee,#28160fee)}
+.elite-ship-window>header h2{margin:2px 0;color:#f1d28d}.elite-ship-window>header p{margin:3px 0;color:#8da8a5;font-size:11px}
+.elite-ship-window>header>button{width:42px;height:42px;border:1px solid #a66f39;background:#3a1713;color:#f2d395;font-size:25px;cursor:pointer}
+.elite-ship-layout{display:grid;grid-template-columns:minmax(0,1fr) 310px;height:calc(100% - 82px)}
+.elite-ship-grid{display:grid;grid-template-columns:repeat(3,minmax(155px,1fr));gap:10px;overflow:auto;padding:16px}
+.elite-card{position:relative;min-height:188px;padding:8px;border:1px solid #876a3d66;border-radius:7px;background:linear-gradient(#153338,#091a1e);color:#d8c496;text-align:left;cursor:pointer;overflow:hidden}
+.elite-card:hover,.elite-card.active{border-color:#e0b459;box-shadow:inset 0 0 22px #dba64820,0 0 0 1px #dba64844}.elite-card.locked{filter:saturate(.35);opacity:.65}
+.elite-card img{display:block;width:100%;height:112px;object-fit:contain;filter:drop-shadow(0 8px 8px #000b)}.elite-card strong,.elite-card small,.elite-card>b{display:block}.elite-card strong{margin-top:5px;color:#f1d28d;font:700 12px Cinzel}.elite-card small{margin-top:3px;color:#91aaa7;font:600 9px Inter}.elite-card>b{margin-top:5px;color:#d87c68;font:700 8px Inter}.elite-level{position:absolute;z-index:1;top:7px;left:7px;padding:4px 6px;border:1px solid #d4aa5666;border-radius:3px;background:#071419dd;color:#ffdb82;font:800 8px Inter}
+.elite-ship-detail{overflow:auto;padding:20px;border-left:1px solid #bd914b55;background:#071419cc;text-align:center}.elite-preview{width:100%;height:220px;object-fit:contain;filter:drop-shadow(0 12px 12px #000c)}.elite-ship-detail h3{margin:8px 0 2px;color:#f4d38d;font:700 20px Cinzel}.elite-ship-detail em{display:block;color:#7faaa8;font:600 10px Inter}.elite-ship-detail>b{display:block;margin:12px 0;color:#d6b56f;font:700 11px Inter}.elite-ship-detail dl{text-align:left}.elite-ship-detail dt{margin-top:14px;color:#dfb45d;font:800 9px Cinzel;text-transform:uppercase}.elite-ship-detail dd{margin:4px 0;color:#c7d2cd;font:500 11px/1.45 Inter}.elite-ship-detail button{width:100%;margin-top:14px;padding:12px;border:1px solid #cf9e48;background:linear-gradient(#9a5825,#563015);color:#ffe1a2;font:800 10px Cinzel;cursor:pointer}.elite-ship-detail button:disabled{filter:grayscale(.7);opacity:.55;cursor:default}
+@media(max-width:800px){.elite-ship-layout{grid-template-columns:1fr}.elite-ship-grid{grid-template-columns:repeat(2,minmax(130px,1fr))}.elite-ship-detail{display:none}}
