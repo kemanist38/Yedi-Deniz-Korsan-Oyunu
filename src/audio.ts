@@ -50,19 +50,32 @@ const CANNON_SHAPE:Record<CannonSound,{sub:[number,number];tail:number;crack:num
 export function playCannon(cannon:CannonSound,ammo:AmmoSound,{gain=1,pan=0}={}){
   const c=audio();if(!c||throttle(`cannon-${cannon}-${ammo}`,70))return;
   const s=CANNON_SHAPE[cannon],o=out(c,s.gain*gain,pan);
-  tone(c,o,{dur:s.tail*.6,f0:s.sub[0],f1:s.sub[1],peak:.9});
-  noise(c,o,{dur:s.tail,f0:s.body,f1:120,peak:.8});
-  noise(c,o,{dur:.05,type:'highpass',f0:s.crack,f1:s.crack,peak:.5});
-  if(ammo==='chain'){for(let i=0;i<5;i++)noise(c,o,{start:.05+i*.045+Math.random()*.02,dur:.05,type:'bandpass',f0:3200+Math.random()*1800,f1:2400,q:9,peak:.35});
-    tone(c,o,{start:.04,dur:.55,type:'sawtooth',f0:220,f1:90,peak:.08});}
-  if(ammo==='fire'){noise(c,o,{start:.02,dur:.9,type:'bandpass',f0:500,f1:2600,q:1.2,peak:.55,attack:.08});
-    for(let i=0;i<9;i++)noise(c,o,{start:.08+Math.random()*.7,dur:.03,type:'highpass',f0:2500,f1:2500,peak:.25});}
-  if(ammo==='grape'){for(let i=0;i<5;i++){const st=Math.random()*.07;noise(c,o,{start:st,dur:.09,type:'highpass',f0:2200,f1:900,peak:.35});tone(c,o,{start:st,dur:.12,f0:220,f1:80,peak:.25});}}
+  // Barut patlaması: kısa namlu çatlağı, yoğun basınç gövdesi ve uzaktaki deniz yankısı.
+  noise(c,o,{dur:.035,type:'highpass',f0:s.crack*1.35,f1:s.crack*.7,q:.8,peak:.9,attack:.001});
+  noise(c,o,{start:.006,dur:s.tail*.52,type:'bandpass',f0:s.body,f1:170,q:.65,peak:1,attack:.002});
+  noise(c,o,{start:.012,dur:s.tail,type:'lowpass',f0:520,f1:48,q:.7,peak:.88,attack:.003});
+  tone(c,o,{start:.008,dur:Math.min(.24,s.tail*.35),type:'sine',f0:s.sub[0]*.72,f1:s.sub[1]*.62,peak:.24,attack:.002});
+  noise(c,o,{start:.105,dur:s.tail*.7,type:'lowpass',f0:390,f1:62,q:.55,peak:.18,attack:.025});
+  noise(c,o,{start:.235,dur:s.tail*.62,type:'bandpass',f0:720,f1:95,q:.75,peak:.09,attack:.035});
+  if(ammo==='chain'){
+    for(let i=0;i<4;i++)noise(c,o,{start:.045+i*.038+Math.random()*.018,dur:.045,type:'bandpass',f0:2600+Math.random()*1200,f1:1250,q:7,peak:.2});
+  }
+  if(ammo==='fire'){
+    noise(c,o,{start:.035,dur:.8,type:'bandpass',f0:430,f1:1900,q:.9,peak:.32,attack:.07});
+    for(let i=0;i<7;i++)noise(c,o,{start:.1+Math.random()*.55,dur:.025,type:'highpass',f0:2800,f1:1900,peak:.12});
+  }
+  if(ammo==='grape'){
+    for(let i=0;i<4;i++)noise(c,o,{start:.018+i*.017+Math.random()*.012,dur:.075,type:'bandpass',f0:1750,f1:420,q:1.1,peak:.22});
+  }
 }
 export function playEnemyCannon(distance:number,pan=0){
   const c=audio();if(!c||throttle('enemy-cannon',90))return;
-  const g=Math.max(.08,Math.min(.55,1-distance/900)),o=out(c,g,pan);
-  tone(c,o,{dur:.45,f0:100,f1:38,peak:.7});noise(c,o,{dur:.7,f0:700,f1:90,peak:.6});
+  const g=Math.max(.07,Math.min(.5,1-distance/950)),o=out(c,g,pan);
+  noise(c,o,{dur:.035,type:'highpass',f0:2900,f1:1500,peak:.55,attack:.001});
+  noise(c,o,{start:.01,dur:.62,type:'bandpass',f0:1050,f1:105,q:.7,peak:.82,attack:.002});
+  noise(c,o,{start:.02,dur:1.05,type:'lowpass',f0:410,f1:45,peak:.7,attack:.004});
+  tone(c,o,{start:.012,dur:.2,f0:76,f1:31,peak:.16,attack:.002});
+  noise(c,o,{start:.16,dur:.72,type:'lowpass',f0:330,f1:58,peak:.13,attack:.04});
 }
 export function playHit(heavy=false){
   const c=audio();if(!c||throttle('hit',55))return;const o=out(c,heavy?.7:.45);
