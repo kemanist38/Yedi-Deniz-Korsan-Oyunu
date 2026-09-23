@@ -74,15 +74,17 @@ export function castleTexture({seed,wood='#3b2418',trim='#c89a45',glass='#f2c46a
 }
 
 // Yelken: renk, dikiş, gölge, amblem, yırtık kenarlar.
-export function sailTexture({seed,base='#d9ceb2',seam='#00000022',stripes=null,stripeColor='#8b2925',border=null,emblem=null,emblemColor='#1a1411',patches=0,patchColors=['#6b4a33'],ragged=0,dirt=.12}){
+export function sailTexture({seed,base='#d9ceb2',seam='#00000022',stripes=null,stripeColor='#8b2925',border=null,emblem=null,emblemColor='#1a1411',patches=0,patchColors=['#6b4a33'],ragged=0,dirt=.12,battens=0,hstripes=0}){
   const W=256,H=256,[c,x]=canvas(W,H),r=rng(seed);
   x.fillStyle=base;x.fillRect(0,0,W,H);
+  if(hstripes){for(let i=0;i<hstripes;i++){if(i%2)continue;x.fillStyle=stripeColor;x.fillRect(0,H*i/hstripes,W,H/hstripes);}}
   if(stripes){for(let i=0;i<stripes;i++){if(i%2)continue;x.fillStyle=stripeColor;x.fillRect(W*i/stripes,0,W/stripes,H);}}
   for(let px=0;px<W;px+=W/9){x.fillStyle=seam;x.fillRect(px,0,2,H);}
   for(let py=H/5;py<H;py+=H/5){x.fillStyle='#00000012';x.fillRect(0,py,W,1);}
   for(let i=0;i<patches;i++){x.fillStyle=patchColors[i%patchColors.length];x.globalAlpha=.85;const pw=30+r()*50,ph=24+r()*44,px=r()*(W-pw),py=r()*(H-ph);x.fillRect(px,py,pw,ph);x.globalAlpha=.6;x.strokeStyle='#1d130c';x.setLineDash([3,3]);x.strokeRect(px+2,py+2,pw-4,ph-4);x.setLineDash([]);x.globalAlpha=1;}
   if(emblem)emblem(x,W,H,emblemColor);
   if(border){x.strokeStyle=border;x.lineWidth=10;x.strokeRect(5,5,W-10,H-10);}
+  if(battens){for(let i=1;i<=battens;i++){const y=H*i/(battens+1);x.fillStyle='#1a120c';x.fillRect(0,y-3,W,6);x.fillStyle='#ffffff22';x.fillRect(0,y-3,W,1);}}
   grain(x,W,H,r,{alpha:.1,count:900,light:'#fff',dark:'#3a2a1a',stretch:.4});
   blotches(x,W,H,r,{alpha:dirt,count:40,colors:['#3b2b1c','#6d5a40']});
   // Kenar kararması
