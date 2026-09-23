@@ -4,7 +4,8 @@
 <body style="margin:0;background:#0e3b48">
 <script type="module">
 import * as THREE from 'three';
-import {buildShip,buildLeviathan,buildChest,FLEET} from './models.js';
+import {buildShip,buildLeviathan,buildChest,buildIsland,buildPortal,FLEET} from './models.js';
+import {paintSeaTile,paintWorldChart} from './paint.js';
 
 const ELEVATION=42*Math.PI/180;
 const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true});
@@ -16,7 +17,7 @@ function stage(){
   const scene=new THREE.Scene();
   scene.add(new THREE.HemisphereLight('#d6ecff','#1d3a3c',1.1));
   const sun=new THREE.DirectionalLight('#fff1d6',2.6);sun.position.set(-60,110,70);sun.castShadow=true;
-  Object.assign(sun.shadow.camera,{left:-80,right:80,top:80,bottom:-80,near:1,far:400});sun.shadow.mapSize.set(2048,2048);sun.shadow.bias=-.0006;sun.shadow.radius=3;
+  Object.assign(sun.shadow.camera,{left:-135,right:135,top:135,bottom:-135,near:1,far:500});sun.shadow.mapSize.set(2048,2048);sun.shadow.bias=-.0006;sun.shadow.radius=3;
   scene.add(sun);const rim=new THREE.DirectionalLight('#8fd3d6',1.1);rim.position.set(50,40,-90);scene.add(rim);
   return scene;
 }
@@ -51,9 +52,9 @@ window.renderPortraits=({frame=128}={})=>{
   {const scene=stage(),m=buildLeviathan(.6);prepare(m);scene.add(m);frames.push(shot(scene,camera(78,4),frame));}
   return{...exportCanvas(sheet(frames,4)),frame};
 };
-window.renderLeviathan=({count=8,frame=256,span=132}={})=>{
+window.renderLeviathan=({count=8,frame=256,span=132,look='deep'}={})=>{
   const cam=camera(span,2),frames=[];
-  for(let i=0;i<count;i++){const scene=stage(),m=buildLeviathan(i/count*Math.PI*2);prepare(m);scene.add(m);frames.push(shot(scene,cam,frame));}
+  for(let i=0;i<count;i++){const scene=stage(),m=buildLeviathan(i/count*Math.PI*2,look);prepare(m);scene.add(m);frames.push(shot(scene,cam,frame));}
   return{...exportCanvas(sheet(frames,4)),frame,count,anchor:anchorOf(cam,frame)};
 };
 window.renderChests=({frame=128,span=28}={})=>{
@@ -61,5 +62,11 @@ window.renderChests=({frame=128,span=28}={})=>{
   for(const kind of ['wood','gilded']){const scene=stage(),c=buildChest(kind);prepare(c);c.rotation.y=-.45;scene.add(c);frames.push(shot(scene,cam,frame));}
   return{...exportCanvas(sheet(frames,2)),frame,anchor:anchorOf(cam,frame)};
 };
+function cameraAt(span,elevDeg){const e=elevDeg*Math.PI/180,c=new THREE.OrthographicCamera(-span/2,span/2,span/2,-span/2,1,1200);c.position.set(0,Math.sin(e)*500,Math.cos(e)*500);c.lookAt(0,0,0);c.updateMatrixWorld();c.updateProjectionMatrix();return c;}
+window.renderIsland=(look,seed,{frame=512,span=236}={})=>{const scene=stage(),isl=buildIsland(look,seed);prepare(isl);scene.add(isl);return{...exportCanvas(shot(scene,cameraAt(span,65),frame)),frame};};
+window.renderIslands=(list,{frame=512,span=236}={})=>{const frames=list.map(([look,seed])=>{const scene=stage(),isl=buildIsland(look,seed);prepare(isl);scene.add(isl);return shot(scene,cameraAt(span,65),frame);});return{...exportCanvas(sheet(frames,frames.length)),frame};};
+window.renderPortal=({count=8,frame=256,span=150}={})=>{const cam=camera(span,6),frames=[];for(let i=0;i<count;i++){const scene=stage(),p=buildPortal(i,count);prepare(p);scene.add(p);frames.push(shot(scene,cam,frame));}return{...exportCanvas(sheet(frames,4)),frame,count,anchor:anchorOf(cam,frame)};};
+window.renderSeaTile=()=>exportCanvas(paintSeaTile());
+window.renderWorldChart=()=>exportCanvas(paintWorldChart());
 window.studioReady=true;
 </script></body></html>

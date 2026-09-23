@@ -94,3 +94,37 @@ button { font: inherit; }
 .raster-item{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 3px 4px #000b);user-select:none}.quick-slot>.raster-item{width:36px;height:36px;margin:auto}.loadout-items .raster-item{grid-row:1/3;width:50px;height:50px}.loadout-slots .raster-item{width:100%;height:100%}.ammo-icon .raster-item{width:48px;height:48px;margin:auto}
 
 .target-portrait{overflow:hidden}.target-portrait .portrait-art{display:block;width:100%;height:100%;background-repeat:no-repeat;background-size:400% 100%}
+/* Dünya haritaları */
+.map-badge{position:absolute;left:6px;top:5px;z-index:2;display:flex;flex-direction:column;padding:3px 7px 3px 8px;border-left:2px solid #d8b268;border-radius:3px;background:linear-gradient(90deg,#030d11d9,#030d1100);pointer-events:none}
+.map-badge strong{font:700 10px Cinzel;letter-spacing:.06em;color:#f3d496;text-shadow:0 1px 4px #000}
+.map-badge small{font:700 6.5px Inter;letter-spacing:.16em;color:#d88a6c}
+.map-badge.safe{border-color:#6fd6c4}.map-badge.safe small{color:#7fe3cf}
+.map-badge.danger-2{border-color:#d8704f}.map-badge.danger-3{border-color:#9d8cff}.map-badge.danger-3 small{color:#b5a8ff}
+.portal-prompt{pointer-events:none;position:absolute;left:50%;bottom:205px;z-index:14;display:grid;justify-items:center;gap:2px;min-width:230px;padding:10px 16px 12px;border:1px solid #5fe0cf88;border-radius:9px;background:linear-gradient(180deg,#08262cf2,#041318f2);box-shadow:0 10px 30px #000b,0 0 22px #3fe6d222;opacity:0;transform:translate(-50%,10px);transition:.2s}
+.portal-prompt.visible{pointer-events:auto;opacity:1;transform:translate(-50%,0)}
+.portal-prompt span{font:700 8px Inter;letter-spacing:.3em;color:#7fe3cf}
+.portal-prompt strong{font:700 17px Cinzel;color:#f3d496}
+.portal-prompt small{font:600 9px Inter;letter-spacing:.12em;color:#b8cbc5}
+.portal-prompt button{margin-top:6px;padding:7px 16px;border:1px solid #5fe0cf;border-radius:5px;background:linear-gradient(180deg,#17635e,#0b3a3a);color:#e9fff9;font:700 11px Cinzel;letter-spacing:.08em;cursor:pointer}
+.portal-prompt button:disabled{filter:grayscale(1);opacity:.55;cursor:not-allowed}
+.portal-prompt kbd{margin-left:6px;padding:1px 5px;border:1px solid #9fe9dc88;border-radius:3px;font:700 9px Inter}
+.world-log{width:min(1080px,94vw)}
+.world-chart{position:relative;width:min(100%,calc(56vh * 1.579));margin:14px auto 0;aspect-ratio:1200/760;border-radius:6px;background-size:cover;box-shadow:inset 0 0 40px #2a160688,0 8px 26px #0009}
+.chart-node{position:absolute;display:grid;justify-items:center;gap:1px;width:120px;padding:0;border:0;background:none;transform:translate(-50%,-38px);cursor:pointer;color:#3a2412}
+.chart-node i{width:72px;height:72px;border:3px solid #6b4a24;border-radius:50%;background-size:200% 100%;background-color:#1d5a63;box-shadow:0 4px 12px #0008;transition:.15s}
+.chart-node strong{margin-top:3px;padding:1px 7px;border-radius:3px;background:#f1e2bfdd;font:700 12px Cinzel;white-space:nowrap}
+.chart-node small{font:800 8px Inter;letter-spacing:.14em;color:#7a2a1e}
+.chart-node:hover i,.chart-node.selected i{border-color:#d4a64c;transform:scale(1.08)}
+.chart-node.here i{border-color:#1f8f7e;box-shadow:0 0 0 4px #6fd6c488,0 4px 12px #0008}
+.chart-node.here small{color:#1f6f60}
+.chart-node.locked i{filter:grayscale(.9) brightness(.7)}
+.world-info{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-top:14px;padding:14px 16px;border:1px solid #d0a95b33;border-radius:8px;background:#06161bcc}
+.world-info h3{margin:3px 0 6px;font:700 20px Cinzel;color:#f3d496}
+.world-info p{margin:0 0 10px;max-width:640px;font:500 13px/1.5 Inter;color:#c9d6d1}
+.world-info dl{display:flex;gap:22px;margin:0}
+.world-info dt{font:700 8px Inter;letter-spacing:.18em;color:#9b7b45;text-transform:uppercase}
+.world-info dd{margin:2px 0 0;font:600 12px Inter;color:#e3d5b3}
+.world-info .safe{color:#7fe3cf}.world-info .danger{color:#e98a6a}
+.world-info button{flex:none;padding:11px 18px;border:1px solid #c69b4e;border-radius:6px;background:linear-gradient(180deg,#7a3b22,#4a2012);color:#f6deb0;font:700 12px Cinzel;letter-spacing:.08em;cursor:pointer}
+.world-info button:disabled{background:#1a2a2e;border-color:#4a5a5a;color:#8a9a96;cursor:default}
+@media (max-width:720px){.chart-node{width:84px}.chart-node i{width:46px;height:46px}.chart-node strong{font-size:9px}.world-info{flex-direction:column;align-items:stretch}.world-info dl{flex-wrap:wrap;gap:10px}.portal-prompt{bottom:250px}}

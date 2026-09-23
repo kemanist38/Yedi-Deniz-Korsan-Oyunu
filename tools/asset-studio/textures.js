@@ -134,3 +134,44 @@ export function chestWoodTexture({seed,wood='#6a4128',dark='#3d2415'}){
   x.globalAlpha=1;grain(x,W,H,r,{alpha:.2,count:900,light:'#c49366',dark:'#120a05'});
   return toTexture(c);
 }
+
+// Tekrarlanabilir değer gürültüsü (ada arazisi için).
+export function noise2(seed){
+  const r=rng(seed),N=256,perm=new Uint8Array(512),grad=new Float32Array(N);
+  for(let i=0;i<N;i++){perm[i]=i;grad[i]=r()*2-1;}
+  for(let i=N-1;i>0;i--){const j=Math.floor(r()*(i+1));[perm[i],perm[j]]=[perm[j],perm[i]];}
+  for(let i=0;i<N;i++)perm[i+N]=perm[i];
+  const f=t=>t*t*(3-2*t),h=(x,y)=>grad[perm[(perm[x&255]+y)&511]];
+  const n=(x,y)=>{const xi=Math.floor(x),yi=Math.floor(y),xf=x-xi,yf=y-yi,u=f(xf),v=f(yf);
+    const a=h(xi,yi),b=h(xi+1,yi),c=h(xi,yi+1),d=h(xi+1,yi+1);return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v;};
+  return(x,y,oct=4)=>{let s=0,amp=1,fr=1,norm=0;for(let o=0;o<oct;o++){s+=n(x*fr,y*fr)*amp;norm+=amp;amp*=.5;fr*=2.03;}return s/norm;};
+}
+
+// Sığlık: adanın etrafındaki turkuaz halka.
+export function shallowTexture({seed,inner='#6fd6c4',outer='#1f6f77',alpha=.75}){
+  const W=512,[c,x]=canvas(W,W),r=rng(seed);
+  const g=x.createRadialGradient(W/2,W/2,W*.2,W/2,W/2,W/2);
+  g.addColorStop(0,inner);g.addColorStop(.62,inner);g.addColorStop(.8,outer);g.addColorStop(1,outer+'00');
+  x.globalAlpha=alpha;x.fillStyle=g;x.fillRect(0,0,W,W);x.globalAlpha=1;
+  for(let i=0;i<700;i++){const a=r()*Math.PI*2,d=W*(.3+r()*.2);x.fillStyle=`rgba(255,255,255,${r()*.18})`;x.beginPath();x.arc(W/2+Math.cos(a)*d,W/2+Math.sin(a)*d,1+r()*3,0,7);x.fill();}
+  return toTexture(c);
+}
+
+export function stoneTexture({seed,base='#6d6a60',dark='#3b3a35',moss='#4d6a3a'}){
+  const W=256,[c,x]=canvas(W,W),r=rng(seed);
+  x.fillStyle=base;x.fillRect(0,0,W,W);
+  for(let y=0;y<W;y+=32){for(let px=(y/32%2)*24;px<W;px+=48){x.fillStyle=r()<.5?base:dark;x.globalAlpha=.5;x.fillRect(px,y,46,30);x.globalAlpha=.8;x.strokeStyle='#1c1b18';x.strokeRect(px+.5,y+.5,46,30);}}
+  x.globalAlpha=1;blotches(x,W,W,r,{alpha:.4,count:40,colors:[moss,dark]});grain(x,W,W,r,{alpha:.15,count:900});
+  return toTexture(c);
+}
+
+// Girdap: üç kollu sarmal, parlak merkez.
+export function vortexTexture({seed,core='#e8fff8',arm='#4fe0d0',deep='#08323a'}){
+  const W=512,[c,x]=canvas(W,W),r=rng(seed);
+  const g=x.createRadialGradient(W/2,W/2,0,W/2,W/2,W/2);g.addColorStop(0,core);g.addColorStop(.18,arm);g.addColorStop(.7,deep);g.addColorStop(1,deep+'00');
+  x.fillStyle=g;x.fillRect(0,0,W,W);
+  x.translate(W/2,W/2);
+  for(let k=0;k<3;k++){for(let i=0;i<220;i++){const t=i/220,a=k*Math.PI*2/3+t*Math.PI*3.2,d=t*W*.46;x.fillStyle=`rgba(210,255,245,${(1-t)*.5*(.5+r()*.5)})`;x.beginPath();x.arc(Math.cos(a)*d,Math.sin(a)*d,2+(1-t)*9,0,7);x.fill();}}
+  x.setTransform(1,0,0,1,0,0);
+  return toTexture(c);
+}

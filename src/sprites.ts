@@ -26,17 +26,17 @@ export function drawEnemyShipSprite(ctx:CanvasRenderingContext2D,role:EnemySprit
 }
 
 // Leviathan: 8 karelik dokunaç döngüsü, 4 sütun × 2 satır, 256 px kare.
-const LEVIATHAN={frame:256,count:8,cols:4,anchorX:128,anchorY:130.9,size:132,fps:5};
-const leviathanSheet=load('/assets/leviathan-v1.webp');
-export function drawLeviathanSprite(ctx:CanvasRenderingContext2D,x:number,y:number,phase:number){
-  if(!ready(leviathanSheet))return false;
+const LEVIATHAN={frame:256,count:8,cols:4,anchorX:128,anchorY:130.9,size:132,fps:5,radius:52};
+const leviathanSheets={deep:load('/assets/leviathan-v1.webp'),storm:load('/assets/leviathan-storm-v1.webp')};
+export function drawLeviathanSprite(ctx:CanvasRenderingContext2D,x:number,y:number,phase:number,look:'deep'|'storm'='deep',radius=LEVIATHAN.radius){
+  const leviathanSheet=leviathanSheets[look];if(!ready(leviathanSheet))return false;
   const t=phase*LEVIATHAN.fps,a=Math.floor(t)%LEVIATHAN.count,b=(a+1)%LEVIATHAN.count,blend=t-Math.floor(t);
-  const k=LEVIATHAN.size/LEVIATHAN.frame,dx=x-LEVIATHAN.anchorX*k,dy=y-LEVIATHAN.anchorY*k+Math.sin(phase*1.3)*1.5;
+  const size=LEVIATHAN.size*radius/LEVIATHAN.radius,k=size/LEVIATHAN.frame,dx=x-LEVIATHAN.anchorX*k,dy=y-LEVIATHAN.anchorY*k+Math.sin(phase*1.3)*1.5;
   const frame=(n:number)=>[(n%LEVIATHAN.cols)*LEVIATHAN.frame,Math.floor(n/LEVIATHAN.cols)*LEVIATHAN.frame] as const;
   ctx.save();
   const [ax,ay]=frame(a),[bx,by]=frame(b);
-  ctx.drawImage(leviathanSheet,ax,ay,LEVIATHAN.frame,LEVIATHAN.frame,dx,dy,LEVIATHAN.size,LEVIATHAN.size);
-  ctx.globalAlpha=blend;ctx.drawImage(leviathanSheet,bx,by,LEVIATHAN.frame,LEVIATHAN.frame,dx,dy,LEVIATHAN.size,LEVIATHAN.size);
+  ctx.drawImage(leviathanSheet,ax,ay,LEVIATHAN.frame,LEVIATHAN.frame,dx,dy,size,size);
+  ctx.globalAlpha=blend;ctx.drawImage(leviathanSheet,bx,by,LEVIATHAN.frame,LEVIATHAN.frame,dx,dy,size,size);
   ctx.restore();return true;
 }
 
@@ -55,3 +55,32 @@ export function drawChestSprite(ctx:CanvasRenderingContext2D,kind:ChestKind,x:nu
 // Hedef kartı portreleri: 4 hücre (gözcü, yağmacı, savaş gemisi, canavar).
 export const PORTRAIT_SHEET='/assets/npc-portraits-v1.webp';
 export const PORTRAIT_INDEX={scout:0,raider:1,warship:2,monster:3} as const;
+
+// Adalar: her görünüm için 2 varyantlı sayfa (512 px), 65° yukarıdan. Çizim boyu = 2.36 × ada yarıçapı.
+type IslandLookName='verdant'|'misty'|'coral'|'haven'|'crimson'|'storm';
+const ISLAND={frame:512,scale:2.36};
+const islandSheets:Partial<Record<IslandLookName,HTMLImageElement>>={};
+function islandSheet(look:IslandLookName){return islandSheets[look]??=load(`/assets/islands-${look}-v1.webp`);}
+export function islandSheetUrl(look:IslandLookName){return`/assets/islands-${look}-v1.webp`;}
+export function drawIslandSprite(ctx:CanvasRenderingContext2D,island:{look:IslandLookName;variant:number;r:number;flip?:boolean},x:number,y:number){
+  const sheet=islandSheet(island.look);if(!ready(sheet))return false;
+  const size=island.r*ISLAND.scale;ctx.save();ctx.translate(x,y);if(island.flip)ctx.scale(-1,1);
+  ctx.drawImage(sheet,island.variant*ISLAND.frame,0,ISLAND.frame,ISLAND.frame,-size/2,-size/2,size,size);ctx.restore();return true;
+}
+
+// Geçit: 8 karelik girdap döngüsü, 4 × 2, 256 px.
+const PORTAL={frame:256,count:8,cols:4,anchorX:128,anchorY:135.6,size:150,fps:7};
+const portalSheet=load('/assets/portal-v1.webp');
+export function drawPortalSprite(ctx:CanvasRenderingContext2D,x:number,y:number,time:number,locked:boolean){
+  if(!ready(portalSheet))return false;
+  const n=Math.floor(time/1000*PORTAL.fps)%PORTAL.count,k=PORTAL.size/PORTAL.frame;
+  ctx.save();if(locked)ctx.filter='grayscale(.85) brightness(.7)';
+  ctx.drawImage(portalSheet,(n%PORTAL.cols)*PORTAL.frame,Math.floor(n/PORTAL.cols)*PORTAL.frame,PORTAL.frame,PORTAL.frame,x-PORTAL.anchorX*k,y-PORTAL.anchorY*k,PORTAL.size,PORTAL.size);
+  ctx.restore();return true;
+}
+
+// Deniz: harita renginin üstüne binen, kesintisiz tekrarlanan raster ışıltı dokusu.
+const seaTile=load('/assets/sea-tile-v1.webp');let seaPattern:CanvasPattern|null=null;
+export function seaTilePattern(ctx:CanvasRenderingContext2D){if(!seaPattern&&ready(seaTile))seaPattern=ctx.createPattern(seaTile,'repeat');return seaPattern;}
+
+export const WORLD_CHART='/assets/world-chart-v1.webp';
