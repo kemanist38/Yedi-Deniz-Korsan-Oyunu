@@ -9,7 +9,7 @@ import {paintSeaTile,paintWorldChart,paintSeaSparkle} from './paint.js';
 import {buildIcon} from './icons.js';
 import {buildFleetBase,buildFleetTower,FLEET_TOWERS,FLEET_ELEVATION} from './fleet.js';
 import {SHIPS,MONSTERS} from './catalog.js';
-import {buildTowerTop,TOWER_TOP_TYPES} from './tower-tops.js';
+import {buildBuiltTower,BUILT_TOWER_TYPES} from './fleet-towers.js';
 import {buildCrab,buildSerpent,buildJelly,buildTurtle,buildHydra} from './monsters.js';
 import * as T from './textures.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
@@ -110,9 +110,16 @@ window.renderPortraitsV2=(order,{cell=96,cols=10}={})=>{const legacy={'n1-2-ligh
     else{const def=legacy[id]?FLEET[legacy[id]]:SHIPS.find(x=>x.id===id).def,ship=buildShip(def,{heading:Math.PI*1.25});prepare(ship);ship.rotation.y=Math.PI-Math.PI*1.25;scene.add(ship);const L=def.hull.L;cam=camera(L*1.12,L*.19);}
     return shot(scene,cam,cell);});
   return{...exportCanvas(sheet(frames,cols)),cell,cols};};
-// Dikilebilir kule üst yapıları: burç tepesine oturur; 4 kare (cannon, mortar, chain, beacon), 256 px = 96 birim.
-window.renderTowerTops=({frame=256,span=96}={})=>{const cam=cameraAt(span,FLEET_ELEVATION);cam.position.y+=12;cam.lookAt(0,12,0);cam.updateMatrixWorld();
-  const frames=TOWER_TOP_TYPES.map(t=>{const scene=stage(),m=buildTowerTop(t);prepare(m);scene.add(m);return shot(scene,cam,frame);});
-  return{...exportCanvas(sheet(frames,frames.length)),frame,span,types:TOWER_TOP_TYPES,anchor:anchorOf(cam,frame,new THREE.Vector3(0,0,0))};};
+// Filonun diktiği tam kuleler: ada görselinin bakış açısına (≈60°) göre render + boyalı son işlem (renk, kontrast, ince kontur).
+function painterly(c){const x=c.getContext('2d'),W=c.width,H=c.height,img=x.getImageData(0,0,W,H),d=img.data,a=new Uint8Array(W*H);for(let i=0;i<W*H;i++)a[i]=d[i*4+3];
+  // Renk eşleme: opak piksellerin ortalamasını ada görselindeki burçların ortalamasına (72,62,45) çek
+  {let R=0,G=0,B=0,n=0;for(let i=0;i<W*H;i++){if(a[i]<250)continue;R+=d[i*4];G+=d[i*4+1];B+=d[i*4+2];n++;}if(n){const gr=Math.min(2.4,72/(R/n)),gg=Math.min(2.4,62/(G/n)),gb=Math.min(2.4,45/(B/n));for(let i=0;i<W*H;i++){const k=i*4;if(!d[k+3])continue;d[k]*=gr;d[k+1]*=gg;d[k+2]*=gb;}}}
+  for(let i=0;i<W*H;i++){const k=i*4;if(!d[k+3])continue;let r=d[k],g=d[k+1],b=d[k+2];const l=(r+g+b)/3;r=l+(r-l)*.9;g=l+(g-l)*.9;b=l+(b-l)*.86;r=(r-128)*1.12+128;g=(g-128)*1.12+128;b=(b-128)*1.12+128+2;d[k]=r;d[k+1]=g;d[k+2]=b;}
+  for(let y=1;y<H-1;y++)for(let xx=1;xx<W-1;xx++){const i=y*W+xx;if(a[i]>40)continue;const n=Math.max(a[i-1],a[i+1],a[i-W],a[i+W]);if(n>140){const k=i*4;d[k]=18;d[k+1]=13;d[k+2]=6;d[k+3]=Math.max(d[k+3],150);}}
+  x.putImageData(img,0,0);return c;}
+// Bakış: ada görselindeki burçlar gibi yuvarlak tepe + uzun gövde → 42° kamera ve modelde z ölçeği 1,3
+window.renderBuiltTowers=({frame=320,span=160}={})=>{const e=42*Math.PI/180,cam=new THREE.OrthographicCamera(-span/2,span/2,span/2,-span/2,1,1500);cam.position.set(0,52+Math.sin(e)*600,Math.cos(e)*600);cam.lookAt(0,52,0);cam.updateMatrixWorld();cam.updateProjectionMatrix();
+  const frames=BUILT_TOWER_TYPES.map(t=>{const scene=stage(),m=buildBuiltTower(t);m.scale.z=1.3;prepare(m);scene.add(m);const sun=scene.children.find(o=>o.isDirectionalLight&&o.castShadow);Object.assign(sun.shadow.camera,{left:-120,right:120,top:120,bottom:-120,far:900});sun.position.set(-180,260,160);sun.intensity=3.4;sun.shadow.camera.updateProjectionMatrix();const fill=new THREE.DirectionalLight('#dfe6ff',.8);fill.position.set(160,120,200);scene.add(fill);return painterly(shot(scene,cam,frame));});
+  return{...exportCanvas(sheet(frames,frames.length)),frame,span,types:BUILT_TOWER_TYPES,anchor:anchorOf(cam,frame,new THREE.Vector3(0,0,0))};};
 window.studioReady=true;
 </script></body></html>

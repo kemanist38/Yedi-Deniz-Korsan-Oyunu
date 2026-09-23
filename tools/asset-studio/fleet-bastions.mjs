@@ -29,7 +29,8 @@ const out=await p.evaluate(async([src,TOWERS])=>{
     ax.putImageData(cell,(k%4)*CELL_W,Math.floor(k/4)*CELL_H);
     // Kuleye göre çizim ofseti (dünya birimi): karenin sol-üst köşesi − kule konumu
     // disk: burcun düz taş tepesinin merkezi (kule üst yapısı buraya oturur), kuleye göre dünya birimi
-    meta.push({ox:+(x0/K-500-wx).toFixed(2),oy:+(y0/K-500-wy).toFixed(2),dx:+(dx/K).toFixed(2),dy:+(dy/K).toFixed(2)});});
+    // pad: taş dikme kaidesinin merkezi (filonun diktiği tam kule buraya oturur)
+    meta.push({ox:+(x0/K-500-wx).toFixed(2),oy:+(y0/K-500-wy).toFixed(2),dx:+(dx/K).toFixed(2),dy:+(dy/K).toFixed(2),px:+(dx/K).toFixed(2),py:+((cutY(t)-(wy+500)*K)/K).toFixed(2)});});
   // 2) Delik (tüm kulelerin maskesi, 3 px genişletilmiş)
   const hole=new Uint8Array(W*W);TOWERS.forEach(t=>{const [wx,wy,dx,dy,base]=t,cx=(wx+500)*K+dx,cy=(wy+500)*K+dy;for(let y=Math.floor(cy-RY-8);y<cy+base+HW;y++)for(let x=Math.floor(cx-RX-8);x<cx+RX+8;x++){if(x<0||y<0||x>=W||y>=W)continue;if(y>cutY(t)+2)continue;let m=0;for(const [ox,oy] of [[0,0],[3,0],[-3,0],[0,3],[0,-3]])m=Math.max(m,maskAt(t,x+ox+.5,y+oy+.5));if(m>0)hole[y*W+x]=1;}});
   const forbidden=new Uint8Array(W*W);for(let y=0;y<W;y++)for(let x=0;x<W;x++){if(!hole[y*W+x])continue;for(let dy=-10;dy<=10;dy+=2)for(let dx=-10;dx<=10;dx+=2){const nx=x+dx,ny=y+dy;if(nx>=0&&ny>=0&&nx<W&&ny<W)forbidden[ny*W+nx]=1;}}
