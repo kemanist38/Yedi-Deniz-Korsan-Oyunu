@@ -36,14 +36,14 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     <canvas id="sea"></canvas><div class="grain"></div>
     <section class="hud">
       <div class="brand">KARA YELKEN<small>GÖLGELER DENİZİ</small></div>
+      <nav class="top-shortcuts"><button id="openQuestTop"><i class="shortcut-mark">✦</i><span>GÖREVLER</span></button><button id="openShip"><i class="sprite icon-hull"></i><span>GEMİ</span></button><button class="market-main" id="openMarket"><i class="sprite icon-gold"></i><span>MARKET</span></button><button disabled><i class="shortcut-mark">♜</i><span>FİLO</span></button><button disabled><i class="shortcut-mark">⚙</i><span>AYARLAR</span></button></nav>
       <div class="resources"><div class="resource pearl">İNCİ<b id="pearls">000</b></div><div class="resource">ALTIN<b id="gold">000</b></div><div class="resource">KERESTE<b id="wood">000</b></div><div class="resource">ŞÖHRET<b id="fame">000</b></div></div>
       <div class="panel quest"><span class="eyebrow">Aktif görev</span><h3 id="questTitle">Görev seçilmedi</h3><p id="questDescription">Kaptan, yapmak istediğin görevi görev defterinden seçebilirsin.</p><div class="progress" id="quest">Hazır olduğunda bir görev başlat</div><button class="quest-open" id="openQuests">GÖREVLERİ AÇ</button></div>
       <div class="panel captain"><div class="name-row"><strong>Kaptan Yasin</strong><span class="level" id="level">SEVİYE 1</span></div><div class="bar-label"><span>GÖVDE</span><span id="hpText">100 / 100</span></div><div class="bar hp"><i id="hpBar" style="width:100%"></i></div><div class="bar-label"><span>ŞÖHRET</span><span id="xpText">0 / 100</span></div><div class="bar xp"><i id="xpBar" style="width:0%"></i></div></div>
       <div class="panel target-card" id="targetCard"><span class="eyebrow">HEDEF YOK</span><h3 id="targetName">Denizde bir gemi seç</h3><div class="bar hp"><i id="targetHp" style="width:0%"></i></div><div class="target-meta"><span id="targetRange">— menzil</span><span id="targetTier">—</span></div></div>
-      <div class="panel actionbar"><button class="action" id="cannonType"><b>♜</b><span id="cannonName">Döküm</span><small>TOP</small></button><button class="action active" data-ammo="iron"><b>●</b><span>Demir</span><small id="ironAmmo">∞</small></button><button class="action" data-ammo="chain"><b>⛓</b><span>Zincir</span><small id="chainAmmo">40</small></button><button class="action fire" id="attack"><b>⚔</b><span>SALDIR</span><small id="reloadText">HAZIR</small></button><button class="action" id="repair"><b>✚</b><span>TAMİR</span><small>F</small></button></div>
+      <div class="quick-inventory"><button class="quick-slot active" data-ammo="iron"><i class="sprite icon-iron"></i><span>Demir</span><b id="ironAmmo">∞</b></button><button class="quick-slot" data-ammo="chain"><i class="sprite icon-chain"></i><span>Zincir</span><b id="chainAmmo">40</b></button><div class="quick-slot"><i class="sprite icon-gold"></i><span>Altın</span><b id="quickGold">0</b></div><div class="quick-slot"><i class="sprite icon-wood"></i><span>Kereste</span><b id="quickWood">0</b></div><div class="quick-slot"><i class="sprite icon-pearl"></i><span>İnci</span><b id="quickPearls">0</b></div><button class="quick-slot" id="quickRepair"><i class="sprite icon-repairkit"></i><span>Tamir</span><b>F</b></button></div>
+      <div class="panel actionbar"><button class="action" id="cannonType"><b>♜</b><span id="cannonName">Döküm</span><small>TOP</small></button><button class="action fire" id="attack"><b>⚔</b><span>SALDIR</span><small id="reloadText">HAZIR</small></button><button class="action" id="repair"><b>✚</b><span>TAMİR</span><small>F</small></button></div>
       <div class="panel zoom-controls"><button id="zoomOut" aria-label="Uzaklaştır">−</button><span id="zoomValue">70%</span><button id="zoomIn" aria-label="Yakınlaştır">+</button></div>
-      <button class="ship-menu-button" id="openShip">⚓ GEMİ</button>
-      <button class="market-menu-button" id="openMarket">▣ MARKET</button>
       <canvas id="minimap" width="170" height="125"></canvas>
       <div class="reward-toast" id="rewardToast"></div>
       <div class="toast" id="toast"></div>
@@ -67,6 +67,8 @@ const directionalChunks=['aa','ab','ac','ad'];
 Promise.all(directionalChunks.map(part=>fetch(`/assets/player-flagship-directions-v1.b64.${part}`).then(r=>r.text())))
   .then(parts=>{directionalShipImage.src=`data:image/webp;base64,${parts.join('')}`;})
   .catch(()=>{directionalShipImage.src='/assets/player-flagship-directions-v1.webp';});
+Promise.all(['00','01','02','03'].map(part=>fetch(`/assets/pirate-ui-icons-v1.b64.${part}`).then(r=>r.text())))
+  .then(parts=>document.documentElement.style.setProperty('--pirate-icons',`url("data:image/webp;base64,${parts.join('')}")`));
 const ui = (id:string) => document.getElementById(id)!;
 const WORLD = 2800;
 const keys = new Set<string>();
@@ -114,6 +116,7 @@ ui('cannonType').onclick=()=>{const types=Object.keys(CANNONS) as CannonKind[];s
 ui('zoomOut').onclick=()=>setZoom(camera.targetZoom-.1);
 ui('zoomIn').onclick=()=>setZoom(camera.targetZoom+.1);
 ui('openQuests').onclick=openQuestLog;
+ui('openQuestTop').onclick=openQuestLog;
 ui('closeQuests').onclick=closeQuestLog;
 ui('questOverlay').addEventListener('pointerdown',e=>{if(e.target===ui('questOverlay'))closeQuestLog();});
 ui('openShip').onclick=openShipMenu;
@@ -122,6 +125,7 @@ ui('shipOverlay').addEventListener('pointerdown',e=>{if(e.target===ui('shipOverl
 ui('openMarket').onclick=openMarket;
 ui('closeMarket').onclick=closeMarket;
 ui('marketOverlay').addEventListener('pointerdown',e=>{if(e.target===ui('marketOverlay'))closeMarket();});
+ui('quickRepair').onclick=toggleRepair;
 canvas.addEventListener('wheel',e=>{e.preventDefault();setZoom(camera.targetZoom+(e.deltaY<0?.1:-.1));},{passive:false});
 document.querySelectorAll<HTMLButtonElement>('[data-ammo]').forEach(b=>b.onclick=()=>{state.ammo=b.dataset.ammo as AmmoKind;document.querySelectorAll('[data-ammo]').forEach(x=>x.classList.toggle('active',x===b));});
 
@@ -211,13 +215,7 @@ function effectiveSpeed(){return 104+upgrades.speed*5;}
 function cooldownText(until:number){const minutes=Math.max(1,Math.ceil((until-Date.now())/60000)),hours=Math.floor(minutes/60),mins=minutes%60;return hours>0?`${hours} sa ${mins} dk`:`${mins} dk`;}
 let pendingUpgrade:UpgradeKind|null=null;
 function upgradeCost(kind:UpgradeKind){return Math.round(UPGRADES[kind].pearls*(1+upgrades[kind]*.55));}
-function upgradeIcon(kind:UpgradeKind){const art:Record<UpgradeKind,string>={
-  hull:'<path d="M32 6 52 14v15c0 14-8 23-20 29C20 52 12 43 12 29V14Z"/><path d="M18 22h28M17 31h30M21 40h22"/>',
-  damage:'<path d="M9 39h31l11-9-3-7-14 5H13Z"/><circle cx="18" cy="46" r="7"/><circle cx="39" cy="46" r="7"/><path d="m48 15 3-7m3 11 6-3"/>',
-  range:'<path d="M7 39h37l12-8-4-8-17 6H11Z"/><path d="M39 14h18M48 7v14"/><circle cx="18" cy="47" r="6"/>',
-  reload:'<circle cx="23" cy="25" r="9"/><circle cx="42" cy="39" r="10"/><path d="M23 10v6m0 18v6M8 25h6m18 0h6M42 23v7m0 18v7M26 39h7m18 0h7"/>',
-  speed:'<path d="M31 5v51M32 9C48 15 52 29 49 38L32 34ZM29 14C17 20 12 34 16 43l13-6Z"/><path d="M9 55h46"/>',
-  repair:'<path d="m12 48 28-28 8 8-28 28Z"/><path d="m35 17 8-8 12 12-8 8M9 13l13 13m-9-17 13 13"/>'};return `<svg viewBox="0 0 64 64" aria-hidden="true">${art[kind]}</svg>`;}
+function upgradeIcon(kind:UpgradeKind){return `<i class="sprite icon-${kind}"></i>`;}
 function openShipMenu(){pendingUpgrade=null;renderShipMenu();ui('shipOverlay').classList.add('open');}
 function closeShipMenu(){pendingUpgrade=null;ui('shipOverlay').classList.remove('open');}
 function renderShipMenu(){
@@ -246,7 +244,7 @@ function openMarket(){pendingMarket=null;renderMarket();ui('marketOverlay').clas
 function closeMarket(){pendingMarket=null;ui('marketOverlay').classList.remove('open');}
 function renderMarket(){
   ui('inventoryStrip').innerHTML=`<div><span>DEMİR GÜLLE</span><b>∞</b><small>Sınırsız standart mühimmat</small></div><div><span>ZİNCİR GÜLLESİ</span><b>${state.chainAmmo}</b><small>Her atış 1 gülle tüketir</small></div><div><span>ALTIN BAKİYESİ</span><b>${state.gold}</b><small>Market alışverişlerinde kullanılır</small></div>`;
-  ui('marketList').innerHTML=MARKET_ITEMS.map((item,index)=>`<article class="market-item"><div class="ammo-icon"><span>⛓</span><b>${item.amount}</b></div><div><h4>${item.name}</h4><p>${item.description}</p></div><button data-market="${index}">${item.price} ALTIN</button></article>`).join('');
+  ui('marketList').innerHTML=MARKET_ITEMS.map((item,index)=>`<article class="market-item"><div class="ammo-icon"><i class="sprite icon-chain"></i><b>${item.amount}</b></div><div><h4>${item.name}</h4><p>${item.description}</p></div><button data-market="${index}">${item.price} ALTIN</button></article>`).join('');
   document.querySelectorAll<HTMLButtonElement>('[data-market]').forEach(button=>button.onclick=()=>{pendingMarket=Number(button.dataset.market);renderMarket();});
   if(pendingMarket===null){ui('marketConfirm').classList.remove('visible');ui('marketConfirm').innerHTML='';return;}
   const item=MARKET_ITEMS[pendingMarket];ui('marketConfirm').classList.add('visible');ui('marketConfirm').innerHTML=`<div><strong>${item.amount} zincir güllesi alınsın mı?</strong><span>${item.price} Altın hesabından düşülecek.</span></div><button id="confirmMarket">SATIN AL</button><button id="cancelMarket">VAZGEÇ</button>`;
@@ -293,6 +291,7 @@ function recordQuestProgress(target:'ship'|'monster'){
 }
 function updateUI(){
   ui('pearls').textContent=String(state.pearls).padStart(3,'0');ui('gold').textContent=String(state.gold).padStart(3,'0');ui('wood').textContent=String(state.wood).padStart(3,'0');ui('fame').textContent=String(state.fame).padStart(3,'0');
+  ui('quickGold').textContent=String(state.gold);ui('quickWood').textContent=String(state.wood);ui('quickPearls').textContent=String(state.pearls);
   ui('hpText').textContent=`${Math.ceil(state.hp)} / ${state.maxHp}`; (ui('hpBar') as HTMLElement).style.width=`${state.hp/state.maxHp*100}%`;
   const need=state.level*100;ui('xpText').textContent=`${state.fame} / ${need}`;(ui('xpBar') as HTMLElement).style.width=`${Math.min(100,state.fame/need*100)}%`;ui('level').textContent=`SEVİYE ${state.level}`;ui('chainAmmo').textContent=String(state.chainAmmo);
   const quest=state.activeQuest===null?null:QUESTS[state.activeQuest];ui('questTitle').textContent=quest?.title||'Görev seçilmedi';ui('questDescription').textContent=quest?.description||'Kaptan, yapmak istediğin görevi görev defterinden seçebilirsin.';ui('quest').textContent=quest?`${questProgress[state.activeQuest!]} / ${quest.required} ${quest.target==='ship'?'Düşman':'Canavar'}`:'Hazır olduğunda bir görev başlat';
