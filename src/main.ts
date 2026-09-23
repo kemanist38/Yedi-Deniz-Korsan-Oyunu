@@ -9,7 +9,7 @@ type Enemy = Vec & { kind:'ship'; angle:number; hp:number; maxHp:number; cooldow
 type Particle = Vec & { vx:number; vy:number; life:number; maxLife:number; kind:'foam'|'smoke'|'spark'|'damage'; text?:string };
 type Monster = Vec & { kind:'monster'; phase:number; radius:number; name:string; hp:number; maxHp:number; cooldown:number; aggro:boolean; slowTimer:number; homeX:number; homeY:number; combatTimer:number };
 type Target = Enemy|Monster;
-type Quest = { title:string; description:string; target:'ship'|'monster'; required:number; gold:number; wood:number; fame:number };
+type Quest = { title:string; description:string; target:'ship'|'monster'; required:number; gold:number; wood:number; fame:number; pearls:number };
 type UpgradeKind = 'hull'|'damage'|'range'|'reload'|'speed'|'repair';
 const CANNONS:Record<CannonKind,{name:string;damage:number;range:number;reload:number}>={
   cast:{name:'Döküm',damage:1,range:390,reload:1.65},
@@ -18,17 +18,17 @@ const CANNONS:Record<CannonKind,{name:string;damage:number;range:number;reload:n
   heavy:{name:'Ağır',damage:1.38,range:365,reload:2.65}
 };
 const QUESTS:Quest[]=[
-  {title:'Kızıl Sular',description:'Yağmacı filonun devriyelerini batır ve bölgeyi güvenli hâle getir.',target:'ship',required:5,gold:100,wood:20,fame:40},
-  {title:'Kaçakçı Avı',description:'Ticaret rotalarına saldıran sekiz korsan gemisini denizin dibine gönder.',target:'ship',required:8,gold:180,wood:35,fame:70},
-  {title:'Derinliğin Gölgesi',description:'Derinlik Leviathanı’nı bul ve canavarı yenerek seferi tamamla.',target:'monster',required:1,gold:350,wood:60,fame:140}
+  {title:'Kızıl Sular',description:'Yağmacı filonun devriyelerini batır ve bölgeyi güvenli hâle getir.',target:'ship',required:5,gold:100,wood:20,fame:40,pearls:3},
+  {title:'Kaçakçı Avı',description:'Ticaret rotalarına saldıran sekiz korsan gemisini denizin dibine gönder.',target:'ship',required:8,gold:180,wood:35,fame:70,pearls:5},
+  {title:'Derinliğin Gölgesi',description:'Derinlik Leviathanı’nı bul ve canavarı yenerek seferi tamamla.',target:'monster',required:1,gold:350,wood:60,fame:140,pearls:10}
 ];
-const UPGRADES:Record<UpgradeKind,{name:string;description:string;effect:string;gold:number;wood:number}>={
-  hull:{name:'Güçlendirilmiş Gövde',description:'Geminin azami gövde dayanıklılığını artırır.',effect:'+20 gövde',gold:90,wood:35},
-  damage:{name:'Top Güvertesi',description:'Her borda atışının verdiği hasarı artırır.',effect:'+%11 hasar',gold:120,wood:25},
-  range:{name:'Uzun Namlular',description:'Tüm top türlerinin etkili menzilini artırır.',effect:'+18 menzil',gold:110,wood:30},
-  reload:{name:'Tecrübeli Topçular',description:'Topların yeniden dolma süresini azaltır.',effect:'-%4 dolum',gold:145,wood:20},
-  speed:{name:'Yeni Yelken Takımı',description:'Geminin ulaşabileceği azami hızı artırır.',effect:'+5 hız',gold:100,wood:40},
-  repair:{name:'Usta Marangozlar',description:'Açık denizde yapılan tamirin hızını artırır.',effect:'+%0,8/sn',gold:80,wood:45}
+const UPGRADES:Record<UpgradeKind,{name:string;description:string;effect:string;pearls:number}>={
+  hull:{name:'Güçlendirilmiş Gövde',description:'Geminin azami gövde dayanıklılığını artırır.',effect:'+20 gövde',pearls:8},
+  damage:{name:'Top Güvertesi',description:'Her borda atışının verdiği hasarı artırır.',effect:'+%11 hasar',pearls:10},
+  range:{name:'Uzun Namlular',description:'Tüm top türlerinin etkili menzilini artırır.',effect:'+18 menzil',pearls:9},
+  reload:{name:'Tecrübeli Topçular',description:'Topların yeniden dolma süresini azaltır.',effect:'-%4 dolum',pearls:12},
+  speed:{name:'Yeni Yelken Takımı',description:'Geminin ulaşabileceği azami hızı artırır.',effect:'+5 hız',pearls:9},
+  repair:{name:'Usta Marangozlar',description:'Açık denizde yapılan tamirin hızını artırır.',effect:'+%0,8/sn',pearls:7}
 };
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
@@ -36,7 +36,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     <canvas id="sea"></canvas><div class="grain"></div>
     <section class="hud">
       <div class="brand">KARA YELKEN<small>GÖLGELER DENİZİ</small></div>
-      <div class="resources"><div class="resource">ALTIN<b id="gold">000</b></div><div class="resource">KERESTE<b id="wood">000</b></div><div class="resource">ŞÖHRET<b id="fame">000</b></div></div>
+      <div class="resources"><div class="resource pearl">İNCİ<b id="pearls">000</b></div><div class="resource">ALTIN<b id="gold">000</b></div><div class="resource">KERESTE<b id="wood">000</b></div><div class="resource">ŞÖHRET<b id="fame">000</b></div></div>
       <div class="panel quest"><span class="eyebrow">Aktif görev</span><h3 id="questTitle">Görev seçilmedi</h3><p id="questDescription">Kaptan, yapmak istediğin görevi görev defterinden seçebilirsin.</p><div class="progress" id="quest">Hazır olduğunda bir görev başlat</div><button class="quest-open" id="openQuests">GÖREVLERİ AÇ</button></div>
       <div class="panel captain"><div class="name-row"><strong>Kaptan Yasin</strong><span class="level" id="level">SEVİYE 1</span></div><div class="bar-label"><span>GÖVDE</span><span id="hpText">100 / 100</span></div><div class="bar hp"><i id="hpBar" style="width:100%"></i></div><div class="bar-label"><span>ŞÖHRET</span><span id="xpText">0 / 100</span></div><div class="bar xp"><i id="xpBar" style="width:0%"></i></div></div>
       <div class="panel target-card" id="targetCard"><span class="eyebrow">HEDEF YOK</span><h3 id="targetName">Denizde bir gemi seç</h3><div class="bar hp"><i id="targetHp" style="width:0%"></i></div><div class="target-meta"><span id="targetRange">— menzil</span><span id="targetTier">—</span></div></div>
@@ -46,7 +46,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <canvas id="minimap" width="170" height="125"></canvas>
       <div class="reward-toast" id="rewardToast"></div>
       <div class="toast" id="toast"></div>
-      <div class="quest-overlay" id="questOverlay"><section class="quest-log"><header><div><span class="eyebrow">Kaptanın görev defteri</span><h2>DENİZ GÖREVLERİ</h2></div><button id="closeQuests" aria-label="Görevleri kapat">×</button></header><p class="quest-intro">İstediğin görevi seç. Görevler arasında geçiş yaptığında mevcut ilerlemen korunur.</p><div class="quest-list" id="questList"></div></section></div>
+      <div class="quest-overlay" id="questOverlay"><section class="quest-log"><header><div><span class="eyebrow">Kaptanın görev defteri</span><h2>DENİZ GÖREVLERİ</h2></div><button id="closeQuests" aria-label="Görevleri kapat">×</button></header><p class="quest-intro">Aynı anda yalnızca bir görev yürütülebilir. İptal edilen veya tamamlanan görev 8 saat sonra yeniden açılır.</p><div class="quest-list" id="questList"></div></section></div>
       <div class="ship-overlay" id="shipOverlay"><section class="ship-menu"><header><div><span class="eyebrow">Kaptanın amiral gemisi</span><h2>KARA YELKEN</h2></div><button id="closeShip" aria-label="Gemi menüsünü kapat">×</button></header><div class="ship-summary" id="shipSummary"></div><div class="upgrade-list" id="upgradeList"></div><div class="upgrade-confirm" id="upgradeConfirm"></div></section></div>
     </section>
   </main>`;
@@ -71,12 +71,12 @@ const keys = new Set<string>();
 const QUEST_STORAGE='kara-yelken-quests-v1';
 const ACCOUNT_STORAGE='kara-yelken-account-v1';
 let storedQuests:{activeQuest:number|null;progress:number[];cooldowns:number[]}|null=null;
-let storedAccount:{gold:number;wood:number;fame:number;level:number;maxHp:number;hp:number;chainAmmo:number;upgrades:Record<UpgradeKind,number>}|null=null;
+let storedAccount:{pearls?:number;gold:number;wood:number;fame:number;level:number;maxHp:number;hp:number;chainAmmo:number;upgrades:Record<UpgradeKind,number>}|null=null;
 try{storedQuests=JSON.parse(localStorage.getItem(QUEST_STORAGE)||'null');}catch{storedQuests=null;}
 try{storedAccount=JSON.parse(localStorage.getItem(ACCOUNT_STORAGE)||'null');}catch{storedAccount=null;}
 const storedActive=storedQuests?.activeQuest;
 const upgrades:Record<UpgradeKind,number>={hull:storedAccount?.upgrades?.hull||0,damage:storedAccount?.upgrades?.damage||0,range:storedAccount?.upgrades?.range||0,reload:storedAccount?.upgrades?.reload||0,speed:storedAccount?.upgrades?.speed||0,repair:storedAccount?.upgrades?.repair||0};
-const state = { gold:storedAccount?.gold??40, wood:storedAccount?.wood??10, fame:storedAccount?.fame??0, level:storedAccount?.level??1, hp:storedAccount?.hp??100, maxHp:storedAccount?.maxHp??100, cannon:18, cannonType:'cast' as CannonKind, activeQuest:Number.isInteger(storedActive)&&storedActive!>=0&&storedActive!<QUESTS.length?storedActive!:null as number|null, ammo:'iron' as AmmoKind, chainAmmo:storedAccount?.chainAmmo??40, attacking:false, repairing:false, invulnerable:0 };
+const state = { pearls:storedAccount?.pearls??30, gold:storedAccount?.gold??40, wood:storedAccount?.wood??10, fame:storedAccount?.fame??0, level:storedAccount?.level??1, hp:storedAccount?.hp??100, maxHp:storedAccount?.maxHp??100, cannon:18, cannonType:'cast' as CannonKind, activeQuest:Number.isInteger(storedActive)&&storedActive!>=0&&storedActive!<QUESTS.length?storedActive!:null as number|null, ammo:'iron' as AmmoKind, chainAmmo:storedAccount?.chainAmmo??40, attacking:false, repairing:false, invulnerable:0 };
 const questProgress=QUESTS.map((_,index)=>Math.max(0,Number(storedQuests?.progress?.[index])||0));
 const questCooldownUntil=QUESTS.map((_,index)=>Math.max(0,Number(storedQuests?.cooldowns?.[index])||0));
 if(state.activeQuest!==null&&questCooldownUntil[state.activeQuest]>Date.now())state.activeQuest=null;
@@ -198,27 +198,34 @@ const rewardQueue:string[]=[];
 function showReward(msg:string){ui('rewardToast').textContent=msg;ui('rewardToast').classList.remove('show');void ui('rewardToast').offsetWidth;ui('rewardToast').classList.add('show');rewardTimer=2.6;}
 function rewardNotice(msg:string){if(rewardTimer>0){rewardQueue.push(msg);return;}showReward(msg);}
 function saveQuestState(){localStorage.setItem(QUEST_STORAGE,JSON.stringify({activeQuest:state.activeQuest,progress:questProgress,cooldowns:questCooldownUntil}));}
-function saveAccount(){localStorage.setItem(ACCOUNT_STORAGE,JSON.stringify({gold:state.gold,wood:state.wood,fame:state.fame,level:state.level,maxHp:state.maxHp,hp:state.hp,chainAmmo:state.chainAmmo,upgrades}));}
+function saveAccount(){localStorage.setItem(ACCOUNT_STORAGE,JSON.stringify({pearls:state.pearls,gold:state.gold,wood:state.wood,fame:state.fame,level:state.level,maxHp:state.maxHp,hp:state.hp,chainAmmo:state.chainAmmo,upgrades}));}
 function effectiveRange(){return CANNONS[state.cannonType].range+upgrades.range*18;}
 function effectiveSpeed(){return 104+upgrades.speed*5;}
 function cooldownText(until:number){const minutes=Math.max(1,Math.ceil((until-Date.now())/60000)),hours=Math.floor(minutes/60),mins=minutes%60;return hours>0?`${hours} sa ${mins} dk`:`${mins} dk`;}
 let pendingUpgrade:UpgradeKind|null=null;
-function upgradeCost(kind:UpgradeKind){const level=upgrades[kind],base=UPGRADES[kind],factor=1+level*.65;return{gold:Math.round(base.gold*factor),wood:Math.round(base.wood*factor)};}
+function upgradeCost(kind:UpgradeKind){return Math.round(UPGRADES[kind].pearls*(1+upgrades[kind]*.55));}
+function upgradeIcon(kind:UpgradeKind){const art:Record<UpgradeKind,string>={
+  hull:'<path d="M32 6 52 14v15c0 14-8 23-20 29C20 52 12 43 12 29V14Z"/><path d="M18 22h28M17 31h30M21 40h22"/>',
+  damage:'<path d="M9 39h31l11-9-3-7-14 5H13Z"/><circle cx="18" cy="46" r="7"/><circle cx="39" cy="46" r="7"/><path d="m48 15 3-7m3 11 6-3"/>',
+  range:'<path d="M7 39h37l12-8-4-8-17 6H11Z"/><path d="M39 14h18M48 7v14"/><circle cx="18" cy="47" r="6"/>',
+  reload:'<circle cx="23" cy="25" r="9"/><circle cx="42" cy="39" r="10"/><path d="M23 10v6m0 18v6M8 25h6m18 0h6M42 23v7m0 18v7M26 39h7m18 0h7"/>',
+  speed:'<path d="M31 5v51M32 9C48 15 52 29 49 38L32 34ZM29 14C17 20 12 34 16 43l13-6Z"/><path d="M9 55h46"/>',
+  repair:'<path d="m12 48 28-28 8 8-28 28Z"/><path d="m35 17 8-8 12 12-8 8M9 13l13 13m-9-17 13 13"/>'};return `<svg viewBox="0 0 64 64" aria-hidden="true">${art[kind]}</svg>`;}
 function openShipMenu(){pendingUpgrade=null;renderShipMenu();ui('shipOverlay').classList.add('open');}
 function closeShipMenu(){pendingUpgrade=null;ui('shipOverlay').classList.remove('open');}
 function renderShipMenu(){
   ui('shipSummary').innerHTML=`<div><span>GÖVDE</span><b>${state.maxHp}</b></div><div><span>TOP HASARI</span><b>${Math.round(state.cannon*(1+upgrades.damage*.11))}</b></div><div><span>MENZİL</span><b>${effectiveRange()}</b></div><div><span>HIZ</span><b>${effectiveSpeed()}</b></div>`;
-  ui('upgradeList').innerHTML=(Object.keys(UPGRADES) as UpgradeKind[]).map(kind=>{const item=UPGRADES[kind],level=upgrades[kind],cost=upgradeCost(kind),maxed=level>=10;return `<article class="upgrade-card"><div><span>SEVİYE ${level} / 10</span><h3>${item.name}</h3><p>${item.description}</p><small>${item.effect}</small></div><button data-upgrade="${kind}" ${maxed?'disabled':''}>${maxed?'AZAMİ':`${cost.gold} ALTIN · ${cost.wood} KERESTE`}</button></article>`;}).join('');
+  ui('upgradeList').innerHTML=(Object.keys(UPGRADES) as UpgradeKind[]).map(kind=>{const item=UPGRADES[kind],level=upgrades[kind],cost=upgradeCost(kind),maxed=level>=10;return `<article class="upgrade-card"><div class="upgrade-icon">${upgradeIcon(kind)}</div><div><span>SEVİYE ${level} / 10</span><h3>${item.name}</h3><p>${item.description}</p><small>${item.effect}</small></div><button data-upgrade="${kind}" ${maxed?'disabled':''}>${maxed?'AZAMİ':`◈ ${cost} İNCİ`}</button></article>`;}).join('');
   document.querySelectorAll<HTMLButtonElement>('[data-upgrade]').forEach(button=>button.onclick=()=>requestUpgrade(button.dataset.upgrade as UpgradeKind));
   if(!pendingUpgrade){ui('upgradeConfirm').classList.remove('visible');ui('upgradeConfirm').innerHTML='';return;}
-  const item=UPGRADES[pendingUpgrade],cost=upgradeCost(pendingUpgrade);ui('upgradeConfirm').classList.add('visible');ui('upgradeConfirm').innerHTML=`<div><strong>${item.name} yükseltmesini onaylıyor musun?</strong><span>${cost.gold} Altın ve ${cost.wood} Kereste harcanacak.</span></div><button id="confirmUpgrade">SATIN AL</button><button id="cancelUpgrade">VAZGEÇ</button>`;
+  const item=UPGRADES[pendingUpgrade],cost=upgradeCost(pendingUpgrade);ui('upgradeConfirm').classList.add('visible');ui('upgradeConfirm').innerHTML=`<div><strong>${item.name} yükseltmesini onaylıyor musun?</strong><span>${cost} İnci harcanacak.</span></div><button id="confirmUpgrade">SATIN AL</button><button id="cancelUpgrade">VAZGEÇ</button>`;
   ui('confirmUpgrade').onclick=buyUpgrade;ui('cancelUpgrade').onclick=()=>{pendingUpgrade=null;renderShipMenu();};
 }
 function requestUpgrade(kind:UpgradeKind){pendingUpgrade=kind;renderShipMenu();}
 function buyUpgrade(){
   if(!pendingUpgrade)return;const kind=pendingUpgrade,cost=upgradeCost(kind);
-  if(state.gold<cost.gold||state.wood<cost.wood){toast('Bu geliştirme için yeterli kaynağın yok');return;}
-  state.gold-=cost.gold;state.wood-=cost.wood;upgrades[kind]++;
+  if(state.pearls<cost){toast('Bu geliştirme için yeterli İncin yok');return;}
+  state.pearls-=cost;upgrades[kind]++;
   if(kind==='hull'){state.maxHp+=20;state.hp+=20;}
   pendingUpgrade=null;saveAccount();renderShipMenu();updateUI();rewardNotice(`${UPGRADES[kind].name}   SEVİYE ${upgrades[kind]}`);
 }
@@ -230,7 +237,7 @@ function renderQuestLog(){
     const cooling=questCooldownUntil[index]>Date.now(),active=state.activeQuest===index,progress=questProgress[index];
     const status=cooling?cooldownText(questCooldownUntil[index]):active?'GÖREVİ İPTAL ET':progress>0?'DEVAM ET':'GÖREVİ BAŞLAT';
     const action=pendingCancel===index?`<div class="cancel-confirm"><strong>Emin misin?</strong><button data-confirm-cancel="${index}">İPTALİ ONAYLA</button><button data-keep-quest="${index}">VAZGEÇ</button></div>`:`<button data-quest="${index}" ${cooling?'disabled':''}>${status}</button>`;
-    return `<article class="quest-entry ${active?'active':''} ${cooling?'completed':''}"><div class="quest-number">${String(index+1).padStart(2,'0')}</div><div class="quest-copy"><span>${cooling?'8 SAAT BEKLEME':quest.target==='ship'?'GEMİ AVI':'DENİZ CANAVARI'}</span><h3>${quest.title}</h3><p>${quest.description}</p><div class="quest-rewards"><b>${quest.gold} ALTIN</b><b>${quest.wood} KERESTE</b><b>${quest.fame} ŞÖHRET</b></div><small>${cooling?'Yeniden açılmasına: '+cooldownText(questCooldownUntil[index]):`${Math.min(progress,quest.required)} / ${quest.required} ${quest.target==='ship'?'Düşman':'Canavar'}`}</small></div>${action}</article>`;
+    return `<article class="quest-entry ${active?'active':''} ${cooling?'completed':''}"><div class="quest-number">${String(index+1).padStart(2,'0')}</div><div class="quest-copy"><span>${cooling?'8 SAAT BEKLEME':quest.target==='ship'?'GEMİ AVI':'DENİZ CANAVARI'}</span><h3>${quest.title}</h3><p>${quest.description}</p><div class="quest-rewards"><b>${quest.gold} ALTIN</b><b>${quest.wood} KERESTE</b><b>${quest.fame} ŞÖHRET</b><b>◈ ${quest.pearls} İNCİ</b></div><small>${cooling?'Yeniden açılmasına: '+cooldownText(questCooldownUntil[index]):`${Math.min(progress,quest.required)} / ${quest.required} ${quest.target==='ship'?'Düşman':'Canavar'}`}</small></div>${action}</article>`;
   }).join('');
   document.querySelectorAll<HTMLButtonElement>('[data-quest]').forEach(button=>button.onclick=()=>{const index=Number(button.dataset.quest);state.activeQuest===index?requestQuestCancel(index):startQuest(index);});
   document.querySelectorAll<HTMLButtonElement>('[data-confirm-cancel]').forEach(button=>button.onclick=()=>cancelQuest(Number(button.dataset.confirmCancel)));
@@ -252,12 +259,12 @@ function recordQuestProgress(target:'ship'|'monster'){
   if(!quest||quest.target!==target)return;
   questProgress[index]++;saveQuestState();
   if(questProgress[index]<quest.required)return;
-  state.gold+=quest.gold;state.wood+=quest.wood;state.fame+=quest.fame;
-  rewardNotice(`GÖREV TAMAMLANDI   +${quest.gold} Altın   +${quest.wood} Kereste   +${quest.fame} Şöhret`);
+  state.gold+=quest.gold;state.wood+=quest.wood;state.fame+=quest.fame;state.pearls+=quest.pearls;
+  rewardNotice(`GÖREV TAMAMLANDI   +${quest.gold} Altın   +${quest.pearls} İnci   +${quest.fame} Şöhret`);
   toast(`${quest.title} tamamlandı`);questProgress[index]=0;questCooldownUntil[index]=Date.now()+8*60*60*1000;state.activeQuest=null;saveQuestState();saveAccount();
 }
 function updateUI(){
-  ui('gold').textContent=String(state.gold).padStart(3,'0');ui('wood').textContent=String(state.wood).padStart(3,'0');ui('fame').textContent=String(state.fame).padStart(3,'0');
+  ui('pearls').textContent=String(state.pearls).padStart(3,'0');ui('gold').textContent=String(state.gold).padStart(3,'0');ui('wood').textContent=String(state.wood).padStart(3,'0');ui('fame').textContent=String(state.fame).padStart(3,'0');
   ui('hpText').textContent=`${Math.ceil(state.hp)} / ${state.maxHp}`; (ui('hpBar') as HTMLElement).style.width=`${state.hp/state.maxHp*100}%`;
   const need=state.level*100;ui('xpText').textContent=`${state.fame} / ${need}`;(ui('xpBar') as HTMLElement).style.width=`${Math.min(100,state.fame/need*100)}%`;ui('level').textContent=`SEVİYE ${state.level}`;ui('chainAmmo').textContent=String(state.chainAmmo);
   const quest=state.activeQuest===null?null:QUESTS[state.activeQuest];ui('questTitle').textContent=quest?.title||'Görev seçilmedi';ui('questDescription').textContent=quest?.description||'Kaptan, yapmak istediğin görevi görev defterinden seçebilirsin.';ui('quest').textContent=quest?`${questProgress[state.activeQuest!]} / ${quest.required} ${quest.target==='ship'?'Düşman':'Canavar'}`:'Hazır olduğunda bir görev başlat';
@@ -325,14 +332,14 @@ function update(dt:number){
       for(let j=monsters.length-1;j>=0&&s.life>0;j--){
         const m=monsters[j];
         if(dist(s,m)<m.radius){const hit=s.damage;s.hit=true;m.aggro=true;m.combatTimer=12;if(s.ammo==='chain')m.slowTimer=3;m.hp-=hit;damageText(m.x,m.y,hit);burst(m.x,m.y);s.life=0;
-          if(m.hp<=0){state.gold+=100;state.wood+=15;state.fame+=80;saveAccount();rewardNotice('+100 Altın   +15 Kereste   +80 Şöhret');recordQuestProgress('monster');m.hp=m.maxHp;m.aggro=false;m.x=160+Math.random()*(WORLD-320);m.y=160+Math.random()*(WORLD-320);m.homeX=m.x;m.homeY=m.y;m.combatTimer=0;selected=null;state.attacking=false;toast(`${m.name} yenildi`);}
+          if(m.hp<=0){state.gold+=100;state.wood+=15;state.fame+=80;state.pearls+=2;saveAccount();rewardNotice('+100 Altın   +2 İnci   +80 Şöhret');recordQuestProgress('monster');m.hp=m.maxHp;m.aggro=false;m.x=160+Math.random()*(WORLD-320);m.y=160+Math.random()*(WORLD-320);m.homeX=m.x;m.homeY=m.y;m.combatTimer=0;selected=null;state.attacking=false;toast(`${m.name} yenildi`);}
         }
       }
     }else if(state.invulnerable<=0&&dist(s,player)<22){s.hit=true;state.repairing=false;state.hp-=s.damage;damageText(player.x,player.y,s.damage);burst(player.x,player.y);s.life=0;if(state.hp<=0)respawn();}
     if(s.life<=0)shots.splice(i,1);
   }
   for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.97;p.vy*=.97;p.life-=dt;if(p.life<=0)particles.splice(i,1);}
-  let need=state.level*100;while(state.fame>=need){state.fame-=need;state.level++;state.maxHp+=15;state.hp=state.maxHp;saveAccount();rewardNotice(`SEVİYE ${state.level}   +15 Azami Gövde`);toast(`Seviye ${state.level}!`);need=state.level*100;}
+  let need=state.level*100;while(state.fame>=need){state.fame-=need;state.level++;state.maxHp+=15;state.hp=state.maxHp;state.pearls+=5;saveAccount();rewardNotice(`SEVİYE ${state.level}   +15 Azami Gövde   +5 İnci`);toast(`Seviye ${state.level}!`);need=state.level*100;}
   if(toastTimer>0){toastTimer-=dt;if(toastTimer<=0)ui('toast').classList.remove('show');}if(rewardTimer>0){rewardTimer-=dt;if(rewardTimer<=0){ui('rewardToast').classList.remove('show');const next=rewardQueue.shift();if(next)setTimeout(()=>showReward(next),220);}} updateUI();
 }
 
