@@ -924,9 +924,29 @@ function drawShip(p:Vec,angle:number,color:string,scale=1){
   ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(1,-29);ctx.lineTo(14,-24);ctx.lineTo(1,-19);ctx.closePath();ctx.fill();
   ctx.fillStyle='#171817';for(const x of [-15,15])for(const y of [-8,3,14]){ctx.beginPath();ctx.arc(x,y,2.2,0,7);ctx.fill();}ctx.restore();
 }
+type SingleViewShipFrame={image:CanvasImageSource;sx:number;sy:number;sw:number;sh:number;width?:number;height?:number;baseFacing?:'left'|'right'};
+function drawSingleViewShip(frame:SingleViewShipFrame,s:Vec){
+  // Tek perspektifli gemiyi deniz düzlemine kilitler. Hareket yönü yalnızca
+  // sağ/sol ayna ve küçük bir dümen yatışı üretir; sprite hiçbir zaman dikleşmez veya ters dönmez.
+  const forwardX=Math.sin(player.angle),forwardY=-Math.cos(player.angle);
+  const facesRight=forwardX>.08||(Math.abs(forwardX)<=.08&&Math.cos(player.angle)>=0);
+  const mirror=frame.baseFacing==='right'?!facesRight:facesRight;
+  const helmLean=clamp(forwardX*.055+forwardY*.018,-.065,.065);
+  const bob=Math.sin(performance.now()/420)*1.8;
+  const width=frame.width??116,height=frame.height??116;
+  ctx.save();ctx.translate(s.x,s.y+bob);ctx.rotate(helmLean);if(mirror)ctx.scale(-1,1);
+  ctx.globalAlpha=state.invulnerable&&Math.floor(performance.now()/120)%2?.55:1;
+  ctx.shadowColor='#000b';ctx.shadowBlur=13;
+  ctx.drawImage(frame.image,frame.sx,frame.sy,frame.sw,frame.sh,-width/2,-height/2,width,height);
+  ctx.restore();
+}
 function drawPlayerShip(){
   const s=worldToScreen(player);
-  if(eliteEnabled()&&eliteAtlasImage.complete&&eliteAtlasImage.naturalWidth){const index=eliteShip().level-1,col=index%5,row=Math.floor(index/5),bob=Math.sin(performance.now()/420)*1.8;ctx.save();ctx.translate(s.x,s.y+bob);ctx.rotate(player.angle+Math.PI*3/4);ctx.globalAlpha=state.invulnerable&&Math.floor(performance.now()/120)%2?.55:1;ctx.shadowColor='#000b';ctx.shadowBlur=13;ctx.drawImage(eliteAtlasImage,col*300,row*300,300,300,-58,-58,116,116);ctx.restore();return;}
+  if(eliteEnabled()&&eliteAtlasImage.complete&&eliteAtlasImage.naturalWidth){
+    const index=eliteShip().level-1,col=index%5,row=Math.floor(index/5);
+    drawSingleViewShip({image:eliteAtlasImage,sx:col*300,sy:row*300,sw:300,sh:300,baseFacing:'left'},s);
+    return;
+  }
 
   if(!directionalShipImage.complete||!directionalShipImage.naturalWidth){
     if(!playerShipImage.complete||!playerShipImage.naturalWidth){drawShip(player,player.angle,'#173f48',1.1);return;}
