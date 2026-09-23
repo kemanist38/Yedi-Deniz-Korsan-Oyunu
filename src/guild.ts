@@ -8,7 +8,7 @@ export type GuildRole='leader'|'deputy'|'member';
 export const ROLE_NAMES:Record<GuildRole,string>={leader:'Filo Başkanı',deputy:'Başkan Yardımcısı',member:'Üye'};
 // Kule dikme yetkisi: başkan ve yardımcısı
 export const canBuild=(r:GuildRole)=>r==='leader'||r==='deputy';
-// Dikilebilir kule tipleri: taş kaideye oturan tam kule (fleet-towers-built-v1, bu sırayla; tools/asset-studio/fleet-towers.js) ve savaş etkisi.
+// Dikilebilir kuleler: fleet-towers-approved-v1 sayfasında bu sırayla, ayrı raster görseller ve savaş etkileri.
 export const TOWER_TYPES:Record<TowerType,{name:string;desc:string;cost:number;damage:number;range:number;reload:number;frame:number}>={
   cannon:{name:'Top Kulesi',desc:'Çift namlulu ağır top. Dengeli hasar ve menzil.',cost:1,damage:1,range:1,reload:1,frame:0},
   mortar:{name:'Havan Kulesi',desc:'Uzun menzil; isabet ettiği yerde 90 birimlik alan hasarı. Yavaş dolum.',cost:1.5,damage:1.5,range:1.35,reload:1.9,frame:1},

@@ -234,6 +234,11 @@ addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
 addEventListener('beforeunload',saveAccount);
 canvas.addEventListener('pointerdown',e=>{
   const world={x:(e.clientX-innerWidth/2)/camera.zoom+camera.x,y:(e.clientY-innerHeight/2)/camera.zoom+camera.y};
+  if(hasFleetIsland()&&fleetOwner()==='player'&&guild){
+    const f=mapDef().fleet,slots=islandSlots(guild,currentMap);
+    const slot=FLEET.towers.findIndex(([dx,dy],i)=>!slots[i]&&dist(world,{x:f.x+dx,y:f.y+dy})<48);
+    if(slot>=0){openGuild();const button=document.querySelector<HTMLButtonElement>(`[data-build="${currentMap}:${slot}"]`);button?.scrollIntoView({block:'center'});button?.classList.add('chosen-foundation');toast(`Kaide ${slot+1}: kule tipini seçip DİK düğmesine bas`);return;}
+  }
   const hit=[...enemies,...monsters].filter(n=>dist(n,world)<Math.max(42,n.kind==='monster'?n.radius:(n.hitRadius??0))).sort((a,b)=>dist(a,world)-dist(b,world))[0];
   if(hit){selected=hit;state.attacking=false;ui('attack').classList.remove('active');toast(`${hit.name} hedef seçildi`);}
   else{const glint=sparkles.find(g=>dist(g,world)<34);if(glint){routeTarget={x:glint.x,y:glint.y};destination=routeVia(routeTarget);state.attacking=false;ui('attack').classList.remove('active');toast('Rota inci pırıltısına çizildi');return;}const chest=lootChests.find(c=>dist(c,world)<CHEST_CLICK_RADIUS);routeTarget=chest?{x:chest.x,y:chest.y}:navigablePoint(world);destination=routeVia(routeTarget);state.attacking=false;ui('attack').classList.remove('active');if(chest)toast('Rota ganimet sandığına çizildi');}
@@ -660,7 +665,7 @@ function renderGuild(){
     ui('guildCreate').onclick=()=>{const name=(ui('guildName') as HTMLInputElement).value.trim(),tag=tagInput.value.trim(),te=tagError(tag);if(te){toast(te);return;}if(name.length<3){toast('Filo adı en az 3 harf olmalı');return;}const g:Guild={name,tag,role:'leader',treasury:0,donated:0,created:Date.now(),towers:{}};guild=g;for(const k of ownedFleetIslands())islandSlots(g,k);saveGuild(g);setupFleetIsland();rewardNotice(`[${tag}] ${name.toLocaleUpperCase('tr')} FİLOSU KURULDU`);renderGuild();};return;}
   const g=guild,islands=ownedFleetIslands(),map=mapDef(),here=hasFleetIsland()?map.fleet.name:'',allowed=canBuild(g.role);
   // Kule resmi: 4 karelik sayfada ilgili kareye yakınlaştırılmış (560% × 140%) kırpma
-  const art=(_slot:number,type:TowerType,ghost=false)=>`<i class="tower-art ${ghost?'ghost':''}" style="background-position:${(((TOWER_TYPES[type].frame+.5)*1.4-.5)/4.6*100).toFixed(1)}% 67%"></i>`;
+  const art=(_slot:number,type:TowerType,ghost=false)=>`<i class="tower-art ${ghost?'ghost':''}" style="background-position:${TOWER_TYPES[type].frame/3*100}% 50%"></i>`;
   const typeCards=(Object.keys(TOWER_TYPES) as TowerType[]).map(t=>{const d=TOWER_TYPES[t];return`<button class="tower-type ${buildType===t?'active':''}" data-type="${t}">${art(3,t)}<div><b>${d.name}</b><small>${d.desc}</small><em>Maliyet ×${d.cost} · Hasar ×${d.damage} · Menzil ×${d.range}</em></div></button>`;}).join('');
   const islandHtml=islands.length?islands.map(k=>{const m=MAPS[k],slots=islandSlots(g,k),cost=towerTypeCost(m.tier,buildType),built=slots.filter(Boolean).length;
     return`<article class="guild-island"><header><div><span class="eyebrow">${m.key} · Seviye ${m.tier}</span><h4>${m.fleet.name}</h4></div><b>${built} / ${TOWER_SLOTS} kule</b></header><div class="tower-slots">${slots.map((t,i)=>t?`<div class="tower-slot built">${art(i,t.type)}<small>${TOWER_TYPES[t.type].name}</small><em><span style="width:${Math.round(t.hp/t.maxHp*100)}%"></span></em></div>`:`<button class="tower-slot empty" data-build="${k}:${i}" ${!allowed||g.treasury<cost?'disabled':''}>${art(i,buildType,true)}<small>Kaide ${i+1}</small><b>${allowed?`DİK · ${cost} İnci`:'YETKİ YOK'}</b></button>`).join('')}</div></article>`;}).join('')
@@ -678,6 +683,7 @@ function renderGuild(){
   panel.querySelectorAll<HTMLButtonElement>('[data-type]').forEach(b=>b.onclick=()=>{buildType=b.dataset.type as TowerType;renderGuild();});
   panel.querySelectorAll<HTMLButtonElement>('[data-build]').forEach(b=>b.onclick=()=>{if(!canBuild(g.role)){toast('Kule dikme yetkisi yalnızca başkan ve yardımcısında');return;}
     const [k,i]=b.dataset.build!.split(':') as [MapKey,string],m=MAPS[k],type=buildType,cost=towerTypeCost(m.tier,type),slots=islandSlots(g,k);
+    if(slots[+i]){toast('Bu kaidede zaten bir kule var');renderGuild();return;}
     if(g.treasury<cost){toast(`Filo hazinesinde ${cost} inci gerekli`);return;}g.treasury-=cost;const hp=fleetTower(m.tier).hp;slots[+i]={hp,maxHp:hp,type};saveGuild(g);if(k===currentMap)setupFleetIsland();playCoins();rewardNotice(`${m.fleet.name.toLocaleUpperCase('tr')}   ${+i+1}. KAİDEYE ${TOWER_TYPES[type].name.toLocaleUpperCase('tr')} DİKİLDİ   −${cost} İNCİ`);renderGuild();});
   const role=document.getElementById('guildRole') as HTMLSelectElement|null;if(role)role.onchange=()=>{g.role=role.value as GuildRole;saveGuild(g);renderGuild();toast(`Test: rolün ${ROLE_NAMES[g.role]}`);};
   const claim=document.getElementById('guildClaim');if(claim)claim.onclick=()=>{fleetOwners[currentMap]='player';saveFleetOwners(fleetOwners);g.towers[currentMap]=Array(TOWER_SLOTS).fill(null);saveGuild(g);enemies.splice(0,enemies.length,...enemies.filter(e=>!e.tower));setupFleetIsland();rewardNotice(`TEST · ${map.fleet.name.toLocaleUpperCase('tr')} FİLONA KATILDI`);renderGuild();};

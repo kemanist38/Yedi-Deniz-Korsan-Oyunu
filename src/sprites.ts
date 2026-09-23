@@ -1,4 +1,3 @@
-import {FLEET_BASTIONS} from './fleetBastions';
 // Raster sprite sayfaları: NPC gemileri, canavarlar, adalar, filo adaları, sandıklar, mayınlar.
 // Görseller tools/asset-studio içindeki 3B modellerden üretilir (npm run render).
 export type ChestKind='wood'|'gilded';
@@ -7,8 +6,6 @@ const cache=new Map<string,HTMLImageElement>();
 function load(src:string){let image=cache.get(src);if(!image){image=new Image();image.decoding='async';image.src=src;cache.set(src,image);}return image;}
 const ready=(image:HTMLImageElement)=>image.complete&&image.naturalWidth>0;
 export function preload(srcs:string[]){srcs.forEach(load);}
-let fleetBaseV3='';
-fetch('/assets/fleet-base-v3.b64').then(r=>r.text()).then(data=>{fleetBaseV3=`data:image/webp;base64,${data.trim()}`;load(fleetBaseV3);}).catch(()=>{});
 
 // NPC gemileri: 16 yön, 8 sütun × 2 satır, 192 px kare; kare 0 = kuzey, saat yönünde 22,5°.
 // span: karenin kapsadığı dünya birimi. Oyunda 1 birim ≈ 1,23 px.
@@ -54,31 +51,31 @@ export function drawIslandSprite(ctx:CanvasRenderingContext2D,island:{look:strin
   ctx.drawImage(sheet,island.variant*512,0,512,512,-size/2,-size/2,size,size);ctx.restore();return true;
 }
 
-// Filo adası: temaya özgü surlu halka (1024 px = 1000 birim) ve iki sancaklı kule sayfası (256 px = 120 birim).
-export const fleetBaseUrl=(theme:string)=>`/assets/fleet-base-${theme}-v2.webp`;
-export const fleetTowerUrl=(theme:string)=>`/assets/fleet-towers-${theme}-v2.webp`;
+// Onaylı raster ada (1000 dünya birimi) ve bağımsız dört kule türü.
+export const fleetBaseUrl=(_theme:string)=>'/assets/fleet-base-approved-v1.webp';
+export const fleetTowerUrl=(_theme:string)=>'/assets/fleet-towers-approved-v1.webp';
 export function drawFleetBase(ctx:CanvasRenderingContext2D,theme:string,x:number,y:number){
-  // v4: kuleleri boşaltılmış, taş dikme kaideli ada (tools/asset-studio/fleet-bastions.mjs)
-  let sheet=load(FLEET_BASE_V4);if(!ready(sheet))sheet=load(fleetBaseV3||fleetBaseUrl(theme));if(!ready(sheet))return false;
+  // Approved raster base: transparent sea/lagoon and eight empty foundations.
+  const sheet=load(fleetBaseUrl(theme));if(!ready(sheet))return false;
   ctx.drawImage(sheet,x-500,y-500,1000,1000);return true;
 }
-const FLEET_BASE_V4='/assets/fleet-base-v4.webp';
-// Burç kuleleri: ada görselindeki kulelerin birebir aynısı, her kaide için kendi karesi (FLEET_BASTIONS).
+// Rakip adanın varsayılan top kuleleri; oyuncu kuleleriyle aynı yerleşim.
 export function drawBastion(ctx:CanvasRenderingContext2D,slot:number,x:number,y:number,alpha=1){
-  const B=FLEET_BASTIONS,sheet=load(B.url),o=B.offsets[slot];if(!o||!ready(sheet))return false;
-  ctx.save();ctx.globalAlpha=alpha;ctx.drawImage(sheet,(slot%4)*B.cellW,Math.floor(slot/4)*B.cellH,B.cellW,B.cellH,x+o.ox,y+o.oy,B.cellW*B.scale,B.cellH*B.scale);ctx.restore();return true;
+  return drawBuiltTower(ctx,0,slot,x,y,alpha);
 }
 // Filonun diktiği tam kuleler (top, havan, zincir, fener): taş dikme kaidesinin merkezine oturur.
-// fleet-towers-built-v1: 4 kare × 320 px, render 160 birim; oyunda 150 birim çizilir, çapa (160,237.3).
+// Dört eşit sütunlu sayfa; ayak çapası her sütunun ortasında, yüksekliğin %92'sinde.
 export function drawBuiltTower(ctx:CanvasRenderingContext2D,frame:number,slot:number,x:number,y:number,alpha=1){
-  const sheet=load('/assets/fleet-towers-built-v1.webp'),o=FLEET_BASTIONS.offsets[slot];if(!o||!ready(sheet))return false;const size=150,k=size/320;
-  ctx.save();ctx.globalAlpha=alpha;ctx.drawImage(sheet,frame*320,0,320,320,x+o.px-160*k,y+o.py-237.3*k,size,size);ctx.restore();return true;
+  const sheet=load(fleetTowerUrl(''));if(slot<0||slot>=8||!ready(sheet))return false;
+  const cellW=sheet.naturalWidth/4,cellH=sheet.naturalHeight,width=110,height=width*cellH/cellW;
+  ctx.save();ctx.globalAlpha=alpha;
+  ctx.drawImage(sheet,frame*cellW,0,cellW,cellH,x-width/2,y-height*.92+8,width,height);
+  ctx.restore();return true;
 }
 // Kuleler adanın görselinden bağımsızdır: surdaki yuvarlak kaidelerin üstüne dikilir (200 px çizim).
-export const TOWER_LABEL_OFFSET=-72;
-export function drawFleetTower(ctx:CanvasRenderingContext2D,theme:string,owner:'npc'|'player',x:number,y:number,alpha=1){
-  const sheet=load(fleetTowerUrl(theme));if(!ready(sheet))return false;const size=200,k=size/256;
-  ctx.save();ctx.globalAlpha=alpha;ctx.drawImage(sheet,owner==='player'?256:0,0,256,256,x-128*k,y-152.7*k,size,size);ctx.restore();return true;
+export const TOWER_LABEL_OFFSET=-135;
+export function drawFleetTower(ctx:CanvasRenderingContext2D,_theme:string,_owner:'npc'|'player',x:number,y:number,alpha=1){
+  return drawBuiltTower(ctx,0,0,x,y,alpha);
 }
 
 // Ganimet sandıkları: 2 kare (tahta, yaldızlı), 128 px.

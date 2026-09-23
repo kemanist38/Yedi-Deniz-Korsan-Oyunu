@@ -314,7 +314,7 @@ button.event-row{cursor:pointer}
 .lg-here::before{background:#f3d496;border:1px solid #6b4a24}.lg-safe::before{background:#7fb85a}.lg-lock::before{background:#777}.lg-own::before{display:none!important}
 .event-art{display:block;width:44px;height:44px;border-radius:5px;background-color:#0c2228;background-repeat:no-repeat}
 .event-art.fleet-art{background-size:cover;background-position:center}
-.portrait-art.tower-art{background-size:200% 100%;background-position:0 0}
+.portrait-art.tower-art{background-size:400% 100%;background-position:0 0}
 .quest-tier{margin:10px 0 4px;font:700 11px Inter;letter-spacing:.12em;color:#9b7b45;text-transform:uppercase}
 @media (max-width:720px){.world-grid{gap:3px}.world-tile b{font-size:12px}.world-tile strong{font-size:7px}.world-tile small{display:none}}
 
@@ -384,7 +384,7 @@ button.event-row{cursor:pointer}
 }
 
 /* FİLO: hazine, bağış ve kule kaideleri */
-.top-shortcuts .guild-nav{background:url(/assets/fleet-towers-built-v1.webp) 0 20%/400% auto no-repeat}
+.top-shortcuts .guild-nav{background:url(/assets/fleet-towers-approved-v1.webp) 0 50%/400% 100% no-repeat}
 .guild-window{width:min(940px,94vw)}
 #guildPanel{display:grid;gap:12px;max-height:72vh;overflow:auto;padding:4px 2px}
 .guild-create{display:grid;gap:10px;padding:14px;border:1px solid #bd914b55;border-radius:8px;background:#071419cc}
@@ -407,7 +407,8 @@ button.event-row{cursor:pointer}
 .tower-slot{display:grid;justify-items:center;gap:3px;padding:8px 6px;border:1px solid #bd914b44;border-radius:7px;background:#0a1c21;color:#e8dcb8;font:inherit}
 .tower-slot.empty{cursor:pointer;border-style:dashed}.tower-slot.empty:not(:disabled):hover{border-color:#d8b268;background:#12282c}
 .tower-slot small{font:700 10px Inter;color:#cfd8d2}.tower-slot b{font:800 9px Inter;letter-spacing:.06em;color:#ffe2a0}
-.tower-art{display:block;width:72px;height:72px;background:url(/assets/fleet-towers-built-v1.webp) 0 0/560% 140% no-repeat;filter:drop-shadow(0 4px 5px #000a)}
+.tower-art{display:block;width:72px;height:72px;background:url(/assets/fleet-towers-approved-v1.webp) 0 50%/400% 100% no-repeat;filter:drop-shadow(0 4px 5px #000a)}
+.tower-slot.chosen-foundation{outline:2px solid #f0cd78;outline-offset:3px}
 .tower-art.ghost{opacity:.35;filter:grayscale(.8)}
 .tower-slot em{display:block;width:80%;height:4px;border-radius:2px;background:#07161c;overflow:hidden}.tower-slot em span{display:block;height:100%;background:#3fd6c0}
 @media(max-width:760px){.tower-slots{grid-template-columns:repeat(2,1fr)}.guild-head{flex-direction:column;align-items:flex-start}.guild-treasury{justify-items:start}}
