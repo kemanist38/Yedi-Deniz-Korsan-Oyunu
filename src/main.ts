@@ -88,6 +88,8 @@ Promise.all(['00','01','02','03'].map(part=>fetch(`/assets/pirate-ui-icons-v1.b6
   .then(parts=>document.documentElement.style.setProperty('--pirate-icons',`url("data:image/webp;base64,${parts.join('')}")`));
 const cannonAssetSources:Record<CannonKind,string>={cast:'',long:'',rapid:'',heavy:''};
 (Object.keys(cannonAssetSources) as CannonKind[]).forEach(kind=>fetch(`/assets/cannon-${kind}-v1.b64`).then(r=>r.text()).then(data=>{cannonAssetSources[kind]=`data:image/webp;base64,${data}`;if(document.getElementById('shipOverlay')?.classList.contains('open'))renderShipMenu();}));
+const rasterItemAssets:Partial<Record<QuickItemId,string>>={};
+(['iron','chain'] as QuickItemId[]).forEach(id=>fetch(`/assets/ammo-${id}-v1.b64`).then(r=>r.text()).then(data=>{rasterItemAssets[id]=`data:image/webp;base64,${data}`;renderQuickSlots();}));
 const ui = (id:string) => document.getElementById(id)!;
 const WORLD = 2800;
 const keys = new Set<string>();
@@ -332,7 +334,7 @@ function openMarket(){pendingMarket=null;renderMarket();ui('marketOverlay').clas
 function closeMarket(){pendingMarket=null;ui('marketOverlay').classList.remove('open');}
 function renderMarket(){
   ui('inventoryStrip').innerHTML=`<div><span>DEMİR GÜLLE</span><b>∞</b><small>Sınırsız standart mühimmat</small></div><div><span>ZİNCİR GÜLLESİ</span><b>${state.chainAmmo}</b><small>Her atış 1 gülle tüketir</small></div><div><span>ALTIN BAKİYESİ</span><b>${state.gold}</b><small>Market alışverişlerinde kullanılır</small></div>`;
-  ui('marketList').innerHTML=MARKET_ITEMS.map((item,index)=>`<article class="market-item"><div class="ammo-icon"><i class="sprite icon-chain"></i><b>${item.amount}</b></div><div><h4>${item.name}</h4><p>${item.description}</p></div><button data-market="${index}">${item.price} ALTIN</button></article>`).join('');
+  ui('marketList').innerHTML=MARKET_ITEMS.map((item,index)=>`<article class="market-item"><div class="ammo-icon">${itemAsset('chain')}<b>${item.amount}</b></div><div><h4>${item.name}</h4><p>${item.description}</p></div><button data-market="${index}">${item.price} ALTIN</button></article>`).join('');
   document.querySelectorAll<HTMLButtonElement>('[data-market]').forEach(button=>button.onclick=()=>{pendingMarket=Number(button.dataset.market);renderMarket();});
   if(pendingMarket===null){ui('marketConfirm').classList.remove('visible');ui('marketConfirm').innerHTML='';return;}
   const item=MARKET_ITEMS[pendingMarket];ui('marketConfirm').classList.add('visible');ui('marketConfirm').innerHTML=`<div><strong>${item.amount} zincir güllesi alınsın mı?</strong><span>${item.price} Altın hesabından düşülecek.</span></div><button id="confirmMarket">SATIN AL</button><button id="cancelMarket">VAZGEÇ</button>`;
@@ -346,8 +348,9 @@ function buyMarketItem(){
 let loadoutTab:'ammo'|'consumable'|'material'='ammo';
 let pendingQuickItem:QuickItemId|null=null;
 function quickCount(item:QuickItemId){if(item==='iron')return'∞';if(item==='chain')return String(state.chainAmmo);if(item==='gold')return String(state.gold);if(item==='wood')return String(state.wood);if(item==='pearl')return String(state.pearls);if(item==='repairkit')return'F';if(item==='speed')return'—';if(item in upgrades)return String(upgrades[item as UpgradeKind]);return'0';}
+function itemAsset(item:QuickItemId){return rasterItemAssets[item]?`<img class="raster-item" src="${rasterItemAssets[item]}" alt="${QUICK_ITEMS[item].name}" draggable="false"/>`:`<i class="sprite icon-${QUICK_ITEMS[item].icon}"></i>`;}
 function renderQuickSlots(){
-  ui('quickInventory').innerHTML=quickSlots.map((item,index)=>item?`<button class="quick-slot ${item===state.ammo?'active':''}" data-quick-slot="${index}" data-quick-item="${item}"><i class="sprite icon-${QUICK_ITEMS[item].icon}"></i><span>${QUICK_ITEMS[item].name}</span><b>${quickCount(item)}</b></button>`:`<button class="quick-slot empty" data-quick-slot="${index}"><span>+</span><small>${index+1}</small></button>`).join('');
+  ui('quickInventory').innerHTML=quickSlots.map((item,index)=>item?`<button class="quick-slot ${item===state.ammo?'active':''}" data-quick-slot="${index}" data-quick-item="${item}">${itemAsset(item)}<span>${QUICK_ITEMS[item].name}</span><b>${quickCount(item)}</b></button>`:`<button class="quick-slot empty" data-quick-slot="${index}"><span>+</span><small>${index+1}</small></button>`).join('');
   document.querySelectorAll<HTMLButtonElement>('#quickInventory [data-quick-slot]').forEach(slot=>{const index=Number(slot.dataset.quickSlot);slot.onclick=()=>useQuickSlot(index);slot.ondragover=e=>e.preventDefault();slot.ondrop=e=>{e.preventDefault();const item=e.dataTransfer?.getData('text/quick-item') as QuickItemId;if(item&&QUICK_ITEMS[item])assignQuickSlot(index,item);};});
 }
 function useQuickSlot(index:number){
@@ -363,8 +366,8 @@ function closeLoadout(){pendingQuickItem=null;ui('loadoutOverlay').classList.rem
 function renderLoadout(){
   document.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach(button=>button.classList.toggle('active',button.dataset.tab===loadoutTab));
   const items=(Object.keys(QUICK_ITEMS) as QuickItemId[]).filter(id=>QUICK_ITEMS[id].category===loadoutTab);
-  ui('loadoutItems').innerHTML=items.map(id=>`<button draggable="true" data-loadout-item="${id}" class="${pendingQuickItem===id?'selected':''}"><i class="sprite icon-${QUICK_ITEMS[id].icon}"></i><span>${QUICK_ITEMS[id].name}</span><small>${QUICK_ITEMS[id].description}</small><b>${quickCount(id)}</b></button>`).join('');
-  ui('loadoutSlots').innerHTML=quickSlots.map((item,index)=>`<button data-editor-slot="${index}" class="${pendingQuickItem?'ready':''}">${item?`<i class="sprite icon-${QUICK_ITEMS[item].icon}"></i><span>${index+1}</span>`:`<b>+</b><span>${index+1}</span>`}</button>`).join('');
+  ui('loadoutItems').innerHTML=items.map(id=>`<button draggable="true" data-loadout-item="${id}" class="${pendingQuickItem===id?'selected':''}">${itemAsset(id)}<span>${QUICK_ITEMS[id].name}</span><small>${QUICK_ITEMS[id].description}</small><b>${quickCount(id)}</b></button>`).join('');
+  ui('loadoutSlots').innerHTML=quickSlots.map((item,index)=>`<button data-editor-slot="${index}" class="${pendingQuickItem?'ready':''}">${item?`${itemAsset(item)}<span>${index+1}</span>`:`<b>+</b><span>${index+1}</span>`}</button>`).join('');
   document.querySelectorAll<HTMLButtonElement>('[data-loadout-item]').forEach(button=>{const item=button.dataset.loadoutItem as QuickItemId;button.onclick=()=>{pendingQuickItem=item;renderLoadout();};button.ondragstart=e=>e.dataTransfer?.setData('text/quick-item',item);});
   document.querySelectorAll<HTMLButtonElement>('[data-editor-slot]').forEach(button=>{const index=Number(button.dataset.editorSlot);button.onclick=()=>{if(pendingQuickItem)assignQuickSlot(index,pendingQuickItem);};button.ondragover=e=>e.preventDefault();button.ondrop=e=>{e.preventDefault();const item=e.dataTransfer?.getData('text/quick-item') as QuickItemId;if(item&&QUICK_ITEMS[item])assignQuickSlot(index,item);};});
 }
