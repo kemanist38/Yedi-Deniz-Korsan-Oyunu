@@ -1,0 +1,57 @@
+// Düşman filosu, Derinlik Leviathanı ve ganimet sandıkları için raster sprite sayfaları.
+// Görseller tools/asset-studio içindeki 3B modellerden üretilir (npm run render).
+export type EnemySpriteRole='scout'|'raider'|'warship';
+export type ChestKind='wood'|'gilded';
+
+function load(src:string){const image=new Image();image.decoding='async';image.src=src;return image;}
+const ready=(image:HTMLImageElement)=>image.complete&&image.naturalWidth>0;
+
+// Gemi sayfaları: 16 yön, 8 sütun × 2 satır, 192 px kare; kare 0 = kuzey, saat yönünde 22,5°.
+const SHIP={frame:192,dirs:16,cols:8,anchorX:96,anchorY:108.3,size:128};
+const shipSheets:Record<EnemySpriteRole,HTMLImageElement>={
+  scout:load('/assets/enemy-scout-v1.webp'),
+  raider:load('/assets/enemy-raider-v1.webp'),
+  warship:load('/assets/enemy-warship-v1.webp')
+};
+// Can barı ve isim etiketinin gemi merkezine göre dikey konumu (direk tepesinin hemen üstü).
+export const SHIP_LABEL_OFFSET:Record<EnemySpriteRole,number>={scout:-41,raider:-59,warship:-59};
+
+export function drawEnemyShipSprite(ctx:CanvasRenderingContext2D,role:EnemySpriteRole,x:number,y:number,angle:number,time:number){
+  const sheet=shipSheets[role];if(!ready(sheet))return false;
+  const step=Math.PI*2/SHIP.dirs,index=((Math.round(angle/step)%SHIP.dirs)+SHIP.dirs)%SHIP.dirs;
+  const k=SHIP.size/SHIP.frame,bob=Math.sin(time/460+x*.013)*1.4;
+  ctx.save();ctx.shadowColor='#000a';ctx.shadowBlur=11;ctx.shadowOffsetY=3;
+  ctx.drawImage(sheet,(index%SHIP.cols)*SHIP.frame,Math.floor(index/SHIP.cols)*SHIP.frame,SHIP.frame,SHIP.frame,x-SHIP.anchorX*k,y+bob-SHIP.anchorY*k,SHIP.size,SHIP.size);
+  ctx.restore();return true;
+}
+
+// Leviathan: 8 karelik dokunaç döngüsü, 4 sütun × 2 satır, 256 px kare.
+const LEVIATHAN={frame:256,count:8,cols:4,anchorX:128,anchorY:130.9,size:132,fps:5};
+const leviathanSheet=load('/assets/leviathan-v1.webp');
+export function drawLeviathanSprite(ctx:CanvasRenderingContext2D,x:number,y:number,phase:number){
+  if(!ready(leviathanSheet))return false;
+  const t=phase*LEVIATHAN.fps,a=Math.floor(t)%LEVIATHAN.count,b=(a+1)%LEVIATHAN.count,blend=t-Math.floor(t);
+  const k=LEVIATHAN.size/LEVIATHAN.frame,dx=x-LEVIATHAN.anchorX*k,dy=y-LEVIATHAN.anchorY*k+Math.sin(phase*1.3)*1.5;
+  const frame=(n:number)=>[(n%LEVIATHAN.cols)*LEVIATHAN.frame,Math.floor(n/LEVIATHAN.cols)*LEVIATHAN.frame] as const;
+  ctx.save();
+  const [ax,ay]=frame(a),[bx,by]=frame(b);
+  ctx.drawImage(leviathanSheet,ax,ay,LEVIATHAN.frame,LEVIATHAN.frame,dx,dy,LEVIATHAN.size,LEVIATHAN.size);
+  ctx.globalAlpha=blend;ctx.drawImage(leviathanSheet,bx,by,LEVIATHAN.frame,LEVIATHAN.frame,dx,dy,LEVIATHAN.size,LEVIATHAN.size);
+  ctx.restore();return true;
+}
+
+// Ganimet sandıkları: 2 kare (tahta, yaldızlı), 128 px.
+const CHEST={frame:128,anchorX:64,anchorY:70.8,size:46};
+const chestSheet=load('/assets/loot-chests-v1.webp');
+export function drawChestSprite(ctx:CanvasRenderingContext2D,kind:ChestKind,x:number,y:number,time:number,alpha=1){
+  const bob=Math.sin(time/380+x*.02)*1.8,k=CHEST.size/CHEST.frame;
+  ctx.save();ctx.globalAlpha=alpha;
+  if(kind==='gilded'){const glow=ctx.createRadialGradient(x,y,4,x,y,34);glow.addColorStop(0,'#ffd97a55');glow.addColorStop(1,'#ffd97a00');ctx.fillStyle=glow;ctx.beginPath();ctx.arc(x,y,34,0,Math.PI*2);ctx.fill();}
+  if(ready(chestSheet))ctx.drawImage(chestSheet,kind==='gilded'?CHEST.frame:0,0,CHEST.frame,CHEST.frame,x-CHEST.anchorX*k,y+bob-CHEST.anchorY*k,CHEST.size,CHEST.size);
+  else{ctx.fillStyle=kind==='gilded'?'#b8862f':'#6a4128';ctx.fillRect(x-9,y-7+bob,18,13);}
+  ctx.restore();
+}
+
+// Hedef kartı portreleri: 4 hücre (gözcü, yağmacı, savaş gemisi, canavar).
+export const PORTRAIT_SHEET='/assets/npc-portraits-v1.webp';
+export const PORTRAIT_INDEX={scout:0,raider:1,warship:2,monster:3} as const;

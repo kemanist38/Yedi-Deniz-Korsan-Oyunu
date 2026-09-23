@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="tr"><head><meta charset="utf-8"><title>Kara Yelken Asset Atölyesi</title>
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js"}}</script></head>
+<body style="margin:0;background:#0e3b48">
+<script type="module">
+import * as THREE from 'three';
+import {buildShip,buildLeviathan,buildChest,FLEET} from './models.js';
+
+const ELEVATION=42*Math.PI/180;
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true});
+renderer.setClearColor(0x000000,0);renderer.localClippingEnabled=true;
+renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.08;renderer.outputColorSpace=THREE.SRGBColorSpace;
+
+function stage(){
+  const scene=new THREE.Scene();
+  scene.add(new THREE.HemisphereLight('#d6ecff','#1d3a3c',1.1));
+  const sun=new THREE.DirectionalLight('#fff1d6',2.6);sun.position.set(-60,110,70);sun.castShadow=true;
+  Object.assign(sun.shadow.camera,{left:-80,right:80,top:80,bottom:-80,near:1,far:400});sun.shadow.mapSize.set(2048,2048);sun.shadow.bias=-.0006;sun.shadow.radius=3;
+  scene.add(sun);const rim=new THREE.DirectionalLight('#8fd3d6',1.1);rim.position.set(50,40,-90);scene.add(rim);
+  return scene;
+}
+function camera(span,lookY){
+  const c=new THREE.OrthographicCamera(-span/2,span/2,span/2,-span/2,1,1000);
+  c.position.set(0,lookY+Math.sin(ELEVATION)*300,Math.cos(ELEVATION)*300);c.lookAt(0,lookY,0);c.updateMatrixWorld();c.updateProjectionMatrix();return c;
+}
+function prepare(obj){
+  const plane=new THREE.Plane(new THREE.Vector3(0,1,0),-(obj.userData.waterline??0)-(obj.position.y||0)*0);
+  obj.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;const ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(m=>{m.clippingPlanes=[plane];m.clipShadows=true;});}});
+}
+function shot(scene,cam,frame){
+  const S=frame*2;renderer.setSize(S,S,false);renderer.render(scene,cam);
+  const out=document.createElement('canvas');out.width=out.height=frame;const x=out.getContext('2d');x.imageSmoothingQuality='high';x.drawImage(renderer.domElement,0,0,frame,frame);return out;
+}
+function sheet(frames,cols){
+  const f=frames[0].width,rows=Math.ceil(frames.length/cols),c=document.createElement('canvas');c.width=f*cols;c.height=f*rows;const x=c.getContext('2d');
+  frames.forEach((fr,i)=>x.drawImage(fr,(i%cols)*f,Math.floor(i/cols)*f));return c;
+}
+function anchorOf(cam,frame,p=new THREE.Vector3()){const v=p.clone().project(cam);return{x:+((v.x+1)/2*frame).toFixed(1),y:+((1-v.y)/2*frame).toFixed(1)};}
+function exportCanvas(c){return{webp:c.toDataURL('image/webp',.9),png:c.toDataURL('image/png')};}
+
+window.renderShipSheet=(key,{dirs=16,frame=192,span=104,lookY=9}={})=>{
+  const cam=camera(span,lookY),frames=[];
+  for(let i=0;i<dirs;i++){const h=i*Math.PI*2/dirs,scene=stage(),ship=buildShip(FLEET[key],{heading:h});prepare(ship);ship.rotation.y=Math.PI-h;scene.add(ship);frames.push(shot(scene,cam,frame));}
+  return{...exportCanvas(sheet(frames,dirs/2)),frame,dirs,anchor:anchorOf(cam,frame)};
+};
+window.renderPortraits=({frame=128}={})=>{
+  const frames=[];
+  for(const key of ['scout','raider','warship']){const scene=stage(),ship=buildShip(FLEET[key]);prepare(ship);ship.rotation.y=Math.PI-Math.PI*1.25;scene.add(ship);
+    const span={scout:52,raider:64,warship:78}[key];frames.push(shot(scene,camera(span,{scout:9,raider:11,warship:13}[key]),frame));}
+  {const scene=stage(),m=buildLeviathan(.6);prepare(m);scene.add(m);frames.push(shot(scene,camera(78,4),frame));}
+  return{...exportCanvas(sheet(frames,4)),frame};
+};
+window.renderLeviathan=({count=8,frame=256,span=132}={})=>{
+  const cam=camera(span,2),frames=[];
+  for(let i=0;i<count;i++){const scene=stage(),m=buildLeviathan(i/count*Math.PI*2);prepare(m);scene.add(m);frames.push(shot(scene,cam,frame));}
+  return{...exportCanvas(sheet(frames,4)),frame,count,anchor:anchorOf(cam,frame)};
+};
+window.renderChests=({frame=128,span=28}={})=>{
+  const cam=camera(span,2),frames=[];
+  for(const kind of ['wood','gilded']){const scene=stage(),c=buildChest(kind);prepare(c);c.rotation.y=-.45;scene.add(c);frames.push(shot(scene,cam,frame));}
+  return{...exportCanvas(sheet(frames,2)),frame,anchor:anchorOf(cam,frame)};
+};
+window.studioReady=true;
+</script></body></html>

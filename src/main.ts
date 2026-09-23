@@ -1,4 +1,6 @@
 import './style.css';
+import {drawEnemyShipSprite,drawLeviathanSprite,drawChestSprite,SHIP_LABEL_OFFSET,PORTRAIT_SHEET,PORTRAIT_INDEX} from './sprites';
+import {createChest,chestRewardText,CHEST_PICKUP_RADIUS,CHEST_CLICK_RADIUS,MAX_DRIFT_CHESTS,DRIFT_RESPAWN_SECONDS,type LootChest} from './loot';
 
 type Vec = { x: number; y: number };
 type AmmoKind = 'iron'|'chain';
@@ -119,6 +121,8 @@ const shots:Shot[]=[]; const enemies:Enemy[]=[];
 const salvoQueue:SalvoRound[]=[];
 const particles:Particle[]=[];
 const monsters:Monster[]=[{kind:'monster',x:1980,y:1530,phase:0,radius:52,name:'Derinlik Leviathanı',hp:180,maxHp:180,cooldown:0,aggro:false,slowTimer:0,homeX:1980,homeY:1530,combatTimer:0}];
+const lootChests:LootChest[]=[];
+let driftClock=0;
 let wakeClock=0;
 let collisionNotice=0;
 const islands = [
@@ -135,7 +139,7 @@ canvas.addEventListener('pointerdown',e=>{
   const world={x:(e.clientX-innerWidth/2)/camera.zoom+camera.x,y:(e.clientY-innerHeight/2)/camera.zoom+camera.y};
   const hit=[...enemies,...monsters].filter(n=>dist(n,world)<Math.max(42,n.kind==='monster'?n.radius:0)).sort((a,b)=>dist(a,world)-dist(b,world))[0];
   if(hit){selected=hit;state.attacking=false;ui('attack').classList.remove('active');toast(`${hit.name} hedef seçildi`);}
-  else{destination=navigablePoint(world);state.attacking=false;ui('attack').classList.remove('active');}
+  else{const chest=lootChests.find(c=>dist(c,world)<CHEST_CLICK_RADIUS);destination=chest?{x:chest.x,y:chest.y}:navigablePoint(world);state.attacking=false;ui('attack').classList.remove('active');if(chest)toast('Rota ganimet sandığına çizildi');}
 });
 ui('attack').onclick=toggleAttack;
 ui('repair').onclick=toggleRepair;
@@ -173,6 +177,7 @@ function spawnEnemy(){
   enemies.push({kind:'ship',role,x,y,angle:a+Math.PI,hp:maxHp,maxHp,cooldown:Math.random()*2,speed:enemyClass.speed+Math.random()*4,damage:enemyClass.damage+tier,reload:enemyClass.reload,rewardGold:enemyClass.gold+tier*5,rewardWood:enemyClass.wood+tier,rewardFame:enemyClass.fame+tier*2,color:enemyClass.color,name:enemyClass.name,tier,aggro:false,wander:Math.random()*6,slowTimer:0,homeX:x,homeY:y,combatTimer:0});
 }
 for(let i=0;i<7;i++) spawnEnemy();
+for(let i=0;i<3;i++){const p=navigablePoint({x:200+Math.random()*(WORLD-400),y:200+Math.random()*(WORLD-400)});lootChests.push(createChest('drift',p.x,p.y));}
 function clamp(n:number,a:number,b:number){return Math.max(a,Math.min(b,n));}
 function dist(a:Vec,b:Vec){return Math.hypot(a.x-b.x,a.y-b.y);}
 function navigablePoint(point:Vec){
@@ -427,7 +432,7 @@ function renderCombatTargets(){
   add(selected);enemies.forEach(enemy=>{if(enemy.aggro)add(enemy);});monsters.forEach(monster=>{if(monster.aggro)add(monster);});
   visibleCombatTargets=targets.slice(0,5);
   const root=ui('combatTargets');root.classList.toggle('visible',visibleCombatTargets.length>0);
-  root.innerHTML=visibleCombatTargets.map((target,index)=>{const range=Math.round(dist(player,target));const active=target===selected;const fighting=target.aggro||(active&&state.attacking);const role=target.kind==='monster'?'DENİZ CANAVARI':target.role==='scout'?'GÖZCÜ':target.role==='warship'?'SAVAŞ GEMİSİ':'YAĞMACI';return `<button class="combat-target ${active?'selected':''}" data-combat-target="${index}"><span class="target-portrait ${target.kind} ${target.kind==='ship'?target.role:''}">${target.kind==='monster'?'☠':target.kind==='ship'&&target.role==='warship'?'⚔':'⚓'}</span><span class="target-info"><small>${target.kind==='monster'?role:target.tier+'. SINIF '+role} · ${range}m</small><strong>${target.name}</strong><i><em style="width:${Math.max(0,target.hp/target.maxHp*100)}%"></em></i><b>${Math.ceil(target.hp)} / ${target.maxHp}</b></span><span class="target-state">${fighting?'SAVAŞ':'HEDEF'}</span></button>`;}).join('');
+  root.innerHTML=visibleCombatTargets.map((target,index)=>{const range=Math.round(dist(player,target));const active=target===selected;const fighting=target.aggro||(active&&state.attacking);const role=target.kind==='monster'?'DENİZ CANAVARI':target.role==='scout'?'GÖZCÜ':target.role==='warship'?'SAVAŞ GEMİSİ':'YAĞMACI';return `<button class="combat-target ${active?'selected':''}" data-combat-target="${index}"><span class="target-portrait ${target.kind} ${target.kind==='ship'?target.role:''}"><i class="portrait-art" style="background-image:url(${PORTRAIT_SHEET});background-position:${PORTRAIT_INDEX[target.kind==='ship'?target.role:'monster']*100/3}% 0"></i></span><span class="target-info"><small>${target.kind==='monster'?role:target.tier+'. SINIF '+role} · ${range}m</small><strong>${target.name}</strong><i><em style="width:${Math.max(0,target.hp/target.maxHp*100)}%"></em></i><b>${Math.ceil(target.hp)} / ${target.maxHp}</b></span><span class="target-state">${fighting?'SAVAŞ':'HEDEF'}</span></button>`;}).join('');
   root.querySelectorAll<HTMLButtonElement>('[data-combat-target]').forEach(button=>button.onclick=()=>{const target=visibleCombatTargets[Number(button.dataset.combatTarget)];if(target){selected=target;updateUI();}});
 }
 
@@ -482,23 +487,32 @@ function update(dt:number){
       for(let j=enemies.length-1;j>=0&&s.life>0;j--){
         const e=enemies[j];
         if(dist(s,e)<25){const hit=s.damage;s.hit=true;e.aggro=true;e.combatTimer=12;if(s.ammo==='chain')e.slowTimer=3;e.hp-=hit;damageText(e.x,e.y,hit);burst(e.x,e.y);s.life=0;
-          if(e.hp<=0){const battle=e.role==='warship'?10:e.role==='raider'?6:4;burst(e.x,e.y,true);enemies.splice(j,1);if(selected===e){selected=null;state.attacking=false;ui('attack').classList.remove('active');}state.gold+=e.rewardGold;state.wood+=e.rewardWood;state.fame+=e.rewardFame;state.battlePoints=Math.min(500,state.battlePoints+battle);saveAccount();rewardNotice(`+${e.rewardGold} Altın   +${e.rewardWood} Kereste   +${e.rewardFame} Şöhret   +${battle} Savaş Puanı`);toast(`${e.name} batırıldı`);recordQuestProgress('ship');setTimeout(spawnEnemy,1400);}
+          if(e.hp<=0){const battle=e.role==='warship'?10:e.role==='raider'?6:4;burst(e.x,e.y,true);lootChests.push(createChest(e.role,e.x,e.y));enemies.splice(j,1);if(selected===e){selected=null;state.attacking=false;ui('attack').classList.remove('active');}state.gold+=e.rewardGold;state.wood+=e.rewardWood;state.fame+=e.rewardFame;state.battlePoints=Math.min(500,state.battlePoints+battle);saveAccount();rewardNotice(`+${e.rewardGold} Altın   +${e.rewardWood} Kereste   +${e.rewardFame} Şöhret   +${battle} Savaş Puanı`);toast(`${e.name} batırıldı`);recordQuestProgress('ship');setTimeout(spawnEnemy,1400);}
         }
       }
       for(let j=monsters.length-1;j>=0&&s.life>0;j--){
         const m=monsters[j];
         if(dist(s,m)<m.radius){const hit=s.damage;s.hit=true;m.aggro=true;m.combatTimer=12;if(s.ammo==='chain')m.slowTimer=3;m.hp-=hit;damageText(m.x,m.y,hit);burst(m.x,m.y);s.life=0;
-          if(m.hp<=0){state.gold+=100;state.wood+=15;state.fame+=80;state.pearls+=2;state.elitePoints=Math.min(100,state.elitePoints+10);state.battlePoints=Math.min(500,state.battlePoints+20);saveAccount();rewardNotice('+100 Altın   +2 İnci   +80 Şöhret   +10 Elit Puan');recordQuestProgress('monster');m.hp=m.maxHp;m.aggro=false;m.x=160+Math.random()*(WORLD-320);m.y=160+Math.random()*(WORLD-320);m.homeX=m.x;m.homeY=m.y;m.combatTimer=0;selected=null;state.attacking=false;toast(`${m.name} yenildi`);}
+          if(m.hp<=0){state.gold+=100;state.wood+=15;state.fame+=80;state.pearls+=2;state.elitePoints=Math.min(100,state.elitePoints+10);state.battlePoints=Math.min(500,state.battlePoints+20);saveAccount();rewardNotice('+100 Altın   +2 İnci   +80 Şöhret   +10 Elit Puan');recordQuestProgress('monster');lootChests.push(createChest('monster',m.x,m.y));m.hp=m.maxHp;m.aggro=false;m.x=160+Math.random()*(WORLD-320);m.y=160+Math.random()*(WORLD-320);m.homeX=m.x;m.homeY=m.y;m.combatTimer=0;selected=null;state.attacking=false;toast(`${m.name} yenildi`);}
         }
       }
     }else if(state.invulnerable<=0&&dist(s,player)<22){s.hit=true;state.repairing=false;state.hp-=s.damage;damageText(player.x,player.y,s.damage);burst(player.x,player.y);s.life=0;if(state.hp<=0)respawn();}
     if(s.life<=0)shots.splice(i,1);
   }
+  updateLootChests(dt);
   for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.97;p.vy*=.97;p.life-=dt;if(p.life<=0)particles.splice(i,1);}
   let need=state.level*100;while(state.fame>=need){state.fame-=need;state.level++;state.maxHp+=15;state.hp=state.maxHp;state.pearls+=5;saveAccount();rewardNotice(`SEVİYE ${state.level}   +15 Azami Gövde   +5 İnci`);toast(`Seviye ${state.level}!`);need=state.level*100;}
   if(toastTimer>0){toastTimer-=dt;if(toastTimer<=0)ui('toast').classList.remove('show');}if(rewardTimer>0){rewardTimer-=dt;if(rewardTimer<=0){ui('rewardToast').classList.remove('show');const next=rewardQueue.shift();if(next)setTimeout(()=>showReward(next),220);}} updateUI();
 }
 
+function updateLootChests(dt:number){
+  for(let i=lootChests.length-1;i>=0;i--){const c=lootChests[i];c.life-=dt;
+    if(dist(c,player)<CHEST_PICKUP_RADIUS){lootChests.splice(i,1);state.gold+=c.gold;state.wood+=c.wood;state.chainAmmo+=c.chain;state.pearls+=c.pearls;saveAccount();renderQuickSlots();burst(c.x,c.y);rewardNotice(chestRewardText(c));toast(c.kind==='gilded'?'Yaldızlı sandık toplandı!':'Ganimet sandığı toplandı');if(destination&&Math.hypot(destination.x-c.x,destination.y-c.y)<2)destination=null;continue;}
+    if(c.life<=0)lootChests.splice(i,1);}
+  driftClock-=dt;
+  if(driftClock<=0){driftClock=DRIFT_RESPAWN_SECONDS;if(lootChests.filter(c=>c.source==='drift').length<MAX_DRIFT_CHESTS){const p=navigablePoint({x:200+Math.random()*(WORLD-400),y:200+Math.random()*(WORLD-400)});if(dist(p,player)>260)lootChests.push(createChest('drift',p.x,p.y));}}
+}
+function drawLootChest(c:LootChest){const s=worldToScreen(c),fading=c.life<6?(Math.floor(c.life*4)%2?.35:.85):1;drawChestSprite(ctx,c.kind,s.x,s.y,performance.now(),fading);}
 function worldToScreen(v:Vec){return{x:v.x-camera.x+innerWidth/2,y:v.y-camera.y+innerHeight/2};}
 function drawShip(p:Vec,angle:number,color:string,scale=1){
   const s=worldToScreen(p);ctx.save();ctx.translate(s.x,s.y);ctx.rotate(angle);ctx.scale(scale,scale);
@@ -531,22 +545,22 @@ function drawPlayerShip(){
   ctx.restore();
 }
 function drawIsland(i:typeof islands[number]){const s=worldToScreen(i);const g=ctx.createRadialGradient(s.x-20,s.y-30,10,s.x,s.y,i.r);g.addColorStop(0,'#617c4e');g.addColorStop(.5,'#3c593e');g.addColorStop(.66,'#b9a16b');g.addColorStop(.72,'#17434a');g.addColorStop(1,'#0b2b35');ctx.fillStyle=g;ctx.beginPath();for(let n=0;n<18;n++){const a=n/18*Math.PI*2,r=i.r*(.78+Math.sin(n*4.7)*.09);const x=s.x+Math.cos(a)*r,y=s.y+Math.sin(a)*r;n?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.closePath();ctx.fill();for(let n=0;n<7;n++){const a=n*2.1,r=i.r*.38;ctx.fillStyle='#213c2d';ctx.beginPath();ctx.arc(s.x+Math.cos(a)*r,s.y+Math.sin(a)*r,7+n%3*2,0,7);ctx.fill();}ctx.fillStyle='#d7c697';ctx.font='600 11px Cinzel';ctx.textAlign='center';ctx.fillText(i.name,s.x,s.y+i.r*.76);}
-function drawMonster(m:Monster){const s=worldToScreen(m);ctx.save();ctx.translate(s.x,s.y);ctx.strokeStyle='#477f72';ctx.lineWidth=9;ctx.lineCap='round';for(let n=0;n<6;n++){const a=n/6*Math.PI*2+m.phase*.12;ctx.beginPath();ctx.moveTo(Math.cos(a)*12,Math.sin(a)*12);ctx.quadraticCurveTo(Math.cos(a+.5)*50,Math.sin(a+.5)*50,Math.cos(a+Math.sin(m.phase+n)*.35)*m.radius,Math.sin(a+Math.sin(m.phase+n)*.35)*m.radius);ctx.stroke();}ctx.fillStyle='#38675f';ctx.beginPath();ctx.arc(0,0,25,0,7);ctx.fill();ctx.fillStyle='#d5cc71';ctx.beginPath();ctx.arc(-8,-5,4,0,7);ctx.arc(8,-5,4,0,7);ctx.fill();ctx.restore();ctx.fillStyle='#89b0a8';ctx.font='600 10px Cinzel';ctx.textAlign='center';ctx.fillText(m.name,s.x,s.y-66);}
+function drawMonster(m:Monster){const s=worldToScreen(m);if(drawLeviathanSprite(ctx,s.x,s.y,m.phase)){ctx.fillStyle='#89b0a8';ctx.font='600 10px Cinzel';ctx.textAlign='center';ctx.fillText(m.name,s.x,s.y-66);return;}ctx.save();ctx.translate(s.x,s.y);ctx.strokeStyle='#477f72';ctx.lineWidth=9;ctx.lineCap='round';for(let n=0;n<6;n++){const a=n/6*Math.PI*2+m.phase*.12;ctx.beginPath();ctx.moveTo(Math.cos(a)*12,Math.sin(a)*12);ctx.quadraticCurveTo(Math.cos(a+.5)*50,Math.sin(a+.5)*50,Math.cos(a+Math.sin(m.phase+n)*.35)*m.radius,Math.sin(a+Math.sin(m.phase+n)*.35)*m.radius);ctx.stroke();}ctx.fillStyle='#38675f';ctx.beginPath();ctx.arc(0,0,25,0,7);ctx.fill();ctx.fillStyle='#d5cc71';ctx.beginPath();ctx.arc(-8,-5,4,0,7);ctx.arc(8,-5,4,0,7);ctx.fill();ctx.restore();ctx.fillStyle='#89b0a8';ctx.font='600 10px Cinzel';ctx.textAlign='center';ctx.fillText(m.name,s.x,s.y-66);}
 function draw(){
   const w=innerWidth,h=innerHeight;const sea=ctx.createLinearGradient(0,0,0,h);sea.addColorStop(0,'#0e3b48');sea.addColorStop(1,'#071f2a');ctx.fillStyle=sea;ctx.fillRect(0,0,w,h);
   ctx.save();ctx.translate(w/2,h/2);ctx.scale(camera.zoom,camera.zoom);ctx.translate(-w/2,-h/2);
   ctx.strokeStyle='#74b3b40b';ctx.lineWidth=1;const grid=80,ox=(-camera.x+innerWidth/2)%grid,oy=(-camera.y+innerHeight/2)%grid;for(let x=ox;x<w;x+=grid){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();}for(let y=oy;y<h;y+=grid){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke();}
   ctx.strokeStyle='#87c8ca22';for(let n=0;n<30;n++){const x=(n*193-camera.x*.12)%(w+120)-60,y=(n*97-camera.y*.1)%(h+100);ctx.beginPath();ctx.arc(x,y,28+n%4*8,.2,2.8);ctx.stroke();}
   ctx.globalAlpha=.12;ctx.fillStyle='#b7d9d1';ctx.font='700 42px Cinzel';ctx.textAlign='center';ctx.fillText('KIZIL SULAR',worldToScreen({x:1500,y:1040}).x,worldToScreen({x:1500,y:1040}).y);ctx.fillText('SİS DENİZİ',worldToScreen({x:610,y:1800}).x,worldToScreen({x:610,y:1800}).y);ctx.globalAlpha=1;
-  islands.forEach(drawIsland);monsters.forEach(drawMonster);
+  islands.forEach(drawIsland);lootChests.forEach(drawLootChest);monsters.forEach(drawMonster);
   particles.forEach(p=>{const s=worldToScreen(p),a=Math.max(0,p.life/p.maxLife);ctx.globalAlpha=a;if(p.kind==='damage'){ctx.fillStyle='#ffd878';ctx.font='700 14px Inter';ctx.textAlign='center';ctx.fillText(p.text||'',s.x,s.y);}else{ctx.fillStyle=p.kind==='foam'?'#b9e2df':p.kind==='spark'?'#ffb340':'#3f4545';ctx.beginPath();ctx.arc(s.x,s.y,p.kind==='smoke'?7*(1-a)+3:p.kind==='foam'?4:2,0,7);ctx.fill();}ctx.globalAlpha=1;});
   shots.forEach(s=>{const p=worldToScreen(s);ctx.fillStyle=s.owner==='player'?'#ffd889':'#ff7450';ctx.shadowColor=ctx.fillStyle;ctx.shadowBlur=9;ctx.beginPath();ctx.arc(p.x,p.y,4,0,7);ctx.fill();ctx.shadowBlur=0;});
-  enemies.forEach(e=>{drawShip(e,e.angle,e.color);const s=worldToScreen(e);ctx.fillStyle='#07161c';ctx.fillRect(s.x-25,s.y-42,50,5);ctx.fillStyle=e.role==='warship'?'#e04b3f':e.role==='scout'?'#50a8b4':'#c96a42';ctx.fillRect(s.x-25,s.y-42,50*e.hp/e.maxHp,5);ctx.fillStyle='#d7cbb5';ctx.font='10px Inter';ctx.textAlign='center';ctx.fillText(e.name,s.x,s.y-49);});
+  enemies.forEach(e=>{const s=worldToScreen(e),raster=drawEnemyShipSprite(ctx,e.role,s.x,s.y,e.angle,performance.now());if(!raster)drawShip(e,e.angle,e.color);const top=raster?SHIP_LABEL_OFFSET[e.role]:-42;ctx.fillStyle='#07161c';ctx.fillRect(s.x-25,s.y+top,50,5);ctx.fillStyle=e.role==='warship'?'#e04b3f':e.role==='scout'?'#50a8b4':'#c96a42';ctx.fillRect(s.x-25,s.y+top,50*e.hp/e.maxHp,5);ctx.fillStyle='#d7cbb5';ctx.font='10px Inter';ctx.textAlign='center';ctx.fillText(e.name,s.x,s.y+top-7);});
   if(selected&&targetExists(selected)){const t=worldToScreen(selected);ctx.strokeStyle='#f1c662';ctx.lineWidth=2;ctx.beginPath();ctx.arc(t.x,t.y,selected.kind==='monster'?selected.radius+10:34,0,7);ctx.stroke();}
   drawPlayerShip();
   if(destination){const d=worldToScreen(destination),p=worldToScreen(player);ctx.strokeStyle='#e7cf8d55';ctx.setLineDash([3,8]);ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(d.x,d.y);ctx.stroke();ctx.setLineDash([]);ctx.strokeStyle='#e7cf8d';ctx.beginPath();ctx.arc(d.x,d.y,9,0,7);ctx.stroke();}
   const ps=worldToScreen(player);ctx.strokeStyle=selected?'#e8cf934d':'#e8cf9328';ctx.setLineDash([4,7]);ctx.beginPath();ctx.arc(ps.x,ps.y,selected?effectiveRange():115,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
   ctx.restore();drawMinimap();
 }
-function drawMinimap(){mini.fillStyle='#061820';mini.fillRect(0,0,170,125);mini.strokeStyle='#9fc2bd22';mini.strokeRect(.5,.5,169,124);for(const i of islands){mini.fillStyle='#536d4b';mini.beginPath();mini.arc(i.x/WORLD*170,i.y/WORLD*125,Math.max(3,i.r/WORLD*170),0,7);mini.fill();}for(const e of enemies){mini.fillStyle='#c34e3d';mini.fillRect(e.x/WORLD*170-1,e.y/WORLD*125-1,3,3);}mini.fillStyle='#f4dd9d';mini.beginPath();mini.arc(player.x/WORLD*170,player.y/WORLD*125,3,0,7);mini.fill();}
+function drawMinimap(){mini.fillStyle='#061820';mini.fillRect(0,0,170,125);mini.strokeStyle='#9fc2bd22';mini.strokeRect(.5,.5,169,124);for(const i of islands){mini.fillStyle='#536d4b';mini.beginPath();mini.arc(i.x/WORLD*170,i.y/WORLD*125,Math.max(3,i.r/WORLD*170),0,7);mini.fill();}for(const c of lootChests){mini.fillStyle=c.kind==='gilded'?'#ffd46b':'#d9a95b';mini.fillRect(c.x/WORLD*170-1,c.y/WORLD*125-1,2,2);}for(const e of enemies){mini.fillStyle='#c34e3d';mini.fillRect(e.x/WORLD*170-1,e.y/WORLD*125-1,3,3);}mini.fillStyle='#f4dd9d';mini.beginPath();mini.arc(player.x/WORLD*170,player.y/WORLD*125,3,0,7);mini.fill();}
 let last=performance.now();function loop(now:number){const dt=Math.min(.033,(now-last)/1000);last=now;update(dt);draw();requestAnimationFrame(loop);}renderQuickSlots();updateUI();requestAnimationFrame(loop);
