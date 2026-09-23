@@ -52,15 +52,15 @@ export function drawIslandSprite(ctx:CanvasRenderingContext2D,island:{look:strin
 }
 
 // Filo adası: temaya özgü surlu halka (1024 px = 1000 birim) ve iki sancaklı kule sayfası (256 px = 120 birim).
-export const fleetBaseUrl=(theme:string)=>`/assets/fleet-base-${theme}-v1.webp`;
-export const fleetTowerUrl=(theme:string)=>`/assets/fleet-towers-${theme}-v1.webp`;
+export const fleetBaseUrl=(theme:string)=>`/assets/fleet-base-${theme}-v2.webp`;
+export const fleetTowerUrl=(theme:string)=>`/assets/fleet-towers-${theme}-v2.webp`;
 export function drawFleetBase(ctx:CanvasRenderingContext2D,theme:string,x:number,y:number){
   const sheet=load(fleetBaseUrl(theme));if(!ready(sheet))return false;
   ctx.drawImage(sheet,x-500,y-500,1000,1000);return true;
 }
-export const TOWER_LABEL_OFFSET=-58;
+export const TOWER_LABEL_OFFSET=-74;
 export function drawFleetTower(ctx:CanvasRenderingContext2D,theme:string,owner:'npc'|'player',x:number,y:number){
-  const sheet=load(fleetTowerUrl(theme));if(!ready(sheet))return false;const size=120,k=size/256;
+  const sheet=load(fleetTowerUrl(theme));if(!ready(sheet))return false;const size=152,k=size/256;
   ctx.drawImage(sheet,owner==='player'?256:0,0,256,256,x-128*k,y-152.7*k,size,size);return true;
 }
 
