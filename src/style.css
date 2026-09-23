@@ -296,3 +296,24 @@ button.event-row{cursor:pointer}
 @media (max-height:520px){.event-panel{top:136px;bottom:auto;right:8px;width:220px;transform:scale(.74);transform-origin:right top}.combat-controls{transform:scale(.7)}.panel.quest{right:8px}}
 @media (max-height:520px){.panel.quest .progress{display:none}.panel.quest{display:flex;align-items:center;gap:8px}.panel.quest h3{flex:1}.panel.quest .quest-open{margin:0;width:auto}.event-panel{top:112px}}
 .loadout-slots{max-width:560px;margin-inline:auto}
+/* ===== 18 denizli dünya haritası ===== */
+.world-chart{aspect-ratio:auto;width:100%;padding:14px;background-size:cover;border-radius:8px}
+.world-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.world-tile{position:relative;display:grid;align-content:end;justify-items:center;gap:1px;aspect-ratio:1.25;padding:6px 4px;border:2px solid #6b4a24aa;border-radius:6px;background:radial-gradient(circle at 50% 38%,var(--tile),var(--tile2) 78%);color:#f3e2b8;cursor:pointer;overflow:hidden;box-shadow:inset 0 0 16px #0008}
+.world-tile i{position:absolute;left:50%;top:6%;width:62%;aspect-ratio:1;transform:translateX(-50%);background-size:200% 100%;opacity:.85;filter:drop-shadow(0 3px 4px #000a)}
+.world-tile b{position:relative;font:800 16px Cinzel;color:#fff;text-shadow:0 2px 4px #000}
+.world-tile strong{position:relative;font:700 9.5px Cinzel;text-align:center;line-height:1.1;text-shadow:0 1px 3px #000}
+.world-tile small{position:relative;font:800 7px Inter;letter-spacing:.1em;color:var(--tint);text-shadow:0 1px 2px #000}
+.world-tile em{position:absolute;right:5px;top:3px;font-style:normal;font-size:14px;color:#3fd6c0;text-shadow:0 1px 3px #000}
+.world-tile.safe{border-color:#7fb85a}
+.world-tile.here{border-color:#f3d496;box-shadow:0 0 0 2px #f3d49688,inset 0 0 16px #0008}
+.world-tile.locked{filter:grayscale(.75) brightness(.6)}
+.world-tile.selected{outline:2px solid #fff;outline-offset:-4px}
+.world-legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:8px;font:700 10px Inter;color:#3a2412}
+.world-legend span::before{content:'';display:inline-block;width:10px;height:10px;margin-right:5px;border-radius:2px;vertical-align:-1px}
+.lg-here::before{background:#f3d496;border:1px solid #6b4a24}.lg-safe::before{background:#7fb85a}.lg-lock::before{background:#777}.lg-own::before{display:none!important}
+.event-art{display:block;width:44px;height:44px;border-radius:5px;background-color:#0c2228;background-repeat:no-repeat}
+.event-art.fleet-art{background-size:cover;background-position:center}
+.portrait-art.tower-art{background-size:200% 100%;background-position:0 0}
+.quest-tier{margin:10px 0 4px;font:700 11px Inter;letter-spacing:.12em;color:#9b7b45;text-transform:uppercase}
+@media (max-width:720px){.world-grid{gap:3px}.world-tile b{font-size:12px}.world-tile strong{font-size:7px}.world-tile small{display:none}}

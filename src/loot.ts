@@ -22,8 +22,8 @@ export const DRIFT_RESPAWN_SECONDS=22;
 
 const roll=([min,max]:Range)=>min+Math.floor(Math.random()*(max-min+1));
 
-export function createChest(source:LootSource,x:number,y:number,gildedBonus=0):LootChest{
-  const table=LOOT_TABLES[source],gilded=Math.random()<table.gildedChance+gildedBonus,boost=gilded?1.6:1;
+export function createChest(source:LootSource,x:number,y:number,gildedBonus=0,scale=1):LootChest{
+  const table=LOOT_TABLES[source],gilded=Math.random()<table.gildedChance+gildedBonus,boost=(gilded?1.6:1)*scale;
   return{x,y,source,kind:gilded?'gilded':'wood',life:table.life,maxLife:table.life,
     gold:Math.round(roll(table.gold)*boost),wood:Math.round(roll(table.wood)*boost),
     chain:Math.random()<table.chain.chance?roll(table.chain.amount):0,

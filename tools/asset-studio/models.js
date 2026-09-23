@@ -121,6 +121,13 @@ export function buildShip(def,{heading=Math.PI*1.25}={}){
       const yard=cyl(.3,.3,yd.w,mats.wood,6);yard.rotation.z=Math.PI/2;yard.position.set(0,0,.3);pivot.add(yard);
       const sail=squareSail(yd.w*.94,yd.drop,yd.bulge??1.6,sailMats[yd.sail??0]);sail.position.set(0,-.2,.55);pivot.add(sail);
       ropes.push([new THREE.Vector3(-yd.w/2,yy,z+.3),new THREE.Vector3(-S.w(m.t)*.95,y0,z-2.5)],[new THREE.Vector3(yd.w/2,yy,z+.3),new THREE.Vector3(S.w(m.t)*.95,y0,z-2.5)]);}
+    if(m.lateen){const L=m.lateen,ls=sailMats[L.sail??0],pivot=new THREE.Group();pivot.position.set(0,0,z);pivot.rotation.y=swing;root.add(pivot);
+      const fore=new THREE.Vector3(0,y0+L.low,L.len*.42),aft=new THREE.Vector3(0,y0+L.high,-L.len*.58),foot=new THREE.Vector3(0,y0+2.2,-L.len*.36);
+      pivot.add(between(fore,aft,.26,mats.wood));
+      pivot.add(foreAftSail([[0,foot.y,foot.z],[0,fore.y-.4,fore.z-.6],[0,fore.y-.3,fore.z-.4],[0,aft.y-.4,aft.z+.2]],L.bulge??1.6,ls));}
+    if(m.junk){const J=m.junk,js=sailMats[J.sail??0],pivot=new THREE.Group();pivot.position.set(0,0,z);pivot.rotation.y=swing;root.add(pivot);
+      pivot.add(foreAftSail([[0,y0+J.foot,.4],[0,y0+J.foot,-J.w],[0,y0+J.h,-J.w*.8],[0,y0+J.h+1,.4]],J.bulge??.9,js));
+      for(let k=0;k<=J.battens;k++){const yy=y0+J.foot+(J.h-J.foot)*k/J.battens,w=J.w*(1-.2*k/J.battens);pivot.add(between(new THREE.Vector3(.25,yy,.4),new THREE.Vector3(.25,yy,-w),.14,mats.wood));}}
     if(m.gaff){const g=m.gaff,gs=sailMats[g.sail??0];
       const pivot=new THREE.Group();pivot.position.set(0,0,z);pivot.rotation.y=swing;root.add(pivot);
       pivot.add(foreAftSail([[0,y0+g.foot,-.4],[0,y0+g.foot,-g.len],[0,y0+g.peak,-g.len*1.05],[0,y0+g.throat,-.4]],g.bulge??1.4,gs));
@@ -226,6 +233,7 @@ function taperedTube(curve,r0,r1,mat,seg=48,radial=10){
 }
 export const LEVIATHAN_LOOKS={
   deep:{seed:909,skin:{},tentacle:{},eye:['#ffcf3a','#ff9a1f'],spike:'#1a3a36',brow:'#16322f',foam:'214,240,232'},
+  abyss:{seed:929,skin:{base:'#3a2458',dark:'#140a24',light:'#9a6ad0',spots:'#e0b0ff'},tentacle:{top:'#1e1034',mid:'#4a2a78',under:'#d8b8ff'},eye:['#ffe0a0','#ff9a2a'],spike:'#120820',brow:'#1a0e2e',foam:'214,200,255'},
   storm:{seed:919,skin:{base:'#3d3563',dark:'#191331',light:'#8577b8',spots:'#8fe8ff'},tentacle:{top:'#231c42',mid:'#4f4485',under:'#b9b3d9'},eye:['#b8fbff','#34d6ff'],spike:'#15102b',brow:'#1c1636',foam:'200,214,255'},
 };
 export function buildLeviathan(phase,look='deep'){
@@ -288,6 +296,10 @@ export const ISLAND_LOOKS={
   coral:{sand:'#ecd9a6',grass:'#4d7a3a',grass2:'#72964a',rock:'#8a7a60',peak:'#a09070',shallow:['#8ff0dc','#2a8a8c'],height:14,trees:'palm',treeCount:26,rocks:4,coral:30},
   haven:{sand:'#e6d39c',grass:'#4a7a3c',grass2:'#6e9a4a',rock:'#7c7263',peak:'#958a78',shallow:['#86ecd8','#237d80'],height:20,trees:'palm',treeCount:30,rocks:6,lighthouse:true},
   crimson:{sand:'#caa27a',grass:'#7a5a36',grass2:'#94703f',rock:'#8a3b2c',peak:'#b0553d',shallow:['#d69a7e','#5b2a2a'],height:26,trees:'dead',treeCount:16,rocks:18,rugged:1.3,ruins:true},
+  ice:{sand:'#dfe8ee',grass:'#e8f0f4',grass2:'#cfdde6',rock:'#8aa0b0',peak:'#ffffff',shallow:['#9fdcf0','#2a5a78'],height:26,trees:'pine',leaf:'#dfeaf0',treeCount:22,rocks:12,crystals:'#bfe6ff'},
+  toxic:{sand:'#6a6a3a',grass:'#3a4a1e',grass2:'#56662a',rock:'#3a3a2a',peak:'#4a4a32',shallow:['#8adf5a','#1f3a1a'],height:18,trees:'dead',treeCount:30,rocks:10,pools:'#8aff4a'},
+  lava:{sand:'#4a3028',grass:'#2a1e1a',grass2:'#3a2a22',rock:'#1a1412',peak:'#2a1e1a',shallow:['#6a2a12','#2a0c06'],height:34,trees:'dead',treeCount:8,rocks:18,rugged:1.5,volcano:true,rivers:'#ff5a10'},
+  abyss:{sand:'#3a3048',grass:'#241c34',grass2:'#302644',rock:'#1a1426',peak:'#3a2e52',shallow:['#9a6aff','#1a0e30'],height:24,trees:null,treeCount:0,rocks:14,rugged:1.3,crystals:'#b070ff'},
   storm:{sand:'#6e6a66',grass:'#2e3530',grass2:'#3d4640',rock:'#26262b',peak:'#3a3940',shallow:['#6f86a8','#1c2740'],height:34,trees:'pine',treeCount:14,rocks:20,rugged:1.6,volcano:true},
 };
 function palm(mat,leaf,r,h){
@@ -319,8 +331,8 @@ export function buildIsland(lookName,seed){
   // Sığlık halkası
   const sh=new THREE.Mesh(new THREE.CircleGeometry(104,64),new THREE.MeshBasicMaterial({map:T.shallowTexture({seed,inner:L.shallow[0],outer:L.shallow[1],alpha:.5}),transparent:true,depthWrite:false}));sh.rotation.x=-Math.PI/2;sh.position.y=.02;sh.userData.float=true;root.add(sh);
   // Ağaçlar
-  const trunkMat=std({color:lookName==='crimson'?'#3a2a20':'#5a4230'}),leafMat=std({color:lookName==='misty'||lookName==='storm'?'#2f4a36':'#3f7a34',roughness:.8,side:THREE.DoubleSide});
-  let placed=0;for(let tries=0;tries<600&&placed<L.treeCount;tries++){const a=r()*Math.PI*2,d=r()*coast(a)*.86,x=Math.cos(a)*d,z=Math.sin(a)*d,h=hAt(x,z);
+  const trunkMat=std({color:lookName==='crimson'||lookName==='lava'?'#2a1a14':'#5a4230'}),leafMat=std({color:L.leaf||(lookName==='misty'||lookName==='storm'?'#2f4a36':lookName==='toxic'?'#4a6a22':'#3f7a34'),roughness:.8,side:THREE.DoubleSide});
+  let placed=0;for(let tries=0;tries<600&&L.trees&&placed<L.treeCount;tries++){const a=r()*Math.PI*2,d=r()*coast(a)*.86,x=Math.cos(a)*d,z=Math.sin(a)*d,h=hAt(x,z);
     if(h<2.2||h>L.height*.75)continue;const slope=Math.abs(hAt(x+1.5,z)-h)+Math.abs(hAt(x,z+1.5)-h);if(slope>2.4)continue;
     const size=.8+r()*.5,tree=L.trees==='palm'?palm(trunkMat,leafMat,r,9*size):L.trees==='pine'?pine(trunkMat,leafMat,r,10*size):deadTree(trunkMat,r,6*size);tree.position.set(x,h-.3,z);tree.rotation.y=r()*6;root.add(tree);placed++;}
   // Kayalar
@@ -334,6 +346,9 @@ export function buildIsland(lookName,seed){
     const roof=new THREE.Mesh(new THREE.ConeGeometry(2.8,3,12),std({color:'#7a2a24'}));roof.position.set(x,y+24.5,z);lh.add(roof);
     const house=new THREE.Mesh(new THREE.BoxGeometry(7,4,5),std({color:'#d8ccb0'}));house.position.set(x+6,y+2,z+3);lh.add(house);const hr=new THREE.Mesh(new THREE.ConeGeometry(5.2,3,4),std({color:'#8a3a2c'}));hr.rotation.y=Math.PI/4;hr.position.set(x+6,y+5.4,z+3);hr.scale.z=.75;lh.add(hr);}
   if(L.ruins){const sm=std({map:T.stoneTexture({seed:seed+4,base:'#8b6f5f',dark:'#5a4035',moss:'#6a5a3a'})});for(let i=0;i<7;i++){const a=.4+i*.28,d=38,x=Math.cos(a)*d,z=Math.sin(a)*d,h=hAt(x,z),ht=3+r()*7;const p=new THREE.Mesh(new THREE.BoxGeometry(2.4,ht,2.4),sm);p.position.set(x,h+ht/2-.5,z);p.rotation.y=a;root.add(p);}}
+  if(L.crystals)for(let i=0;i<26;i++){const a=r()*Math.PI*2,d=r()*coast(a)*.8,x=Math.cos(a)*d,z=Math.sin(a)*d,h=hAt(x,z);if(h<1)continue;const c=new THREE.Mesh(new THREE.ConeGeometry(1.6+r()*2.4,6+r()*12,6),std({color:L.crystals,emissive:L.crystals,emissiveIntensity:lookName==='abyss'?1.4:.4,roughness:.1,transparent:true,opacity:.9}));c.position.set(x,h+3,z);c.rotation.set((r()-.5)*.5,r()*3,(r()-.5)*.5);root.add(c);}
+  if(L.pools)for(let i=0;i<8;i++){const a=r()*Math.PI*2,d=r()*coast(a)*.7,x=Math.cos(a)*d,z=Math.sin(a)*d,h=hAt(x,z);if(h<1)continue;const p=new THREE.Mesh(new THREE.CircleGeometry(3+r()*4,18),std({color:L.pools,emissive:L.pools,emissiveIntensity:1.3}));p.rotation.x=-Math.PI/2;p.position.set(x,h+.4,z);root.add(p);}
+  if(L.rivers)for(let i=0;i<4;i++){const a0=i/4*Math.PI*2+.4,pts=[];for(let k=0;k<=10;k++){const a=a0+Math.sin(k*.9+i)*.18,d=10+k*6.4,x=-8+Math.cos(a)*d,z=6+Math.sin(a)*d;if(hAt(x,z)<.5)break;pts.push(new THREE.Vector3(x,hAt(x,z)+.5,z));}if(pts.length>2)root.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),30,1.1,6),std({color:'#ff4a0a',emissive:'#ff3a00',emissiveIntensity:1.6})));}
   if(L.volcano){const lava=new THREE.Mesh(new THREE.CircleGeometry(8,24),std({color:'#ff6a1a',emissive:'#ff4a0a',emissiveIntensity:2.6}));lava.rotation.x=-Math.PI/2;lava.position.set(-8,hAt(-8,6)+.3,6);root.add(lava);}
   root.scale.z=1/Math.sin(65*Math.PI/180);root.userData.waterline=0;
   return root;

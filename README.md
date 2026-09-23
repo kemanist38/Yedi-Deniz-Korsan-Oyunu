@@ -23,39 +23,34 @@ Varsayılan tuşlar (hepsi **AYARLAR → Klavye kısayolları** bölümünden de
 
 Ses efektleri WebAudio ile anlık üretilir; AYARLAR'dan açılıp kapatılabilir ve düzeyi ayarlanabilir.
 
-## Dünya haritaları
+## Dünya: 9 seviye, 18 deniz
 
-| Deniz | Seviye | Özellik |
-|---|---|---|
-| Sığınak Koyu | 1+ | Güvenli sular: düşman yok, top ateşlenmez, gövde kendiliğinden onarılır. Batan kaptanlar burada doğar. |
-| Gölgeler Denizi | 1+ | İlk açık deniz; Kaçakçılar, Yağmacılar, Derinlik Leviathanı. |
-| Kızıl Resifler | 4+ | Daha güçlü Yağmacı ve savaş gemisi filoları. |
-| Fırtına Kuşağı | 8+ | Şimşekli kara sular, ağır savaş gemileri ve Fırtına Leviathanı. |
+Dünya haritası (`M` veya **DÜNYA**) 6 × 3 ızgaradır:
 
-Denizler geçitlerle birbirine bağlıdır. Geçide tıklayınca rota çizilir; geçidin içindeyken `J` ya da ekrandaki butonla geçilir.
-Sol üstteki **DÜNYA** butonu parşömen haritayı açar; oradan bağlı bir denizin geçidine rota çizilebilir.
+|   |   |   |   |   |   |
+|---|---|---|---|---|---|
+| 7/1 Kül Adaları | 7/2 Magma Boğazı | 8/1 Şimşek Denizi | 8/2 Kasırga Gözü | 9/1 Gölge Uçurumu | 9/2 Kara Yelken Tahtı |
+| 5/1 Ayaz Boğazı | 5/2 Kristal Buzullar | 4/1 Kan Körfezi | 4/2 Paslı Sığlık | 6/1 Zehirli Mangrov | 6/2 Çürük Lagün |
+| 1/1 Sığınak Koyu | 1/2 Martı Kıyıları | 2/1 Mercan Geçidi | 2/2 İnci Resifleri | 3/1 Sis Kayalıkları | 3/2 Hayalet Boğazı |
 
-## Özel mühimmat
+- **Seviye kilidi:** X/Y denizine X. seviyede girilir.
+- **Kenardan geçiş:** Denizin kenarına yanaşınca **HARİTA ATLA** istemi çıkar (`J`). Komşu denizlerin yanı sıra 1/1 ↔ 3/2 (yatay) ve 1/1 ↔ 7/1 (dikey) arasında da geçiş vardır.
+- **Temalar:** Her seviyenin kendi teması vardır: Zümrüt, Mercan, Sis, Kızıl, Buz, Zehir, Alev, Fırtına, Derinlik. Deniz rengi, adalar, hava efektleri (sis, kar, kor, spor, şimşek…) ve filo adası temaya göre değişir.
+- **NPC ve canavarlar:** Her denizin kendine özgü 2 NPC gemisi ve 1 canavarı vardır; toplam 36 gemi ve 18 canavar. Güçleri ve ödülleri seviyeyle artar.
+- **1/1 Sığınak Koyu savaşa kapalıdır:** Buradaki gemiler sen saldırmadıkça ateş etmez. Batan kaptanlar burada, kendi filo adasının lagününde doğar.
 
-- **Ateş Güllesi:** ×1,2 hasar, hedefi 4 saniye yakar.
-- **Saçma:** ×1,6 hasar, menzil %35 kısa.
-- Ateş güllesi, saçma ve mayınlar marketten alınır; hızlı yuvalardan seçilir. İlk açılışta tanıtım stoğu verilir.
+### Filo adaları
 
-## Kaptan yetenekleri ve tayfa
+Her denizde surlarla çevrili, kuleli bir filo adası vardır.
+- **Kendi filonun adası:** Güneydeki girişten içine girilir; lagünde gövde kendiliğinden onarılır ve kuleler düşmanlara ateş eder.
+- **Rakip ya da tarafsız ada:** İçine girilemez. Kuleleri yaklaşan gemiye ateş eder ve filo savaşı ölçeğinde dayanıklıdır; tek gemi yıkamaz.
 
-**KAPTAN** penceresinde üç sekme bulunur:
-- **Yetenekler:** Her seviyede 1 puan. Topçuluk, Denizcilik ve Yağma dallarında 12 yetenek. 5 İnci karşılığında puanlar sıfırlanabilir.
-- **Tayfa:** 6 subay (Topçu Başı, Serdümen, Marangoz, Gözcü, Levazımcı, Cerrah) altınla işe alınır ve 5 rütbeye kadar yükseltilir. Aynı anda görevde olabilecek subay sayısı 1 / 2 / 3'tür (seviye 1 / 3 / 6).
-- **Profil:** Tüm kaptan ve tayfa bonuslarının toplamı.
+### Seviye ve görevler
 
-## Boss etkinlikleri ve kaleler
-
-- **Hayalet Amiral:** Açık denizlerde ilk kez 90 saniye sonra, yenildikten sonra da 8 dakikada bir belirir. Canı yarıya inince muhafız çağırır ve beşli yaylım ateşine geçer. Batırılınca 3 yaldızlı sandık, altın, inci, şöhret, elit ve savaş puanı verir. Sağdaki etkinlik panelinden rota çizilebilir.
-- **Kaleler:** Gölgeler Denizi'nde Fırtına Kalesi, Kızıl Resifler'de Kan Kalesi, Fırtına Kuşağı'nda Kül Kalesi var.
-  - NPC kalesinin 4 kulesi yaklaşan gemiye ateş eder; surları yıkılan kale oyuncuya geçer.
-  - Oyuncunun kalesi dakikada altın ve kereste üretir; kuleleri düşman gemilerine ateş eder.
-  - Kale 10 dakikada bir Yağmacıların kuşatmasına uğrar; garnizon canı biterse kale düşer.
-  - GELİŞTİRME → KALELER sekmesinden hasılat toplanır ve kale 3. seviyeye kadar yükseltilir.
+- **Tecrübe (TP):** Seviye atlamak için gereken TP sırasıyla 2.000 / 5.000 / 10.000 / 18.000 / 30.000 / 48.000 / 72.000 / 105.000'dir; en yüksek seviye 9.
+- **Seviye ödülü:** Her seviye +20 azami gövde, +10 İnci ve +1 yetenek puanı verir.
+- **Görevler:** Her seviyenin 4 görevi vardır: devriye avı, ağır filo, canavar avı ve ganimet avı. Görevler o seviyenin gemi ve canavarlarını hedefler; ödüller seviyeyle artar.
+- **Hayalet Amiral:** Savaşa açık denizlerde zamanlı olarak çıkan boss; gücü ve ödülü deniz seviyesine göre değişir.
 
 ## Ganimet sandıkları
 
@@ -65,7 +60,7 @@ Sol üstteki **DÜNYA** butonu parşömen haritayı açar; oradan bağlı bir de
 
 ## Raster assetler
 
-Düşman gemileri (16 yön), Leviathan varyantları (8 karelik animasyon), adalar, geçit, deniz dokusu, dünya haritası, ganimet sandıkları ve hedef portreleri
+36 NPC gemisi (16 yön), 18 canavar (8 karelik animasyon), 10 ada teması, 9 filo adası ve kuleleri, ikonlar, deniz dokusu, ganimet sandıkları ve portre atlası
 `tools/asset-studio` içindeki özgün 3B modellerden üretilir ve `public/assets` altına WebP olarak yazılır:
 
 ```bash
