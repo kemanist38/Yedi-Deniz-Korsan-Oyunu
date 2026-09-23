@@ -88,6 +88,7 @@ const cannonAssetSources:Record<CannonKind,string>={cast:'',long:'',rapid:'',hea
 const rasterItemAssets:Partial<Record<QuickItemId,string>>={};
 rasterItemAssets.fire=SPECIAL_AMMO.fire.icon;rasterItemAssets.grape=SPECIAL_AMMO.grape.icon;rasterItemAssets.mine=ABILITIES.mine.icon;rasterItemAssets.shield=ABILITIES.shield.icon;rasterItemAssets.speed=ABILITIES.speed.icon;rasterItemAssets.repairkit='/assets/icon-repair-v1.webp';
 (['iron','chain'] as QuickItemId[]).forEach(id=>fetch(`/assets/ammo-${id}-v1.b64`).then(r=>r.text()).then(data=>{rasterItemAssets[id]=`data:image/webp;base64,${data}`;renderQuickSlots();}));
+let eliteAtlasUrl='';fetch('/assets/elite-ships-atlas-v1.b64').then(r=>r.text()).then(data=>{eliteAtlasUrl=`data:image/webp;base64,${data.trim()}`;ui('eliteShipOverlay')?.style.setProperty('--elite-atlas',`url("${eliteAtlasUrl}")`);}).catch(()=>{});
 const ui = (id:string) => document.getElementById(id)!;
 const keys = new Set<string>();
 const QUEST_STORAGE='kara-yelken-quests-v2';
@@ -410,10 +411,10 @@ function openEliteShips(){previewEliteShip=activeEliteShip;renderEliteShips();ui
 function closeEliteShips(){ui('eliteShipOverlay').classList.remove('open');}
 function renderEliteShips(){
   const unlocked=Math.max(1,Math.min(15,Math.floor(state.elitePoints/100)+1));
-  ui('eliteShipGrid').innerHTML=ELITE_SHIPS.map(ship=>`<button class="elite-card ${ship.id===activeEliteShip?'active':''} ${ship.level>unlocked?'locked':''}" data-elite="${ship.id}"><span class="elite-level">ELİT ${ship.level}</span><img src="${ship.asset}" alt="${ship.name}" draggable="false"/><strong>${ship.name}</strong><small>${ship.role}</small>${ship.level>unlocked?`<b>🔒 ${ship.level}. elit seviye</b>`:''}</button>`).join('');
+  ui('eliteShipGrid').innerHTML=ELITE_SHIPS.map((ship,index)=>{const col=index%5,row=Math.floor(index/5);return`<button class="elite-card ${ship.id===activeEliteShip?'active':''} ${ship.level>unlocked?'locked':''}" data-elite="${ship.id}"><span class="elite-level">ELİT ${ship.level}</span><span class="elite-art" role="img" aria-label="${ship.name}" style="--elite-x:${col*25}%;--elite-y:${row*50}%"></span><strong>${ship.name}</strong><small>${ship.role}</small>${ship.level>unlocked?`<b>🔒 ${ship.level}. elit seviye</b>`:''}</button>`}).join('');
   ui('eliteShipGrid').querySelectorAll<HTMLElement>('[data-elite]').forEach(el=>el.onclick=()=>{previewEliteShip=el.dataset.elite as EliteShipId;renderEliteShips();});
   const ship=eliteById(previewEliteShip),locked=ship.level>unlocked;
-  ui('eliteShipDetail').innerHTML=`<span class="eyebrow">Elit ${ship.level}</span><img class="elite-preview" src="${ship.asset}" alt="${ship.name}" draggable="false"/><h3>${ship.name}</h3><em>${ship.english}</em><b>${ship.role}</b><dl><dt>Pasif</dt><dd>${ship.passive}</dd><dt>${ship.ability}</dt><dd>${ship.abilityDescription}</dd></dl><button id="equipEliteShip" ${locked||ship.id===activeEliteShip?'disabled':''}>${ship.id===activeEliteShip?'AKTİF GEMİ':locked?'KİLİTLİ':'GEMİYİ SEÇ'}</button>`;
+  ui('eliteShipDetail').innerHTML=`<span class="eyebrow">Elit ${ship.level}</span><span class="elite-art elite-preview" role="img" aria-label="${ship.name}" style="--elite-x:${((ship.level-1)%5)*25}%;--elite-y:${Math.floor((ship.level-1)/5)*50}%"></span><h3>${ship.name}</h3><em>${ship.english}</em><b>${ship.role}</b><dl><dt>Pasif</dt><dd>${ship.passive}</dd><dt>${ship.ability}</dt><dd>${ship.abilityDescription}</dd></dl><button id="equipEliteShip" ${locked||ship.id===activeEliteShip?'disabled':''}>${ship.id===activeEliteShip?'AKTİF GEMİ':locked?'KİLİTLİ':'GEMİYİ SEÇ'}</button>`;
   const equip=document.getElementById('equipEliteShip') as HTMLButtonElement|null;if(equip&&!equip.disabled)equip.onclick=()=>{activeEliteShip=ship.id;saveAccount();renderEliteShips();toast(`${ship.name} amiral gemisi seçildi`);};
 }
 function openDevelopment(){pendingUpgrade=null;renderUpgrades();ui('developmentOverlay').classList.add('open');}
@@ -639,7 +640,7 @@ function update(dt:number){
   }
   for(const e of enemies){
     if(e.tower){updateTower(e,dt);continue;}
-    const d=dist(e,player);if(!mapDef().safe&&!e.aggro&&state.invulnerable<=0&&!insideOwnLagoon(player)&&d<(e.role==='heavy'?300:180)){e.aggro=true;e.combatTimer=12;}e.wander+=dt;e.slowTimer=Math.max(0,e.slowTimer-dt);if(e.aggro){e.combatTimer-=dt;if(e.combatTimer<=0||Math.hypot(e.x-e.homeX,e.y-e.homeY)>680)e.aggro=false;}
+    const d=dist(e,player);e.wander+=dt;e.slowTimer=Math.max(0,e.slowTimer-dt);if(e.aggro){e.combatTimer-=dt;if(e.combatTimer<=0||Math.hypot(e.x-e.homeX,e.y-e.homeY)>680)e.aggro=false;}
     const homeDistance=Math.hypot(e.x-e.homeX,e.y-e.homeY);
     const target=e.aggro?Math.atan2(player.y-e.y,player.x-e.x)+Math.PI/2:homeDistance>90?Math.atan2(e.homeY-e.y,e.homeX-e.x)+Math.PI/2:e.angle+Math.sin(e.wander*.35)*.008;
     e.angle+=Math.atan2(Math.sin(target-e.angle),Math.cos(target-e.angle))*dt*(e.aggro?.8:.25);
