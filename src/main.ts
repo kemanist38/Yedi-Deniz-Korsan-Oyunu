@@ -3,6 +3,7 @@ import {drawEnemyShipSprite,drawLeviathanSprite,drawChestSprite,drawIslandSprite
 import {MAPS,MAP_ORDER,PORTAL_RADIUS,arrivalPoint,loadMapId,saveMapId,type MapId,type WorldIsland,type WorldPortal} from './world';
 import {ABILITIES,SPECIAL_AMMO,MINE,SPEED_BOOST,SHIELD_FACTOR,ARSENAL_MARKET,loadArsenal,saveArsenal,type AbilityId} from './arsenal';
 import {drawMineSprite} from './sprites';
+import {TALENT_BRANCHES,TALENTS,OFFICERS,OFFICER_MAX_RANK,officerCost,officerSlots,talentPoints,loadCrew,saveCrew,spentPoints,computeBonus,type TalentId,type OfficerId} from './crew';
 import {createChest,chestRewardText,CHEST_PICKUP_RADIUS,CHEST_CLICK_RADIUS,DRIFT_RESPAWN_SECONDS,type LootChest} from './loot';
 
 type Vec = { x: number; y: number };
@@ -59,7 +60,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     <canvas id="sea"></canvas><div class="grain"></div>
     <section class="hud">
       <div class="brand">KARA YELKEN<small>GÖLGELER DENİZİ</small></div>
-      <nav class="top-shortcuts"><button id="openQuestTop"><i class="shortcut-mark">✦</i><span>GÖREVLER</span></button><button id="openShip"><i class="sprite icon-hull"></i><span>ENVANTER</span></button><button class="market-main" id="openMarket"><i class="sprite icon-gold"></i><span>MARKET</span></button><button id="openDevelopment"><i class="shortcut-mark">♜</i><span>GELİŞTİRME</span></button><button class="captain-shortcut" id="openCaptain"><i class="captain-face">☠</i><span>KAPTAN</span><b id="level">1</b></button><button disabled><i class="shortcut-mark">⚙</i><span>AYARLAR</span></button></nav>
+      <nav class="top-shortcuts"><button id="openQuestTop"><i class="shortcut-mark">✦</i><span>GÖREVLER</span></button><button id="openShip"><i class="sprite icon-hull"></i><span>ENVANTER</span></button><button class="market-main" id="openMarket"><i class="sprite icon-gold"></i><span>MARKET</span></button><button id="openDevelopment"><i class="shortcut-mark">♜</i><span>GELİŞTİRME</span></button><button class="captain-shortcut" id="openCaptain"><i class="captain-face"><img src="/assets/icon-hat-v1.webp" alt="" draggable="false"/></i><span>KAPTAN</span><b id="level">1</b></button><button disabled><i class="shortcut-mark">⚙</i><span>AYARLAR</span></button></nav>
       <div class="resources"><div class="resource compact"><i class="sprite icon-gold"></i><span>ALTIN</span><b id="gold">000</b></div><div class="resource compact pearl"><i class="sprite icon-pearl"></i><span>İNCİ</span><b id="pearls">000</b></div></div>
       <div class="panel quest"><span class="eyebrow">Aktif görev</span><h3 id="questTitle">Görev seçilmedi</h3><p id="questDescription">Kaptan, yapmak istediğin görevi görev defterinden seçebilirsin.</p><div class="progress" id="quest">Hazır olduğunda bir görev başlat</div><button class="quest-open" id="openQuests">GÖREVLERİ AÇ</button></div>
       <section class="combat-targets" id="combatTargets" aria-live="polite"></section>
@@ -69,7 +70,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <div class="reward-toast" id="rewardToast"></div>
       <div class="toast" id="toast"></div>
       <div class="portal-prompt" id="portalPrompt"></div><div class="quest-overlay world-overlay" id="worldMapOverlay"><section class="quest-log world-log"><header><div><span class="eyebrow">Kaptanın deniz haritası</span><h2>DÜNYA HARİTASI</h2></div><button id="closeWorldMap" aria-label="Dünya haritasını kapat">×</button></header><div class="world-chart" id="worldChart"></div><div class="world-info" id="worldInfo"></div></section></div><div class="quest-overlay" id="questOverlay"><section class="quest-log"><header><div><span class="eyebrow">Kaptanın görev defteri</span><h2>DENİZ GÖREVLERİ</h2></div><button id="closeQuests" aria-label="Görevleri kapat">×</button></header><p class="quest-intro">Aynı anda yalnızca bir görev yürütülebilir. İptal edilen veya tamamlanan görev 8 saat sonra yeniden açılır.</p><div class="quest-list" id="questList"></div></section></div>
-      <div class="captain-overlay" id="captainOverlay"><section class="captain-profile"><header><div><span class="eyebrow">Oyuncu profili</span><h2>KAPTAN YASİN</h2></div><button id="closeCaptain" aria-label="Kaptan profilini kapat">×</button></header><div class="captain-identity"><div class="captain-portrait">☠<b id="captainLevel">1</b></div><div><span>AMİRAL GEMİSİ</span><strong>Kara Yelken</strong><small>Gölgeler Denizi Kaptanı</small></div></div><div class="captain-stat-grid"><article><span>TECRÜBE PUANI</span><b id="xpText">0 / 100</b><i class="xp"><em id="xpBar"></em></i></article><article><span>CAN PUANI</span><b id="hpText">100 / 100</b><i class="hp"><em id="hpBar" style="width:100%"></em></i></article><article><span>ELİT PUAN</span><b id="profileElite">0 / 100</b><i class="elite"><em id="profileEliteBar"></em></i></article><article><span>SAVAŞ PUANI</span><b id="profileBattle">0 / 500</b><i class="battle"><em id="profileBattleBar"></em></i></article></div></section></div>
+      <div class="captain-overlay" id="captainOverlay"><section class="captain-profile"><header><div><span class="eyebrow">Oyuncu profili</span><h2>KAPTAN YASİN</h2></div><button id="closeCaptain" aria-label="Kaptan profilini kapat">×</button></header><nav class="captain-tabs"><button data-captain-tab="profile" class="active">PROFİL</button><button data-captain-tab="talents">YETENEKLER<b id="talentBadge"></b></button><button data-captain-tab="crew">TAYFA</button></nav><div class="captain-tab" id="captainTab-profile"><div class="captain-identity"><div class="captain-portrait"><img src="/assets/icon-hat-v1.webp" alt="" draggable="false"/><b id="captainLevel">1</b></div><div><span>AMİRAL GEMİSİ</span><strong>Kara Yelken</strong><small>Gölgeler Denizi Kaptanı</small></div></div><div class="captain-stat-grid"><article><span>TECRÜBE PUANI</span><b id="xpText">0 / 100</b><i class="xp"><em id="xpBar"></em></i></article><article><span>CAN PUANI</span><b id="hpText">100 / 100</b><i class="hp"><em id="hpBar" style="width:100%"></em></i></article><article><span>ELİT PUAN</span><b id="profileElite">0 / 100</b><i class="elite"><em id="profileEliteBar"></em></i></article><article><span>SAVAŞ PUANI</span><b id="profileBattle">0 / 500</b><i class="battle"><em id="profileBattleBar"></em></i></article></div><div class="bonus-summary" id="bonusSummary"></div></div><div class="captain-tab hidden" id="captainTab-talents"></div><div class="captain-tab hidden" id="captainTab-crew"></div></section></div>
       <div class="ship-overlay" id="shipOverlay"><section class="ship-menu inventory-window"><header><div><span class="eyebrow">Gemi ambarı ve güverteler</span><h2>GEMİ ENVANTERİ</h2></div><div class="inventory-capacity" id="shipSummary"></div><button id="closeShip" aria-label="Gemi menüsünü kapat">×</button></header><div class="inventory-board"><aside class="quartermaster-art"><svg viewBox="0 0 180 300"><path d="M64 66q0-42 31-42t31 42l-9 31 24 25 18 153H22l17-153 25-25z"/><path d="M52 61q38-35 81 0-12-39-41-42-27 4-40 42z"/><path d="M53 118q40 28 78 0l-8 99H59z"/><path d="M37 274l36-75M143 274l-37-75"/></svg><strong>TOPÇUBAŞI</strong><span>Silah deposu</span></aside><section class="inventory-column"><h3>DEPO <b>←</b></h3><div class="cannon-storage-grid" id="cannonDepot"></div></section><section class="inventory-column ship-column"><h3><b>→</b> GEMİ</h3><div class="cannon-storage-grid" id="cannonMounted"></div></section><aside class="cannon-detail" id="cannonInfo"></aside></div><div class="transfer-dialog" id="transferDialog"></div></section></div>
       <div class="development-overlay" id="developmentOverlay"><section class="development-menu"><header><div><span class="eyebrow">Kaptanın gelişim planı</span><h2>GELİŞTİRME</h2></div><button id="closeDevelopment" aria-label="Geliştirmeyi kapat">×</button></header><div class="development-tabs"><button class="active" data-development-tab="talents">YETENEKLER</button><button data-development-tab="castles">KALELER</button></div><div id="talentPanel"><div class="upgrade-list" id="upgradeList"></div><div class="upgrade-confirm" id="upgradeConfirm"></div></div><div class="castle-panel" id="castlePanel"><div class="castle-asset"><svg viewBox="0 0 120 100"><path d="M18 88V38h14V22h14v16h28V22h14v16h14v50H72V65H48v23z"/><path d="M12 88h96M45 52h30M27 48v12M93 48v12"/></svg></div><h3>Kaptan Kaleleri</h3><p>Kale sistemi ilerleyen haritalarda savunma, top menzili ve filo bonusları sağlayacak.</p><button disabled>SONRAKİ AŞAMADA</button></div></section></div>
       <div class="market-overlay" id="marketOverlay"><section class="market-menu"><header><div><span class="eyebrow">Tüccar loncası</span><h2>DENİZ MARKETİ</h2></div><button id="closeMarket" aria-label="Marketi kapat">×</button></header><div class="inventory-strip" id="inventoryStrip"></div><h3 class="market-heading">MÜHİMMAT</h3><div class="market-list" id="marketList"></div><h3 class="market-heading">İNCİ PAKETLERİ</h3><div class="pearl-shop"><div><b>◈ İnci Sandıkları</b><span>Gerçek ödeme sistemi kullanıcı hesaplarıyla birlikte açılacak.</span></div><button disabled>YAKINDA</button></div><div class="market-confirm" id="marketConfirm"></div></section></div>
@@ -117,6 +118,8 @@ const state = { pearls:storedAccount?.pearls??30, gold:storedAccount?.gold??40, 
 state.cannon=(Object.keys(mountedCannons) as CannonKind[]).reduce((sum,kind)=>sum+mountedCannons[kind],0);
 const quickSlots:Array<QuickItemId|null>=Array.from({length:12},(_,index)=>storedAccount?.quickSlots?.[index]??(['iron','chain','repairkit','speed'][index] as QuickItemId|undefined)??null);
 const arsenal=loadArsenal();
+const crew=loadCrew();
+let bonus=computeBonus(crew);
 if(!arsenal.seeded){for(const item of ['fire','grape','mine','shield'] as QuickItemId[]){const free=quickSlots.indexOf(null);if(free>=0&&!quickSlots.includes(item))quickSlots[free]=item;}arsenal.seeded=true;saveArsenal(arsenal);}
 const questProgress=QUESTS.map((_,index)=>Math.max(0,Number(storedQuests?.progress?.[index])||0));
 const questCooldownUntil=QUESTS.map((_,index)=>Math.max(0,Number(storedQuests?.cooldowns?.[index])||0));
@@ -164,6 +167,7 @@ ui('openWorldMap').onclick=openWorldMap;ui('closeWorldMap').onclick=closeWorldMa
 ui('worldMapOverlay').addEventListener('pointerdown',e=>{if(e.target===ui('worldMapOverlay'))closeWorldMap();});
 ui('openCaptain').onclick=openCaptainProfile;
 ui('closeCaptain').onclick=closeCaptainProfile;
+document.querySelectorAll<HTMLButtonElement>('[data-captain-tab]').forEach(b=>b.onclick=()=>setCaptainTab(b.dataset.captainTab as 'profile'|'talents'|'crew'));
 ui('captainOverlay').addEventListener('pointerdown',e=>{if(e.target===ui('captainOverlay'))closeCaptainProfile();});
 ui('zoomOut').onclick=()=>setZoom(camera.targetZoom-.1);
 ui('zoomIn').onclick=()=>setZoom(camera.targetZoom+.1);
@@ -197,7 +201,7 @@ function populateMap(){
   const map=mapDef();islands.splice(0,islands.length,...map.islands.map(i=>({...i})));createMonsters();
   enemies.length=0;shots.length=0;salvoQueue.length=0;particles.length=0;lootChests.length=0;driftClock=DRIFT_RESPAWN_SECONDS;
   if(map.enemies)for(let i=0;i<map.enemies.count;i++)spawnEnemy();
-  for(let i=0;i<Math.min(3,map.driftChests);i++){const p=navigablePoint({x:200+Math.random()*(WORLD-400),y:200+Math.random()*(WORLD-400)});lootChests.push(createChest('drift',p.x,p.y));}
+  for(let i=0;i<Math.min(3,map.driftChests);i++){const p=navigablePoint({x:200+Math.random()*(WORLD-400),y:200+Math.random()*(WORLD-400)});lootChests.push(createChest('drift',p.x,p.y,bonus.gilded));}
   ui('mapName').textContent=map.name;ui('mapSubtitle').textContent=map.subtitle;ui('mapBadge').className=`map-badge ${map.safe?'safe':'danger-'+map.danger}`;
   document.querySelector('.brand small')!.textContent=map.name.toLocaleUpperCase('tr');
 }
@@ -265,11 +269,11 @@ function fireAtTarget(){
   if(state.ammo==='chain'&&state.chainAmmo<=0){state.ammo='iron';toast('Zincir güllesi tükendi');}
   if((state.ammo==='fire'||state.ammo==='grape')&&arsenal[state.ammo]<=0){toast(`${SPECIAL_AMMO[state.ammo].name} tükendi`);state.ammo='iron';renderQuickSlots();}
   const fx=Math.sin(player.angle),fy=-Math.cos(player.angle),tx=selected.x-player.x,ty=selected.y-player.y;
-  const side=fx*ty-fy*tx>0?-1:1,damage=state.cannon*5*(1+upgrades.damage*.11)*cannon.damage*(state.ammo==='chain'?1.45:1)*(state.ammo==='fire'||state.ammo==='grape'?SPECIAL_AMMO[state.ammo].damage:1);
+  const side=fx*ty-fy*tx>0?-1:1,damage=state.cannon*5*(1+upgrades.damage*.11)*cannon.damage*bonus.damage*(state.ammo==='chain'?1.45:1)*(state.ammo==='fire'||state.ammo==='grape'?SPECIAL_AMMO[state.ammo].damage:1);
   salvoQueue.push({delay:0,target:selected,side,slot:0,damage,ammo:state.ammo});
   if(state.ammo==='chain'){state.chainAmmo-=1;saveAccount();}
   else if(state.ammo==='fire'||state.ammo==='grape'){arsenal[state.ammo]-=1;saveArsenal(arsenal);renderQuickSlots();}
-  player.cooldown=cannon.reload*Math.max(.6,1-upgrades.reload*.04)*(state.ammo==='chain'?1.18:1)*(state.ammo==='fire'||state.ammo==='grape'?SPECIAL_AMMO[state.ammo].reload:1);
+  player.cooldown=cannon.reload*Math.max(.6,1-upgrades.reload*.04)*bonus.reload*(state.ammo==='chain'?1.18:1)*(state.ammo==='fire'||state.ammo==='grape'?SPECIAL_AMMO[state.ammo].reload:1);
 }
 function releaseSalvo(round:SalvoRound){
   if(!targetExists(round.target))return;
@@ -301,8 +305,8 @@ function showReward(msg:string){ui('rewardToast').textContent=msg;ui('rewardToas
 function rewardNotice(msg:string){if(rewardTimer>0){rewardQueue.push(msg);return;}showReward(msg);}
 function saveQuestState(){localStorage.setItem(QUEST_STORAGE,JSON.stringify({activeQuest:state.activeQuest,progress:questProgress,cooldowns:questCooldownUntil}));}
 function saveAccount(){localStorage.setItem(ACCOUNT_STORAGE,JSON.stringify({pearls:state.pearls,gold:state.gold,wood:state.wood,fame:state.fame,level:state.level,maxHp:state.maxHp,hp:state.hp,chainAmmo:state.chainAmmo,elitePoints:state.elitePoints,battlePoints:state.battlePoints,cannonType:state.cannonType,cannonInventory,mountedCannons,quickSlots,upgrades}));}
-function effectiveRange(){return(CANNONS[state.cannonType].range+upgrades.range*18)*(state.ammo==='grape'?SPECIAL_AMMO.grape.rangeFactor:1);}
-function effectiveSpeed(){return(104+upgrades.speed*5)*(abilityActive('speed')?SPEED_BOOST:1);}
+function effectiveRange(){return(CANNONS[state.cannonType].range+upgrades.range*18+bonus.range)*(state.ammo==='grape'?SPECIAL_AMMO.grape.rangeFactor:1);}
+function effectiveSpeed(){return(104+upgrades.speed*5)*bonus.speed*(abilityActive('speed')?SPEED_BOOST:1);}
 function cannonCapacity(){return 30+upgrades.hull*2;}
 function mountedCannonCount(){return (Object.keys(mountedCannons) as CannonKind[]).reduce((sum,kind)=>sum+mountedCannons[kind],0);}
 function cannonAsset(kind:CannonKind){
@@ -444,7 +448,29 @@ function renderWorldMap(){
 }
 function openQuestLog(){renderQuestLog();ui('questOverlay').classList.add('open');}
 function closeQuestLog(){pendingCancel=null;ui('questOverlay').classList.remove('open');}
-function openCaptainProfile(){updateUI();ui('captainOverlay').classList.add('open');}
+let captainTab:'profile'|'talents'|'crew'='profile';
+function openCaptainProfile(){updateUI();setCaptainTab(captainTab);ui('captainOverlay').classList.add('open');}
+function setCaptainTab(tab:typeof captainTab){captainTab=tab;document.querySelectorAll<HTMLButtonElement>('[data-captain-tab]').forEach(b=>b.classList.toggle('active',b.dataset.captainTab===tab));
+  for(const id of ['profile','talents','crew'])ui(`captainTab-${id}`).classList.toggle('hidden',id!==tab);renderCaptainTabs();}
+function refreshBonus(){bonus=computeBonus(crew);saveCrew(crew);renderCaptainTabs();}
+function renderCaptainTabs(){
+  const free=talentPoints(state.level)-spentPoints(crew);ui('talentBadge').textContent=free>0?String(free):'';
+  const pct=(v:number)=>`${v>=1?'+':''}${Math.round((v-1)*100)}%`;
+  ui('bonusSummary').innerHTML=`<span class="eyebrow">Toplam kaptan ve tayfa bonusları</span><div><b>Hasar ${pct(bonus.damage)}</b><b>Dolum ${pct(bonus.reload)}</b><b>Menzil +${bonus.range}</b><b>Hız ${pct(bonus.speed)}</b><b>Alınan hasar ${pct(bonus.taken)}</b><b>Tamir ${pct(bonus.repair)}</b></div>`;
+  if(captainTab==='talents'){
+    ui('captainTab-talents').innerHTML=`<p class="talent-points">Kullanılabilir yetenek puanı: <b>${free}</b> <small>Her seviyede 1 puan kazanılır.</small>${spentPoints(crew)>0?'<button id="resetTalents">PUANLARI SIFIRLA · 5 İNCİ</button>':''}</p><div class="talent-branches">${TALENT_BRANCHES.map(branch=>`<section class="talent-branch"><header><img src="${branch.icon}" alt=""/><h3>${branch.name}</h3></header>${branch.talents.map(id=>{const t=TALENTS[id],rank=crew.talents[id]||0,maxed=rank>=t.max;
+      return`<button class="talent ${rank?'owned':''} ${maxed?'maxed':''}" data-talent="${id}" ${free<=0||maxed?'disabled':''}><img src="${t.icon}" alt=""/><span><strong>${t.name}</strong><small>${t.per} / kademe</small></span><b>${rank}/${t.max}</b></button>`;}).join('')}</section>`).join('')}</div>`;
+    document.querySelectorAll<HTMLButtonElement>('[data-talent]').forEach(b=>b.onclick=()=>{const id=b.dataset.talent as TalentId;if(talentPoints(state.level)-spentPoints(crew)<=0)return;crew.talents[id]=(crew.talents[id]||0)+1;refreshBonus();toast(`${TALENTS[id].name} ${crew.talents[id]}. kademe`);});
+    const reset=document.getElementById('resetTalents');if(reset)reset.onclick=()=>{if(state.pearls<5){toast('Sıfırlamak için 5 İnci gerekli');return;}state.pearls-=5;crew.talents={};saveAccount();refreshBonus();updateUI();toast('Yetenek puanları iade edildi');};
+  }
+  if(captainTab==='crew'){
+    const slots=officerSlots(state.level);
+    ui('captainTab-crew').innerHTML=`<p class="talent-points">Görevdeki subaylar: <b>${crew.active.length} / ${slots}</b> <small>Yuvalar 3. ve 6. seviyede açılır. Yalnızca görevdeki subaylar bonus verir.</small></p><div class="officer-grid">${(Object.keys(OFFICERS) as OfficerId[]).map(id=>{const o=OFFICERS[id],rank=crew.officers[id]||0,active=crew.active.includes(id),cost=officerCost(rank),maxed=rank>=OFFICER_MAX_RANK;
+      return`<article class="officer ${active?'active':''} ${rank?'hired':''}"><img src="${o.icon}" alt=""/><div><span>${o.title}</span><h4>${o.name}</h4><small>${o.per} / rütbe</small><i>${'★'.repeat(rank)}${'☆'.repeat(OFFICER_MAX_RANK-rank)}</i></div><footer>${rank?`<button data-officer-toggle="${id}">${active?'GÖREVDEN AL':'GÖREVE AL'}</button>`:''}<button data-officer-rank="${id}" ${maxed?'disabled':''}>${maxed?'AZAMİ RÜTBE':rank?`RÜTBE ↑ ${cost} ALTIN`:`İŞE AL · ${cost} ALTIN`}</button></footer></article>`;}).join('')}</div>`;
+    document.querySelectorAll<HTMLButtonElement>('[data-officer-rank]').forEach(b=>b.onclick=()=>{const id=b.dataset.officerRank as OfficerId,rank=crew.officers[id]||0,cost=officerCost(rank);if(rank>=OFFICER_MAX_RANK)return;if(state.gold<cost){toast('Yeterli altının yok');return;}state.gold-=cost;crew.officers[id]=rank+1;if(!rank&&crew.active.length<officerSlots(state.level))crew.active.push(id);saveAccount();refreshBonus();updateUI();rewardNotice(`${OFFICERS[id].name}   ${rank?`${rank+1}. RÜTBE`:'TAYFAYA KATILDI'}`);});
+    document.querySelectorAll<HTMLButtonElement>('[data-officer-toggle]').forEach(b=>b.onclick=()=>{const id=b.dataset.officerToggle as OfficerId,i=crew.active.indexOf(id);if(i>=0)crew.active.splice(i,1);else{if(crew.active.length>=officerSlots(state.level)){toast('Boş subay yuvası yok');return;}crew.active.push(id);}refreshBonus();});
+  }
+}
 function closeCaptainProfile(){ui('captainOverlay').classList.remove('open');}
 function renderQuestLog(){
   ui('questList').innerHTML=QUESTS.map((quest,index)=>{
@@ -522,7 +548,7 @@ function update(dt:number){
     player.x=clamp(player.x+Math.sin(player.angle)*player.speed*dt,25,WORLD-25);player.y=clamp(player.y-Math.cos(player.angle)*player.speed*dt,25,WORLD-25);resolveIslandCollision();
   player.cooldown=Math.max(0,player.cooldown-dt);state.invulnerable=Math.max(0,state.invulnerable-dt);collisionNotice=Math.max(0,collisionNotice-dt);camera.x+=(player.x-camera.x)*Math.min(1,dt*3);camera.y+=(player.y-camera.y)*Math.min(1,dt*3);camera.zoom+=(camera.targetZoom-camera.zoom)*Math.min(1,dt*7);
   for(let i=salvoQueue.length-1;i>=0;i--){salvoQueue[i].delay-=dt;if(salvoQueue[i].delay<=0){releaseSalvo(salvoQueue[i]);salvoQueue.splice(i,1);}}
-  if(state.repairing){state.hp=Math.min(state.maxHp,state.hp+state.maxHp*(.035+upgrades.repair*.008)*dt);if(state.hp>=state.maxHp){state.repairing=false;saveAccount();ui('repair').classList.remove('active');toast('Gövde tamamen onarıldı');}}
+  if(state.repairing){state.hp=Math.min(state.maxHp,state.hp+state.maxHp*(.035+upgrades.repair*.008)*bonus.repair*dt);if(state.hp>=state.maxHp){state.repairing=false;saveAccount();ui('repair').classList.remove('active');toast('Gövde tamamen onarıldı');}}
   wakeClock-=dt;if(Math.abs(player.speed)>8&&wakeClock<=0){wakeClock=.1;particles.push({x:player.x-Math.sin(player.angle)*22,y:player.y+Math.cos(player.angle)*22,vx:-Math.sin(player.angle)*8,vy:Math.cos(player.angle)*8,life:.75,maxLife:.75,kind:'foam'});}
   monsters.forEach(m=>{m.phase+=dt;m.cooldown-=dt;m.slowTimer=Math.max(0,m.slowTimer-dt);if(m.aggro){m.combatTimer-=dt;if(m.combatTimer<=0||Math.hypot(m.x-m.homeX,m.y-m.homeY)>720)m.aggro=false;}if(m.aggro&&dist(m,player)<430&&m.cooldown<=0)monsterFire(m);});
   if(state.attacking&&selected){
@@ -561,7 +587,7 @@ function update(dt:number){
           if(m.hp<=0)defeatMonster(m);
         }
       }
-    }else if(state.invulnerable<=0&&dist(s,player)<22){s.hit=true;state.repairing=false;const taken=s.damage*(abilityActive('shield')?SHIELD_FACTOR:1);state.hp-=taken;damageText(player.x,player.y,Math.round(taken));burst(player.x,player.y);s.life=0;if(state.hp<=0)respawn();}
+    }else if(state.invulnerable<=0&&dist(s,player)<22){s.hit=true;state.repairing=false;const taken=s.damage*bonus.taken*(abilityActive('shield')?SHIELD_FACTOR:1);state.hp-=taken;damageText(player.x,player.y,Math.round(taken));burst(player.x,player.y);s.life=0;if(state.hp<=0)respawn();}
     if(s.life<=0)shots.splice(i,1);
   }
   updateLootChests(dt);updateArsenal(dt);
@@ -569,13 +595,13 @@ function update(dt:number){
   updatePortalPrompt();mapFade=Math.max(0,mapFade-dt*1.6);
   if(mapDef().weather==='storm'){lightning=Math.max(0,lightning-dt*2.5);if(Math.random()<dt*.08)lightning=1;}
   for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.97;p.vy*=.97;p.life-=dt;if(p.life<=0)particles.splice(i,1);}
-  let need=state.level*100;while(state.fame>=need){state.fame-=need;state.level++;state.maxHp+=15;state.hp=state.maxHp;state.pearls+=5;saveAccount();rewardNotice(`SEVİYE ${state.level}   +15 Azami Gövde   +5 İnci`);toast(`Seviye ${state.level}!`);need=state.level*100;}
+  let need=state.level*100;while(state.fame>=need){state.fame-=need;state.level++;state.maxHp+=15;state.hp=state.maxHp;state.pearls+=5;saveAccount();rewardNotice(`SEVİYE ${state.level}   +15 Azami Gövde   +5 İnci   +1 Yetenek Puanı`);toast(`Seviye ${state.level}!`);need=state.level*100;}
   if(toastTimer>0){toastTimer-=dt;if(toastTimer<=0)ui('toast').classList.remove('show');}if(rewardTimer>0){rewardTimer-=dt;if(rewardTimer<=0){ui('rewardToast').classList.remove('show');const next=rewardQueue.shift();if(next)setTimeout(()=>showReward(next),220);}} updateUI();
 }
 
 function sinkEnemy(e:Enemy){
   const j=enemies.indexOf(e);if(j<0)return;
-  const battle=e.role==='warship'?10:e.role==='raider'?6:4;burst(e.x,e.y,true);lootChests.push(createChest(e.role,e.x,e.y));enemies.splice(j,1);if(selected===e){selected=null;state.attacking=false;ui('attack').classList.remove('active');}state.gold+=e.rewardGold;state.wood+=e.rewardWood;state.fame+=e.rewardFame;state.battlePoints=Math.min(500,state.battlePoints+battle);saveAccount();rewardNotice(`+${e.rewardGold} Altın   +${e.rewardWood} Kereste   +${e.rewardFame} Şöhret   +${battle} Savaş Puanı`);toast(`${e.name} batırıldı`);recordQuestProgress('ship');setTimeout(spawnEnemy,1400);
+  const battle=e.role==='warship'?10:e.role==='raider'?6:4;burst(e.x,e.y,true);lootChests.push(createChest(e.role,e.x,e.y,bonus.gilded));enemies.splice(j,1);if(selected===e){selected=null;state.attacking=false;ui('attack').classList.remove('active');}const bountyGold=Math.round(e.rewardGold*bonus.bounty);state.gold+=e.rewardGold+bountyGold;state.wood+=e.rewardWood;state.fame+=e.rewardFame;state.battlePoints=Math.min(500,state.battlePoints+battle);saveAccount();rewardNotice(`+${e.rewardGold+bountyGold} Altın   +${e.rewardWood} Kereste   +${e.rewardFame} Şöhret   +${battle} Savaş Puanı`);toast(`${e.name} batırıldı`);recordQuestProgress('ship');setTimeout(spawnEnemy,1400);
 }
 function defeatMonster(m:Monster){
   state.gold+=100;state.wood+=15;state.fame+=80;state.pearls+=2;state.elitePoints=Math.min(100,state.elitePoints+10);state.battlePoints=Math.min(500,state.battlePoints+20);saveAccount();rewardNotice('+100 Altın   +2 İnci   +80 Şöhret   +10 Elit Puan');recordQuestProgress('monster');lootChests.push(createChest('monster',m.x,m.y));m.hp=m.maxHp;m.aggro=false;m.burnTimer=0;m.x=160+Math.random()*(WORLD-320);m.y=160+Math.random()*(WORLD-320);m.homeX=m.x;m.homeY=m.y;m.combatTimer=0;selected=null;state.attacking=false;toast(`${m.name} yenildi`);
@@ -583,7 +609,7 @@ function defeatMonster(m:Monster){
 function activateAbility(id:'speed'|'shield'){
   const t=abilityTimers[id],a=ABILITIES[id];
   if(t.cooldown>0){toast(`${a.name} ${Math.ceil(t.cooldown)} sn sonra hazır`);return;}
-  t.active=a.duration;t.cooldown=a.cooldown;toast(`${a.name} etkin`);
+  t.active=a.duration;t.cooldown=a.cooldown*bonus.cooldown;toast(`${a.name} etkin`);
   if(id==='speed')for(let n=0;n<10;n++)particles.push({x:player.x+(Math.random()-.5)*30,y:player.y+(Math.random()-.5)*30,vx:-Math.sin(player.angle)*60,vy:Math.cos(player.angle)*60,life:.6,maxLife:.6,kind:'foam'});
 }
 function dropMine(){
@@ -592,12 +618,12 @@ function dropMine(){
   if(arsenal.mine<=0){toast('Deniz mayını kalmadı — marketten alabilirsin');return;}
   if(t.cooldown>0){toast(`Mayın ${Math.ceil(t.cooldown)} sn sonra hazır`);return;}
   if(mines.length>=MINE.maxActive){toast(`Aynı anda en fazla ${MINE.maxActive} mayın`);return;}
-  arsenal.mine-=1;saveArsenal(arsenal);renderQuickSlots();t.cooldown=ABILITIES.mine.cooldown;
+  arsenal.mine-=1;saveArsenal(arsenal);renderQuickSlots();t.cooldown=ABILITIES.mine.cooldown*bonus.cooldown;
   mines.push({x:player.x-Math.sin(player.angle)*42,y:player.y+Math.cos(player.angle)*42,life:ABILITIES.mine.duration,arm:MINE.armSeconds});toast('Mayın bırakıldı');
 }
 function detonateMine(index:number){
   const mine=mines[index];mines.splice(index,1);burst(mine.x,mine.y,true);burst(mine.x,mine.y,true);
-  const damage=MINE.baseDamage+state.level*MINE.damagePerLevel;
+  const damage=Math.round((MINE.baseDamage+state.level*MINE.damagePerLevel)*bonus.mine);
   for(const e of [...enemies])if(dist(e,mine)<MINE.blastRadius){e.aggro=true;e.combatTimer=12;e.hp-=damage;damageText(e.x,e.y,damage);if(e.hp<=0)sinkEnemy(e);}
   for(const m of monsters)if(dist(m,mine)<MINE.blastRadius+m.radius*.5){m.aggro=true;m.combatTimer=12;m.hp-=damage;damageText(m.x,m.y,damage);if(m.hp<=0)defeatMonster(m);}
 }
@@ -605,19 +631,19 @@ function updateArsenal(dt:number){
   for(const t of Object.values(abilityTimers)){t.active=Math.max(0,t.active-dt);t.cooldown=Math.max(0,t.cooldown-dt);}
   for(let i=mines.length-1;i>=0;i--){const m=mines[i];m.life-=dt;m.arm=Math.max(0,m.arm-dt);if(m.life<=0){mines.splice(i,1);continue;}
     if(m.arm<=0&&(enemies.some(e=>dist(e,m)<MINE.triggerRadius)||monsters.some(x=>dist(x,m)<MINE.triggerRadius+x.radius*.6)))detonateMine(i);}
-  const burnDps=SPECIAL_AMMO.fire.burnDps+state.level*.5;
+  const burnDps=(SPECIAL_AMMO.fire.burnDps+state.level*.5)*bonus.burn;
   for(const e of [...enemies])if(e.burnTimer&&e.burnTimer>0){e.burnTimer-=dt;e.hp-=burnDps*dt;if(Math.random()<dt*14)particles.push({x:e.x+(Math.random()-.5)*26,y:e.y+(Math.random()-.5)*20,vx:0,vy:-22,life:.5,maxLife:.5,kind:'spark'});if(e.hp<=0)sinkEnemy(e);}
   for(const m of monsters)if(m.burnTimer&&m.burnTimer>0){m.burnTimer-=dt;m.hp-=burnDps*dt;if(Math.random()<dt*14)particles.push({x:m.x+(Math.random()-.5)*40,y:m.y+(Math.random()-.5)*30,vx:0,vy:-22,life:.5,maxLife:.5,kind:'spark'});if(m.hp<=0)defeatMonster(m);}
   for(const id of ['speed','shield','mine'] as AbilityId[]){const t=abilityTimers[id],button=document.getElementById(`ability-${id}`);if(!button)continue;
-    const cd=t.cooldown/ABILITIES[id].cooldown,label=t.active>0&&id!=='mine'?`${Math.ceil(t.active)} SN`:t.cooldown>0?`${Math.ceil(t.cooldown)}`:id==='mine'?`${arsenal.mine} · ${ABILITIES.mine.key}`:ABILITIES[id].key;
+    const cd=Math.min(1,t.cooldown/(ABILITIES[id].cooldown*bonus.cooldown)),label=t.active>0&&id!=='mine'?`${Math.ceil(t.active)} SN`:t.cooldown>0?`${Math.ceil(t.cooldown)}`:id==='mine'?`${arsenal.mine} · ${ABILITIES.mine.key}`:ABILITIES[id].key;
     button.style.setProperty('--cd',cd.toFixed(3));button.classList.toggle('active',t.active>0&&id!=='mine');const small=button.querySelector('small');if(small&&small.textContent!==label)small.textContent=label;}
 }
 function updateLootChests(dt:number){
   for(let i=lootChests.length-1;i>=0;i--){const c=lootChests[i];c.life-=dt;
-    if(dist(c,player)<CHEST_PICKUP_RADIUS){lootChests.splice(i,1);state.gold+=c.gold;state.wood+=c.wood;state.chainAmmo+=c.chain;state.pearls+=c.pearls;saveAccount();renderQuickSlots();burst(c.x,c.y);rewardNotice(chestRewardText(c));toast(c.kind==='gilded'?'Yaldızlı sandık toplandı!':'Ganimet sandığı toplandı');if(destination&&Math.hypot(destination.x-c.x,destination.y-c.y)<2)destination=null;continue;}
+    if(dist(c,player)<CHEST_PICKUP_RADIUS){lootChests.splice(i,1);c.gold=Math.round(c.gold*bonus.chestGold);state.gold+=c.gold;state.wood+=c.wood;state.chainAmmo+=c.chain;state.pearls+=c.pearls;saveAccount();renderQuickSlots();burst(c.x,c.y);rewardNotice(chestRewardText(c));toast(c.kind==='gilded'?'Yaldızlı sandık toplandı!':'Ganimet sandığı toplandı');if(destination&&Math.hypot(destination.x-c.x,destination.y-c.y)<2)destination=null;continue;}
     if(c.life<=0)lootChests.splice(i,1);}
   driftClock-=dt;
-  if(driftClock<=0){driftClock=DRIFT_RESPAWN_SECONDS;if(lootChests.filter(c=>c.source==='drift').length<mapDef().driftChests){const p=navigablePoint({x:200+Math.random()*(WORLD-400),y:200+Math.random()*(WORLD-400)});if(dist(p,player)>260)lootChests.push(createChest('drift',p.x,p.y));}}
+  if(driftClock<=0){driftClock=DRIFT_RESPAWN_SECONDS;if(lootChests.filter(c=>c.source==='drift').length<mapDef().driftChests){const p=navigablePoint({x:200+Math.random()*(WORLD-400),y:200+Math.random()*(WORLD-400)});if(dist(p,player)>260)lootChests.push(createChest('drift',p.x,p.y,bonus.gilded));}}
 }
 function drawLootChest(c:LootChest){const s=worldToScreen(c),fading=c.life<6?(Math.floor(c.life*4)%2?.35:.85):1;drawChestSprite(ctx,c.kind,s.x,s.y,performance.now(),fading);}
 function worldToScreen(v:Vec){return{x:v.x-camera.x+innerWidth/2,y:v.y-camera.y+innerHeight/2};}

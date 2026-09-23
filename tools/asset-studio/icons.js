@@ -93,5 +93,85 @@ export function buildIcon(name){
     for(let i=0;i<14;i++){const a=i/14*Math.PI*2,rv=new THREE.Mesh(new THREE.SphereGeometry(.24,10,8),std({color:'#d4a64c',metalness:.9,roughness:.3}));rv.position.set(Math.cos(a)*4.35,Math.sin(a)*4.35,.5);root.add(rv);}
     root.rotation.set(-.25,.45,0);root.position.y=5;root.userData.cam={pos:[0,6,15],look:[0,5,0],fov:42};
   }
+  if(name==='icon-hat'){
+    const felt=std({map:hammered(91,{base:'#1f1814',light:'#4a3a30'}),roughness:.95,metalness:0,side:THREE.DoubleSide}),gold=std({color:'#d4a64c',metalness:.9,roughness:.3});
+    const crown=new THREE.Mesh(new THREE.SphereGeometry(3,32,20,0,Math.PI*2,0,Math.PI/2),felt);crown.scale.set(1,1.1,1);crown.position.y=.6;root.add(crown);
+    // Kenar: yukarı kıvrık halka, üç noktadan sıkıştırılmış (üç köşe)
+    const prof=[[2.9,.6],[4,.8],[5,1.6],[5.5,3.2],[5.4,3.6]].map(([x,y])=>new THREE.Vector2(x,y));
+    const brim=new THREE.LatheGeometry(prof,72),bp=brim.attributes.position;
+    for(let i=0;i<bp.count;i++){const x=bp.getX(i),z=bp.getZ(i),y=bp.getY(i),a=Math.atan2(z,x),d=Math.hypot(x,z),pinch=1-.26*Math.max(0,Math.cos(3*(a-Math.PI/2)));const out=2.9+(d-2.9)*pinch;bp.setX(i,Math.cos(a)*out);bp.setZ(i,Math.sin(a)*out);bp.setY(i,.6+(y-.6)*(.55+.45*pinch));}
+    brim.computeVertexNormals();root.add(new THREE.Mesh(brim,felt));
+    const edge=new THREE.Mesh(new THREE.TorusGeometry(1,.14,6,72),gold);const ep=edge.geometry.attributes.position;
+    for(let i=0;i<ep.count;i++){const x=ep.getX(i),y=ep.getY(i),a=Math.atan2(y,x),pinch=1-.26*Math.max(0,Math.cos(3*(-a-Math.PI/2)));const rr=2.9+(5.4-2.9)*pinch,t=Math.hypot(x,y)-1;ep.setX(i,Math.cos(a)*(rr+t));ep.setY(i,Math.sin(a)*(rr+t));ep.setZ(i,ep.getZ(i)+.6+3*(.55+.45*pinch));}
+    edge.rotation.x=-Math.PI/2;edge.geometry.computeVertexNormals();root.add(edge);
+    const band=new THREE.Mesh(new THREE.CylinderGeometry(3.02,3.02,.7,32,1,true),std({color:'#7a1f1a',roughness:.8,metalness:0,side:THREE.DoubleSide}));band.position.y=1;root.add(band);
+    const badge=new THREE.Mesh(new THREE.SphereGeometry(.7,16,12),gold);badge.scale.z=.4;badge.position.set(0,1.1,3.05);root.add(badge);
+    const feather=new THREE.Mesh(new THREE.ConeGeometry(.8,6,8),std({color:'#e9e1cc',roughness:.9,metalness:0}));feather.scale.z=.3;feather.rotation.set(-.2,0,-1.1);feather.position.set(3,3.4,-.5);root.add(feather);
+    root.userData.cam={pos:[0,8,13],look:[0,1.6,0]};
+  }
+  if(name==='officer-gunner'){
+    const wood=std({map:T.chestWoodTexture({seed:101,wood:'#7a4a2a',dark:'#4a2a16'}),roughness:.8,metalness:0});
+    const keg=new THREE.Mesh(new THREE.CylinderGeometry(2.6,2.6,5,24),wood);keg.scale.set(1,1,1);const kp=keg.geometry.attributes.position;for(let i=0;i<kp.count;i++){const y=kp.getY(i),f=1+.16*Math.cos(y/2.5*Math.PI/2);kp.setX(i,kp.getX(i)*f);kp.setZ(i,kp.getZ(i)*f);}keg.geometry.computeVertexNormals();keg.position.y=2.5;root.add(keg);
+    for(const [y,rr] of [[.35,2.68],[2.5,3.04],[4.65,2.68]]){const hoop=new THREE.Mesh(new THREE.TorusGeometry(rr,.16,8,32),iron(102));hoop.rotation.x=Math.PI/2;hoop.position.y=y;root.add(hoop);}
+    const rod=new THREE.Mesh(new THREE.CylinderGeometry(.18,.18,10,8),std({color:'#8a5a30',roughness:.8,metalness:0}));rod.rotation.z=-.5;rod.position.set(1.8,4.4,1.8);root.add(rod);
+    const sponge=new THREE.Mesh(new THREE.CylinderGeometry(.55,.55,1.4,12),std({color:'#3a2a20',roughness:1,metalness:0}));sponge.rotation.z=-.5;sponge.position.set(4.3,8.7,1.8);root.add(sponge);
+    for(let i=0;i<3;i++){const b=new THREE.Mesh(new THREE.SphereGeometry(.9,20,16),iron(103+i));b.position.set(-3.2+i*1.1,.9,2.4-i*.4);root.add(b);}
+    root.userData.cam={pos:[0,6,14],look:[0,3.5,0]};
+  }
+  if(name==='officer-helmsman'){
+    const wood=std({color:'#7a4a28',roughness:.7,metalness:0}),brass=std({color:'#d4a64c',metalness:.9,roughness:.3});
+    const rim=new THREE.Mesh(new THREE.TorusGeometry(4.2,.42,12,48),wood);root.add(rim);const inner=new THREE.Mesh(new THREE.TorusGeometry(2.2,.3,10,32),wood);root.add(inner);
+    const hub=new THREE.Mesh(new THREE.CylinderGeometry(1,1,1,20),brass);hub.rotation.x=Math.PI/2;root.add(hub);
+    for(let k=0;k<8;k++){const a=k/8*Math.PI*2,sp=new THREE.Mesh(new THREE.CylinderGeometry(.22,.26,6.4,8),wood);sp.position.set(Math.cos(a)*3.2,Math.sin(a)*3.2,0);sp.rotation.z=a-Math.PI/2;root.add(sp);
+      const h=new THREE.Mesh(new THREE.CylinderGeometry(.3,.4,1.6,10),wood);h.position.set(Math.cos(a)*5.6,Math.sin(a)*5.6,0);h.rotation.z=a-Math.PI/2;root.add(h);const kn=new THREE.Mesh(new THREE.SphereGeometry(.42,10,8),wood);kn.position.set(Math.cos(a)*6.5,Math.sin(a)*6.5,0);root.add(kn);}
+    const ring=new THREE.Mesh(new THREE.TorusGeometry(4.2,.16,8,48),brass);ring.position.z=.4;root.add(ring);
+    root.rotation.set(-.3,.35,0);root.userData.cam={pos:[0,1,15],look:[0,0,0]};
+  }
+  if(name==='officer-carpenter'){
+    const blade=std({color:'#c9ced4',metalness:.95,roughness:.28});
+    const shape=new THREE.Shape();shape.moveTo(0,0);shape.lineTo(9,0);shape.lineTo(9,.6);for(let i=18;i>=0;i--){shape.lineTo(i*.5,i%2?2.6:2.2);}shape.lineTo(0,0);
+    const saw=new THREE.Mesh(new THREE.ExtrudeGeometry(shape,{depth:.08,bevelEnabled:false}),blade);saw.position.set(-5,1.5,0);saw.rotation.z=.25;root.add(saw);
+    const handle=new THREE.Mesh(new THREE.TorusGeometry(1.1,.45,10,20),std({color:'#8a5a30',roughness:.7,metalness:0}));handle.position.set(-5.6,1.4,0);handle.scale.set(1,1.3,1);root.add(handle);
+    const plank=new THREE.Mesh(new THREE.BoxGeometry(10,1,3),std({map:T.chestWoodTexture({seed:111,wood:'#b07a44',dark:'#7a4a24'}),roughness:.8,metalness:0}));plank.position.set(1,-.6,-1);plank.rotation.y=.25;root.add(plank);
+    const square=new THREE.Mesh(new THREE.BoxGeometry(.5,4.5,.25),iron(112));square.position.set(3.4,1.6,1);root.add(square);const sq2=new THREE.Mesh(new THREE.BoxGeometry(3,.5,.25),iron(113));sq2.position.set(4.65,-.4,1);root.add(sq2);
+    root.userData.cam={pos:[0,5,15],look:[0,1,0]};
+  }
+  if(name==='officer-lookout'){
+    const brass=std({color:'#d4a64c',metalness:.9,roughness:.28}),leather=std({color:'#5a2a1c',roughness:.8,metalness:0});
+    const parts=[[0,1.1,3.2,leather],[3.2,.9,2.6,brass],[5.8,.75,2.4,brass],[8.2,.6,2.2,brass]];
+    for(const [x,r,len,m] of parts){const c=new THREE.Mesh(new THREE.CylinderGeometry(r,r,len,24),m);c.rotation.z=Math.PI/2;c.position.x=x-4;root.add(c);const ring=new THREE.Mesh(new THREE.TorusGeometry(r+.05,.12,8,24),brass);ring.rotation.y=Math.PI/2;ring.position.x=x-4+len/2;root.add(ring);}
+    const lens=new THREE.Mesh(new THREE.CircleGeometry(.6,24),std({color:'#9fe8ff',metalness:.2,roughness:.05,emissive:'#3fa8c8',emissiveIntensity:.6}));lens.rotation.y=Math.PI/2;lens.position.x=5.35;root.add(lens);
+    root.rotation.set(.2,-.5,.35);root.userData.cam={pos:[0,4,15],look:[0,0,0]};
+  }
+  if(name==='officer-quartermaster'){
+    const cloth=std({color:'#6a2a22',roughness:.9,metalness:0}),gold=std({color:'#f0c04a',metalness:.9,roughness:.25});
+    const bag=new THREE.Mesh(new THREE.SphereGeometry(3,32,24),cloth);bag.scale.set(1,.95,.9);bag.position.y=2.9;root.add(bag);
+    const neck=new THREE.Mesh(new THREE.CylinderGeometry(1.4,.7,1.6,16),cloth);neck.position.y=6.2;root.add(neck);
+    const tie=new THREE.Mesh(new THREE.TorusGeometry(.8,.22,8,20),std({color:'#d4a64c',metalness:.6,roughness:.4}));tie.rotation.x=Math.PI/2;tie.position.y=5.6;root.add(tie);
+    const r=T.rng(7);for(let i=0;i<9;i++){const c=new THREE.Mesh(new THREE.CylinderGeometry(.85,.85,.22,20),gold);c.position.set(2.2+r()*3,.12+i*.24*(i<5?1:0),1.5+r()*1.5-(i>4?2:0));if(i>4){c.position.y=.12;c.rotation.set(r()*.6,0,r()*.6);}root.add(c);}
+    root.userData.cam={pos:[0,6,14],look:[0,3,0]};
+  }
+  if(name==='officer-surgeon'){
+    const glass=std({color:'#3f8a5a',metalness:.1,roughness:.08,transparent:true,opacity:.85}),cork=std({color:'#b08a5a',roughness:.9,metalness:0});
+    const pts=[[0,0],[1.8,0],[1.9,.3],[1.9,3.6],[1.2,4.6],[.6,5],[.6,6.2],[0,6.2]].map(([x,y])=>new THREE.Vector2(x,y));
+    const bottle=new THREE.Mesh(new THREE.LatheGeometry(pts,32),glass);root.add(bottle);
+    const liquid=new THREE.Mesh(new THREE.CylinderGeometry(1.7,1.7,2.6,24),std({color:'#b02a2a',roughness:.2,metalness:0,emissive:'#4a0a0a'}));liquid.position.y=1.4;root.add(liquid);
+    const c=new THREE.Mesh(new THREE.CylinderGeometry(.55,.5,1,12),cork);c.position.y=6.6;root.add(c);
+    const label=new THREE.Mesh(new THREE.CylinderGeometry(1.93,1.93,1.4,24,1,true),std({color:'#e8dcc0',roughness:.9,metalness:0}));label.position.y=2.4;root.add(label);
+    
+    root.userData.cam={pos:[0,5,14],look:[0,3,0]};
+  }
+  if(name==='icon-chest'){
+    const c=buildChestIcon();root.add(c);root.userData.cam={pos:[0,8,15],look:[0,3,0]};
+  }
   return root;
+}
+function buildChestIcon(){
+  const g=new THREE.Group(),wood=std({map:T.chestWoodTexture({seed:72,wood:'#6e2a22',dark:'#3d1512'}),roughness:.8,metalness:0}),band=std({color:'#e0b24e',metalness:.85,roughness:.28});
+  const body=new THREE.Mesh(new THREE.BoxGeometry(8,4.6,5.4),wood);body.position.y=2.3;g.add(body);
+  const lid=new THREE.Mesh(new THREE.CylinderGeometry(2.7,2.7,8,20,1,false,0,Math.PI),wood);lid.rotation.z=Math.PI/2;lid.position.y=4.6;g.add(lid);
+  for(const x of [-2.8,0,2.8]){const b=new THREE.Mesh(new THREE.BoxGeometry(.6,4.7,5.55),band);b.position.set(x,2.3,0);g.add(b);const arc=new THREE.Mesh(new THREE.TorusGeometry(2.72,.32,6,20,Math.PI),band);arc.position.set(x,4.6,0);arc.rotation.y=Math.PI/2;g.add(arc);}
+  const lock=new THREE.Mesh(new THREE.BoxGeometry(1.4,1.7,.5),band);lock.position.set(0,4,2.9);g.add(lock);
+  const coin=std({color:'#f0c04a',metalness:.9,roughness:.25});const r=T.rng(3);for(let i=0;i<7;i++){const m=new THREE.Mesh(new THREE.CylinderGeometry(.6,.6,.16,16),coin);m.position.set(-3+r()*6,.1,3.2+r()*1.4);m.rotation.set(r()*.4,0,r()*.4);g.add(m);}
+  return g;
 }
