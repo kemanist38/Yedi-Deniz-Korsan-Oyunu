@@ -5,7 +5,8 @@ type AmmoKind = 'iron'|'chain';
 type CannonKind = 'cast'|'long'|'rapid'|'heavy';
 type Shot = Vec & { vx:number; vy:number; life:number; owner:'player'|'enemy'; damage:number; hit:boolean; ammo:AmmoKind; target?:Target };
 type SalvoRound = { delay:number; target:Target; side:number; slot:number; damage:number; ammo:AmmoKind };
-type Enemy = Vec & { kind:'ship'; angle:number; hp:number; maxHp:number; cooldown:number; speed:number; name:string; tier:number; aggro:boolean; wander:number; slowTimer:number; homeX:number; homeY:number; combatTimer:number };
+type EnemyRole='scout'|'raider'|'warship';
+type Enemy = Vec & { kind:'ship'; role:EnemyRole; angle:number; hp:number; maxHp:number; cooldown:number; speed:number; damage:number; reload:number; rewardGold:number; rewardWood:number; rewardFame:number; color:string; name:string; tier:number; aggro:boolean; wander:number; slowTimer:number; homeX:number; homeY:number; combatTimer:number };
 type Particle = Vec & { vx:number; vy:number; life:number; maxLife:number; kind:'foam'|'smoke'|'spark'|'damage'; text?:string };
 type Monster = Vec & { kind:'monster'; phase:number; radius:number; name:string; hp:number; maxHp:number; cooldown:number; aggro:boolean; slowTimer:number; homeX:number; homeY:number; combatTimer:number };
 type Target = Enemy|Monster;
@@ -17,6 +18,11 @@ const CANNONS:Record<CannonKind,{name:string;damage:number;range:number;reload:n
   long:{name:'Uzun',damage:.82,range:470,reload:2.05},
   rapid:{name:'Seri',damage:.68,range:340,reload:1.05},
   heavy:{name:'Ağır',damage:1.38,range:365,reload:2.65}
+};
+const ENEMY_CLASSES:Record<EnemyRole,{name:string;hp:number;speed:number;damage:number;reload:number;gold:number;wood:number;fame:number;color:string}>={
+  scout:{name:'Kaçakçı Gözcü',hp:38,speed:52,damage:5,reload:2.8,gold:13,wood:3,fame:14,color:'#4d6c75'},
+  raider:{name:'Yağmacı',hp:58,speed:42,damage:8,reload:2.35,gold:20,wood:5,fame:22,color:'#79372f'},
+  warship:{name:'Kızıl Savaş Gemisi',hp:92,speed:32,damage:12,reload:2.8,gold:34,wood:9,fame:38,color:'#8b2925'}
 };
 const QUESTS:Quest[]=[
   {title:'Kızıl Sular',description:'Yağmacı filonun devriyelerini batır ve bölgeyi güvenli hâle getir.',target:'ship',required:5,gold:100,wood:20,fame:40,pearls:3},
@@ -148,7 +154,8 @@ document.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach(button=>butto
 function spawnEnemy(){
   const a=Math.random()*Math.PI*2,d=500+Math.random()*650,tier=1+Math.floor(state.level/3);
   const x=clamp(player.x+Math.cos(a)*d,80,WORLD-80),y=clamp(player.y+Math.sin(a)*d,80,WORLD-80);
-  enemies.push({kind:'ship',x,y,angle:a+Math.PI,hp:42+tier*12,maxHp:42+tier*12,cooldown:Math.random()*2,speed:35+Math.random()*15,name:['Yağmacı','Kaçakçı','Kızıl Korsan'][Math.floor(Math.random()*3)],tier,aggro:false,wander:Math.random()*6,slowTimer:0,homeX:x,homeY:y,combatTimer:0});
+  const roll=Math.random(),role:EnemyRole=roll<.38?'scout':roll<.82?'raider':'warship',enemyClass=ENEMY_CLASSES[role],maxHp=enemyClass.hp+tier*12;
+  enemies.push({kind:'ship',role,x,y,angle:a+Math.PI,hp:maxHp,maxHp,cooldown:Math.random()*2,speed:enemyClass.speed+Math.random()*4,damage:enemyClass.damage+tier,reload:enemyClass.reload,rewardGold:enemyClass.gold+tier*5,rewardWood:enemyClass.wood+tier,rewardFame:enemyClass.fame+tier*2,color:enemyClass.color,name:enemyClass.name,tier,aggro:false,wander:Math.random()*6,slowTimer:0,homeX:x,homeY:y,combatTimer:0});
 }
 for(let i=0;i<7;i++) spawnEnemy();
 function clamp(n:number,a:number,b:number){return Math.max(a,Math.min(b,n));}
@@ -208,7 +215,7 @@ function releaseSalvo(round:SalvoRound){
 }
 function enemyFire(e:Enemy){
   const a=Math.atan2(player.y-e.y,player.x-e.x);
-  shots.push({x:e.x,y:e.y,vx:Math.cos(a)*260,vy:Math.sin(a)*260,life:2.2,owner:'enemy',damage:8,hit:false,ammo:'iron'}); e.cooldown=2.2+Math.random();
+  shots.push({x:e.x,y:e.y,vx:Math.cos(a)*260,vy:Math.sin(a)*260,life:2.2,owner:'enemy',damage:e.damage,hit:false,ammo:'iron'}); e.cooldown=e.reload+Math.random()*.55;
 }
 function monsterFire(m:Monster){const a=Math.atan2(player.y-m.y,player.x-m.x);shots.push({x:m.x,y:m.y,vx:Math.cos(a)*210,vy:Math.sin(a)*210,life:2.4,owner:'enemy',damage:10,hit:false,ammo:'iron'});m.cooldown=2.8;}
 function respawn(){
@@ -352,7 +359,7 @@ function renderCombatTargets(){
   add(selected);enemies.forEach(enemy=>{if(enemy.aggro)add(enemy);});monsters.forEach(monster=>{if(monster.aggro)add(monster);});
   visibleCombatTargets=targets.slice(0,5);
   const root=ui('combatTargets');root.classList.toggle('visible',visibleCombatTargets.length>0);
-  root.innerHTML=visibleCombatTargets.map((target,index)=>{const range=Math.round(dist(player,target));const active=target===selected;const fighting=target.aggro||(active&&state.attacking);return `<button class="combat-target ${active?'selected':''}" data-combat-target="${index}"><span class="target-portrait ${target.kind}">${target.kind==='monster'?'☠':'⚓'}</span><span class="target-info"><small>${target.kind==='monster'?'DENİZ CANAVARI':target.tier+'. SINIF GEMİ'} · ${range}m</small><strong>${target.name}</strong><i><em style="width:${Math.max(0,target.hp/target.maxHp*100)}%"></em></i><b>${Math.ceil(target.hp)} / ${target.maxHp}</b></span><span class="target-state">${fighting?'SAVAŞ':'HEDEF'}</span></button>`;}).join('');
+  root.innerHTML=visibleCombatTargets.map((target,index)=>{const range=Math.round(dist(player,target));const active=target===selected;const fighting=target.aggro||(active&&state.attacking);const role=target.kind==='monster'?'DENİZ CANAVARI':target.role==='scout'?'GÖZCÜ':target.role==='warship'?'SAVAŞ GEMİSİ':'YAĞMACI';return `<button class="combat-target ${active?'selected':''}" data-combat-target="${index}"><span class="target-portrait ${target.kind} ${target.kind==='ship'?target.role:''}">${target.kind==='monster'?'☠':target.kind==='ship'&&target.role==='warship'?'⚔':'⚓'}</span><span class="target-info"><small>${target.kind==='monster'?role:target.tier+'. SINIF '+role} · ${range}m</small><strong>${target.name}</strong><i><em style="width:${Math.max(0,target.hp/target.maxHp*100)}%"></em></i><b>${Math.ceil(target.hp)} / ${target.maxHp}</b></span><span class="target-state">${fighting?'SAVAŞ':'HEDEF'}</span></button>`;}).join('');
   root.querySelectorAll<HTMLButtonElement>('[data-combat-target]').forEach(button=>button.onclick=()=>{const target=visibleCombatTargets[Number(button.dataset.combatTarget)];if(target){selected=target;updateUI();}});
 }
 
@@ -407,7 +414,7 @@ function update(dt:number){
       for(let j=enemies.length-1;j>=0&&s.life>0;j--){
         const e=enemies[j];
         if(dist(s,e)<25){const hit=s.damage;s.hit=true;e.aggro=true;e.combatTimer=12;if(s.ammo==='chain')e.slowTimer=3;e.hp-=hit;damageText(e.x,e.y,hit);burst(e.x,e.y);s.life=0;
-          if(e.hp<=0){const gold=12+e.tier*5,wood=4+e.tier;burst(e.x,e.y,true);enemies.splice(j,1);if(selected===e){selected=null;state.attacking=false;ui('attack').classList.remove('active');}state.gold+=gold;state.wood+=wood;state.fame+=20;state.battlePoints=Math.min(500,state.battlePoints+5);saveAccount();rewardNotice(`+${gold} Altın   +${wood} Kereste   +20 Şöhret   +5 Savaş Puanı`);toast(`${e.name} batırıldı`);recordQuestProgress('ship');setTimeout(spawnEnemy,1400);}
+          if(e.hp<=0){const battle=e.role==='warship'?10:e.role==='raider'?6:4;burst(e.x,e.y,true);enemies.splice(j,1);if(selected===e){selected=null;state.attacking=false;ui('attack').classList.remove('active');}state.gold+=e.rewardGold;state.wood+=e.rewardWood;state.fame+=e.rewardFame;state.battlePoints=Math.min(500,state.battlePoints+battle);saveAccount();rewardNotice(`+${e.rewardGold} Altın   +${e.rewardWood} Kereste   +${e.rewardFame} Şöhret   +${battle} Savaş Puanı`);toast(`${e.name} batırıldı`);recordQuestProgress('ship');setTimeout(spawnEnemy,1400);}
         }
       }
       for(let j=monsters.length-1;j>=0&&s.life>0;j--){
@@ -466,7 +473,7 @@ function draw(){
   islands.forEach(drawIsland);monsters.forEach(drawMonster);
   particles.forEach(p=>{const s=worldToScreen(p),a=Math.max(0,p.life/p.maxLife);ctx.globalAlpha=a;if(p.kind==='damage'){ctx.fillStyle='#ffd878';ctx.font='700 14px Inter';ctx.textAlign='center';ctx.fillText(p.text||'',s.x,s.y);}else{ctx.fillStyle=p.kind==='foam'?'#b9e2df':p.kind==='spark'?'#ffb340':'#3f4545';ctx.beginPath();ctx.arc(s.x,s.y,p.kind==='smoke'?7*(1-a)+3:p.kind==='foam'?4:2,0,7);ctx.fill();}ctx.globalAlpha=1;});
   shots.forEach(s=>{const p=worldToScreen(s);ctx.fillStyle=s.owner==='player'?'#ffd889':'#ff7450';ctx.shadowColor=ctx.fillStyle;ctx.shadowBlur=9;ctx.beginPath();ctx.arc(p.x,p.y,4,0,7);ctx.fill();ctx.shadowBlur=0;});
-  enemies.forEach(e=>{drawShip(e,e.angle,'#732f2b');const s=worldToScreen(e);ctx.fillStyle='#07161c';ctx.fillRect(s.x-25,s.y-42,50,5);ctx.fillStyle='#c64f3d';ctx.fillRect(s.x-25,s.y-42,50*e.hp/e.maxHp,5);ctx.fillStyle='#d7cbb5';ctx.font='10px Inter';ctx.textAlign='center';ctx.fillText(e.name,s.x,s.y-49);});
+  enemies.forEach(e=>{drawShip(e,e.angle,e.color);const s=worldToScreen(e);ctx.fillStyle='#07161c';ctx.fillRect(s.x-25,s.y-42,50,5);ctx.fillStyle=e.role==='warship'?'#e04b3f':e.role==='scout'?'#50a8b4':'#c96a42';ctx.fillRect(s.x-25,s.y-42,50*e.hp/e.maxHp,5);ctx.fillStyle='#d7cbb5';ctx.font='10px Inter';ctx.textAlign='center';ctx.fillText(e.name,s.x,s.y-49);});
   if(selected&&targetExists(selected)){const t=worldToScreen(selected);ctx.strokeStyle='#f1c662';ctx.lineWidth=2;ctx.beginPath();ctx.arc(t.x,t.y,selected.kind==='monster'?selected.radius+10:34,0,7);ctx.stroke();}
   drawPlayerShip();
   if(destination){const d=worldToScreen(destination),p=worldToScreen(player);ctx.strokeStyle='#e7cf8d55';ctx.setLineDash([3,8]);ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(d.x,d.y);ctx.stroke();ctx.setLineDash([]);ctx.strokeStyle='#e7cf8d';ctx.beginPath();ctx.arc(d.x,d.y,9,0,7);ctx.stroke();}
