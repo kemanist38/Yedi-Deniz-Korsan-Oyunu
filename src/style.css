@@ -128,3 +128,14 @@ button { font: inherit; }
 .world-info button{flex:none;padding:11px 18px;border:1px solid #c69b4e;border-radius:6px;background:linear-gradient(180deg,#7a3b22,#4a2012);color:#f6deb0;font:700 12px Cinzel;letter-spacing:.08em;cursor:pointer}
 .world-info button:disabled{background:#1a2a2e;border-color:#4a5a5a;color:#8a9a96;cursor:default}
 @media (max-width:720px){.chart-node{width:84px}.chart-node i{width:46px;height:46px}.chart-node strong{font-size:9px}.world-info{flex-direction:column;align-items:stretch}.world-info dl{flex-wrap:wrap;gap:10px}.portal-prompt{bottom:250px}}
+/* Özel yetenekler */
+.combat-action{position:relative;overflow:hidden}
+.combat-action b img{display:block;width:34px;height:34px;margin:0 auto -1px;object-fit:contain;filter:drop-shadow(0 2px 3px #000a);pointer-events:none}
+.combat-action.attack b img{width:42px;height:42px}
+.combat-action.speed{opacity:1}
+.combat-action.ability::after{content:'';position:absolute;inset:0;border-radius:50%;background:conic-gradient(#020a0dcc calc(var(--cd,0)*360deg),transparent 0);pointer-events:none}
+.combat-action.ability.active{border-color:#6fd6c4;box-shadow:0 0 16px #6fd6c477,inset 0 0 14px #6fd6c422}
+.combat-action.shield.active{border-color:#d4a64c;box-shadow:0 0 16px #d4a64c88}
+.combat-action small{position:relative;z-index:1;font-weight:700}
+.combat-action span{position:relative;z-index:1}
+@media (max-width:720px){.combat-action b img{width:24px;height:24px}.combat-action.attack b img{width:30px;height:30px}}

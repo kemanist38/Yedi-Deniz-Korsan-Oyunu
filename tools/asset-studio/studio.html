@@ -1,11 +1,14 @@
 <!doctype html>
 <html lang="tr"><head><meta charset="utf-8"><title>Kara Yelken Asset Atölyesi</title>
-<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js"}}</script></head>
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script></head>
 <body style="margin:0;background:#0e3b48">
 <script type="module">
 import * as THREE from 'three';
 import {buildShip,buildLeviathan,buildChest,buildIsland,buildPortal,FLEET} from './models.js';
 import {paintSeaTile,paintWorldChart} from './paint.js';
+import {buildIcon} from './icons.js';
+import * as T from './textures.js';
+import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 
 const ELEVATION=42*Math.PI/180;
 const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true});
@@ -68,5 +71,17 @@ window.renderIslands=(list,{frame=512,span=236}={})=>{const frames=list.map(([lo
 window.renderPortal=({count=8,frame=256,span=150}={})=>{const cam=camera(span,6),frames=[];for(let i=0;i<count;i++){const scene=stage(),p=buildPortal(i,count);prepare(p);scene.add(p);frames.push(shot(scene,cam,frame));}return{...exportCanvas(sheet(frames,4)),frame,count,anchor:anchorOf(cam,frame)};};
 window.renderSeaTile=()=>exportCanvas(paintSeaTile());
 window.renderWorldChart=()=>exportCanvas(paintWorldChart());
+let envMap=null;
+window.renderIcon=(name,{frame=256,margin=.8}={})=>{const scene=stage(),icon=buildIcon(name);scene.add(icon);icon.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
+  envMap??=new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(),.04).texture;scene.environment=envMap;scene.environmentIntensity=.55;
+  const key=new THREE.DirectionalLight('#fff1d6',1.4);key.position.set(-8,14,12);scene.add(key);
+  // Kamerayı modelin sınır küresine sığdır (userData.cam yalnızca bakış yönünü verir).
+  const c=icon.userData.cam,box=new THREE.Box3().setFromObject(icon),sphere=box.getBoundingSphere(new THREE.Sphere());
+  const dir=new THREE.Vector3(...c.pos).sub(new THREE.Vector3(...c.look)).normalize(),fov=34,dist=sphere.radius*margin/Math.sin(fov/2*Math.PI/180);
+  const cam=new THREE.PerspectiveCamera(fov,1,.1,500);cam.position.copy(sphere.center).addScaledVector(dir,dist);cam.lookAt(sphere.center);
+  return{...exportCanvas(shot(scene,cam,frame)),frame};};
+window.renderMineSprite=({frame=128,span=18}={})=>{const scene=stage(),m=buildIcon('icon-mine');m.userData.waterline=2.6;prepare(m);scene.add(m);
+  const foam=new THREE.Mesh(new THREE.PlaneGeometry(16,16),new THREE.MeshBasicMaterial({map:T.foamTexture({seed:12,color:'220,245,240',strength:.7,inner:.3}),transparent:true,depthWrite:false}));foam.rotation.x=-Math.PI/2;foam.position.y=2.65;scene.add(foam);
+  const cam=camera(span,3.5);return{...exportCanvas(shot(scene,cam,frame)),frame,anchor:anchorOf(cam,frame,new THREE.Vector3(0,2.6,0))};};
 window.studioReady=true;
 </script></body></html>
