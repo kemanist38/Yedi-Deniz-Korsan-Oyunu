@@ -22,7 +22,7 @@ const CANNONS:Record<CannonKind,{name:string;damage:number;range:number;reload:n
 };
 const ENEMY_CLASSES:Record<EnemyRole,{name:string;hp:number;speed:number;damage:number;reload:number;gold:number;wood:number;fame:number;color:string}>={
   scout:{name:'Kaçakçı Gözcü',hp:38,speed:52,damage:5,reload:2.8,gold:13,wood:3,fame:14,color:'#4d6c75'},
-  raider:{name:'Yağmacı',hp:58,speed:42,damage:8,reload:2.35,gold:20,wood:5,fame:22,color:'#79372f'},
+  raider:{name:'Yağmacılar',hp:58,speed:42,damage:8,reload:2.35,gold:20,wood:5,fame:22,color:'#79372f'},
   warship:{name:'Kızıl Savaş Gemisi',hp:92,speed:32,damage:12,reload:2.8,gold:34,wood:9,fame:38,color:'#8b2925'}
 };
 const QUESTS:Quest[]=[
