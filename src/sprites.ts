@@ -1,3 +1,4 @@
+import {FLEET_BASTIONS} from './fleetBastions';
 // Raster sprite sayfaları: NPC gemileri, canavarlar, adalar, filo adaları, sandıklar, mayınlar.
 // Görseller tools/asset-studio içindeki 3B modellerden üretilir (npm run render).
 export type ChestKind='wood'|'gilded';
@@ -57,11 +58,18 @@ export function drawIslandSprite(ctx:CanvasRenderingContext2D,island:{look:strin
 export const fleetBaseUrl=(theme:string)=>`/assets/fleet-base-${theme}-v2.webp`;
 export const fleetTowerUrl=(theme:string)=>`/assets/fleet-towers-${theme}-v2.webp`;
 export function drawFleetBase(ctx:CanvasRenderingContext2D,theme:string,x:number,y:number){
-  const sheet=load(fleetBaseV3||fleetBaseUrl(theme));if(!ready(sheet))return false;
+  // v4: kuleleri boşaltılmış, taş dikme kaideli ada (tools/asset-studio/fleet-bastions.mjs)
+  let sheet=load(FLEET_BASE_V4);if(!ready(sheet))sheet=load(fleetBaseV3||fleetBaseUrl(theme));if(!ready(sheet))return false;
   ctx.drawImage(sheet,x-500,y-500,1000,1000);return true;
 }
+const FLEET_BASE_V4='/assets/fleet-base-v4.webp';
+// Burç kuleleri: ada görselindeki kulelerin birebir aynısı, her kaide için kendi karesi (FLEET_BASTIONS).
+export function drawBastion(ctx:CanvasRenderingContext2D,slot:number,x:number,y:number,alpha=1){
+  const B=FLEET_BASTIONS,sheet=load(B.url),o=B.offsets[slot];if(!o||!ready(sheet))return false;
+  ctx.save();ctx.globalAlpha=alpha;ctx.drawImage(sheet,(slot%4)*B.cellW,Math.floor(slot/4)*B.cellH,B.cellW,B.cellH,x+o.ox,y+o.oy,B.cellW*B.scale,B.cellH*B.scale);ctx.restore();return true;
+}
 // Kuleler adanın görselinden bağımsızdır: surdaki yuvarlak kaidelerin üstüne dikilir (200 px çizim).
-export const TOWER_LABEL_OFFSET=-104;
+export const TOWER_LABEL_OFFSET=-72;
 export function drawFleetTower(ctx:CanvasRenderingContext2D,theme:string,owner:'npc'|'player',x:number,y:number,alpha=1){
   const sheet=load(fleetTowerUrl(theme));if(!ready(sheet))return false;const size=200,k=size/256;
   ctx.save();ctx.globalAlpha=alpha;ctx.drawImage(sheet,owner==='player'?256:0,0,256,256,x-128*k,y-152.7*k,size,size);ctx.restore();return true;

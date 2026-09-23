@@ -51,7 +51,8 @@ Filo adaları 5. seviye ve üstü denizlerde bulunur: sur halkasıyla çevrili, 
 ### Filo (FİLO sekmesi)
 - **Filo kur:** Filoyu kuran oyuncu filo başkanı olur. Çok oyunculu mod gelene kadar filoda yalnızca sen varsın.
 - **İnci bağışı:** Oyuncular filo hazinesine inci bağışlar (+10, +50, +100 ya da istenen miktar).
-- **Kuleler adadan bağımsızdır:** Surdaki yuvarlak burçlar boş kule kaideleridir. Filo başkanı, hazinedeki inciyle kaideye kule diker; bedeli `20 + 10 × seviye` incidir. Dikilen kule adaya yaklaşan düşmanlara ateş eder.
+- **Kuleler adadan bağımsızdır:** Ada görselinde kulelerin yeri boştur; surda 8 taş dikme kaidesi vardır (`fleet-base-v4`). Filo başkanı, hazinedeki inciyle kaideye kule diker; bedeli `20 + 10 × seviye` incidir. Dikilen kule, ada görselindeki burcun birebir aynısıdır (`fleet-bastions-v1`) ve adaya yaklaşan düşmanlara ateş eder. Rakip adalarda NPC filosunun burçları durur.
+- Görseller `tools/asset-studio/fleet-bastions.mjs` ile üretilir: burçlar ada görselinden kesilir, yerleri çevre dokusuyla doldurulur ve kaideler çizilir.
 - Fethedilen adanın kaideleri boş gelir. Test modunda bulunduğun denizin adası FİLO sekmesinden doğrudan filoya katılabilir.
 
 ### Seviye ve görevler
