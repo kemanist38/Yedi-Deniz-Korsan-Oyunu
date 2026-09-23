@@ -411,3 +411,15 @@ button.event-row{cursor:pointer}
 .tower-art.ghost{opacity:.28;filter:grayscale(1)}
 .tower-slot em{display:block;width:80%;height:4px;border-radius:2px;background:#07161c;overflow:hidden}.tower-slot em span{display:block;height:100%;background:#3fd6c0}
 @media(max-width:760px){.tower-slots{grid-template-columns:repeat(2,1fr)}.guild-head{flex-direction:column;align-items:flex-start}.guild-treasury{justify-items:start}}
+
+/* Kaptan adı (nick) ve filo kısaltması */
+.guild-tag{font-style:normal;color:#ffd24a;margin-right:2px}
+.guild-create-row{display:grid;grid-template-columns:140px 1fr;gap:10px}
+.guild-hint{font:600 11px Inter;color:#9fb8b0}.guild-hint b{color:#f4f1ea}
+.captain-nick{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;margin:10px 0;padding:10px 12px;border:1px solid #bd914b55;border-radius:8px;background:#071419cc}
+.captain-nick>div:first-child{display:grid;gap:2px}.captain-nick span{font:800 9px Inter;letter-spacing:.14em;color:#d8b268}
+.captain-nick strong{font:700 16px Inter;color:#f4f1ea}.captain-nick small{font:600 11px Inter;color:#5fd8e0}
+.nick-form{display:flex;gap:8px}.nick-form input{width:170px;padding:8px 10px;border:1px solid #bd914b88;border-radius:6px;background:#04101399;color:#f3e6c8;font:600 13px Inter}
+.nick-form button{padding:8px 12px;border:1px solid #d8b268;border-radius:6px;background:linear-gradient(#5a3a1c,#2c1a0c);color:#ffe2a0;font:800 11px Inter;letter-spacing:.06em;cursor:pointer}
+.nick-form :disabled{opacity:.5;cursor:not-allowed}
+@media(max-width:760px){.guild-create-row{grid-template-columns:1fr}.nick-form input{width:130px}}
