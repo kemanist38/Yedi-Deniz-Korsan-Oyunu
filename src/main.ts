@@ -76,8 +76,8 @@ const mini = minimap.getContext('2d')!;
 const playerShipImage=new Image();
 const shipChunks=['aa','ab','ac','ad','ae','af','ag','ah','ai'];
 Promise.all(shipChunks.map(part=>fetch(`/assets/player-flagship-game-v1.b64.${part}`).then(r=>r.text())))
-  .then(parts=>{playerShipImage.src=`data:image/png;base64,${parts.join('')}`;})
-  .catch(()=>{playerShipImage.src='/assets/player-flagship-game-v1.png';});
+  .then(parts=>{playerShipImage.src=`data:image/png;base64,${parts.join('')}`;document.documentElement.style.setProperty('--starter-ship',`url("${playerShipImage.src}")`);})
+  .catch(()=>{playerShipImage.src='/assets/player-flagship-game-v1.png';document.documentElement.style.setProperty('--starter-ship',`url("${playerShipImage.src}")`);});
 const directionalShipImage=new Image();
 const directionalChunks=['aa','ab','ac','ad'];
 Promise.all(directionalChunks.map(part=>fetch(`/assets/player-flagship-directions-v1.b64.${part}`).then(r=>r.text())))
@@ -193,7 +193,7 @@ addEventListener('resize',resize); resize();
 const settings=loadSettings();setAudio(settings.sound,settings.volume);
 let rebinding:ActionId|null=null;
 const held=(action:ActionId,...extra:string[])=>keys.has(settings.binds[action])||extra.some(k=>keys.has(k));
-function closeAllOverlays(){closeWorldMap();closeQuestLog();closeShipMenu();closeMarket();closeCaptainProfile();closeDevelopment();closeCrew();closeSettings();closeLoadout();}
+function closeAllOverlays(){closeWorldMap();closeQuestLog();closeEliteShips();closeShipMenu();closeMarket();closeCaptainProfile();closeDevelopment();closeCrew();closeSettings();closeLoadout();}
 function runAction(action:ActionId){
   if(action==='attack')toggleAttack();else if(action==='repair')toggleRepair();else if(action==='recenter')recenterShip();
   else if(action==='jump')useJump();else if(action==='speed'||action==='shield')activateAbility(action);else if(action==='mine')dropMine();
@@ -457,13 +457,13 @@ function purchaseEliteOne(){
 }
 function renderEliteShips(){
   const unlocked=elitePurchased?Math.max(1,Math.min(15,Math.floor(state.elitePoints/100)+1)):0;
-  const starter=`<button class="elite-card starter-card ${activeShip==='starter'?'active':''}" data-starter><span class="elite-level">BAŞLANGIÇ</span><span class="starter-ship-art"><i class="sprite icon-hull"></i></span><strong>Kara Yelken</strong><small>Başlangıç gemisi · Özel güç yok</small></button>`;
+  const starter=`<button class="elite-card starter-card ${activeShip==='starter'?'active':''}" data-starter><span class="elite-level">BAŞLANGIÇ</span><span class="starter-ship-art" role="img" aria-label="Kara Yelken başlangıç gemisi"></span><strong>Kara Yelken</strong><small>Başlangıç gemisi · Özel güç yok</small></button>`;
   const eliteCards=ELITE_SHIPS.map((ship,index)=>{const col=index%5,row=Math.floor(index/5),locked=ship.level>unlocked;return`<button class="elite-card ${activeShip===ship.id?'active':''} ${locked?'locked':''}" data-elite="${ship.id}"><span class="elite-level">ELİT ${ship.level}</span><span class="elite-art" role="img" aria-label="${ship.name}" style="--elite-x:${col*25}%;--elite-y:${row*50}%"></span><strong>${ship.name}</strong><small>${ship.role}</small>${locked?`<b>🔒 ${ship.level===1?`${ELITE_ONE_PRICE} İnci ile açılır`:`${(ship.level-1)*100} Elit Puan gerekli`}</b>`:''}</button>`}).join('');
   ui('eliteShipGrid').innerHTML=starter+eliteCards;
   ui('eliteShipGrid').querySelector<HTMLElement>('[data-starter]')!.onclick=()=>{previewShip='starter';renderEliteShips();};
   ui('eliteShipGrid').querySelectorAll<HTMLElement>('[data-elite]').forEach(el=>el.onclick=()=>{previewShip=el.dataset.elite as EliteShipId;renderEliteShips();});
   if(previewShip==='starter'){
-    ui('eliteShipDetail').innerHTML=`<span class="eyebrow">Başlangıç gemisi</span><div class="starter-preview"><i class="sprite icon-hull"></i></div><h3>Kara Yelken</h3><em>Kaptanın ilk gemisi</em><b>Dengeli başlangıç sınıfı</b><dl><dt>Özellik</dt><dd>Elit pasifi veya özel yeteneği yoktur. Oyuna başlayan her kaptanda ücretsiz bulunur.</dd></dl><button id="equipStarter" ${activeShip==='starter'?'disabled':''}>${activeShip==='starter'?'AKTİF GEMİ':'GEMİYİ SEÇ'}</button>`;
+    ui('eliteShipDetail').innerHTML=`<span class="eyebrow">Başlangıç gemisi</span><div class="starter-preview" role="img" aria-label="Kara Yelken başlangıç gemisi"></div><h3>Kara Yelken</h3><em>Kaptanın ilk gemisi</em><b>Dengeli başlangıç sınıfı</b><dl><dt>Özellik</dt><dd>Elit pasifi veya özel yeteneği yoktur. Oyuna başlayan her kaptanda ücretsiz bulunur.</dd></dl><button id="equipStarter" ${activeShip==='starter'?'disabled':''}>${activeShip==='starter'?'AKTİF GEMİ':'GEMİYİ SEÇ'}</button>`;
     const button=document.getElementById('equipStarter') as HTMLButtonElement|null;if(button&&!button.disabled)button.onclick=equipStarterShip;return;
   }
   const ship=eliteById(previewShip),locked=ship.level>unlocked;
