@@ -93,19 +93,11 @@ const rasterItemAssets:Partial<Record<QuickItemId,string>>={};
 rasterItemAssets.fire=SPECIAL_AMMO.fire.icon;rasterItemAssets.grape=SPECIAL_AMMO.grape.icon;rasterItemAssets.mine=ABILITIES.mine.icon;rasterItemAssets.shield=ABILITIES.shield.icon;rasterItemAssets.speed=ABILITIES.speed.icon;rasterItemAssets.repairkit='/assets/icon-repair-v1.webp';
 (['iron','chain'] as QuickItemId[]).forEach(id=>fetch(`/assets/ammo-${id}-v1.b64`).then(r=>r.text()).then(data=>{rasterItemAssets[id]=`data:image/webp;base64,${data}`;renderQuickSlots();}));
 let eliteAtlasUrl='';const eliteAtlasImage=new Image();eliteAtlasImage.decoding='async';fetch('/assets/elite-ships-atlas-v1.b64').then(r=>r.text()).then(data=>{eliteAtlasUrl=`data:image/webp;base64,${data.trim()}`;eliteAtlasImage.src=eliteAtlasUrl;ui('eliteShipOverlay')?.style.setProperty('--elite-atlas',`url("${eliteAtlasUrl}")`);}).catch(()=>{});
-const eliteDirectionalImages=[new Image(),new Image(),new Image()];
-const eliteDirectionalParts=[
-  ['aa','ab','ac','ad'],
-  ['aa','ab','ac','ad','ae'],
-  ['aa','ab','ac','ad']
-] as const;
-eliteDirectionalImages.forEach((image,index)=>{
-  image.decoding='async';
-  const range=index===0?'01-05':index===1?'06-10':'11-15';
-  Promise.all(eliteDirectionalParts[index].map(part=>fetch(`/assets/elite-directions-${range}-v1.b64.${part}`).then(response=>response.text())))
-    .then(parts=>{image.src=`data:image/webp;base64,${parts.join('')}`;})
-    .catch(()=>{});
-});
+const eliteDirectionalImage=new Image();eliteDirectionalImage.decoding='async';
+const eliteDirectionalV2Parts=['aa','ab','ac','ad','ae','af','ag','ah','ai','aj','ak','al'] as const;
+Promise.all(eliteDirectionalV2Parts.map(part=>fetch(`/assets/elite-directional-sheets-v2.b64.${part}`).then(response=>response.text())))
+  .then(parts=>{eliteDirectionalImage.src=`data:image/webp;base64,${parts.join('')}`;})
+  .catch(()=>{});
 const ui = (id:string) => document.getElementById(id)!;
 const keys = new Set<string>();
 const QUEST_STORAGE='kara-yelken-quests-v2';
@@ -937,25 +929,21 @@ function drawShip(p:Vec,angle:number,color:string,scale=1){
   ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(1,-29);ctx.lineTo(14,-24);ctx.lineTo(1,-19);ctx.closePath();ctx.fill();
   ctx.fillStyle='#171817';for(const x of [-15,15])for(const y of [-8,3,14]){ctx.beginPath();ctx.arc(x,y,2.2,0,7);ctx.fill();}ctx.restore();
 }
-const ELITE_DIRECTION_FRAMES=[4,5,6,7,0,1,2,3] as const;
-function eliteDirectionFrame(angle:number){
-  // Oyun açısı 0=Kuzey, π/2=Doğu. Üretilen atlas bir turntable dizisidir:
-  // ilk karede pruva kameraya (Güney), beşinci karede uzağa (Kuzey) bakar.
-  const compass=(Math.round(angle/(Math.PI/4))+8)%8;
-  return ELITE_DIRECTION_FRAMES[compass];
-}
+const SHIP_DIRECTION_FRAMES=[4,3,6,5,0,1,2,7] as const;
+function shipCompass(angle:number){return(Math.round(angle/(Math.PI/4))+8)%8;}
+function shipDirectionFrame(angle:number){return SHIP_DIRECTION_FRAMES[shipCompass(angle)];}
 function drawEliteDirectionalShip(s:Vec){
-  const level=eliteShip().level,index=level-1,group=Math.floor(index/5),row=index%5;
-  const image=eliteDirectionalImages[group];
-  if(!image?.complete||!image.naturalWidth)return false;
-  const column=eliteDirectionFrame(player.angle),cellW=image.naturalWidth/8,cellH=image.naturalHeight/5;
-  const bob=Math.sin(performance.now()/420)*1.8;
+  const index=eliteShip().level-1;
+  if(!eliteDirectionalImage.complete||!eliteDirectionalImage.naturalWidth)return false;
+  // Büyük atlas: 5x3 elit gemi döşemesi; her döşeme Kara Yelken gibi 4x2 yön sayfasıdır.
+  const tileW=eliteDirectionalImage.naturalWidth/5,tileH=eliteDirectionalImage.naturalHeight/3;
+  const tileX=(index%5)*tileW,tileY=Math.floor(index/5)*tileH;
+  const frame=shipDirectionFrame(player.angle),frameX=frame%4,frameY=Math.floor(frame/4);
+  const cellW=tileW/4,cellH=tileH/2,bob=Math.sin(performance.now()/420)*1.8,size=124;
   ctx.save();ctx.translate(s.x,s.y+bob);
   ctx.globalAlpha=state.invulnerable&&Math.floor(performance.now()/120)%2?.55:1;
-  ctx.shadowColor='#000b';ctx.shadowBlur=13;
-  ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
-  const size=128;
-  ctx.drawImage(image,column*cellW,row*cellH,cellW,cellH,-size/2,-size/2,size,size);
+  ctx.shadowColor='#000b';ctx.shadowBlur=13;ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+  ctx.drawImage(eliteDirectionalImage,tileX+frameX*cellW,tileY+frameY*cellH,cellW,cellH,-size/2,-size/2,size,size);
   ctx.restore();return true;
 }
 function drawPlayerShip(){
@@ -976,14 +964,8 @@ function drawPlayerShip(){
   const bob=Math.sin(performance.now()/420)*1.8;
   ctx.save();ctx.translate(s.x,s.y+bob);ctx.shadowColor='#000b';ctx.shadowBlur=13;ctx.globalAlpha=state.invulnerable&&Math.floor(performance.now()/120)%2?.55:1;
   if(directionalShipImage.complete&&directionalShipImage.naturalWidth){
-    const heading=Math.atan2(-Math.cos(player.angle),Math.sin(player.angle));
-    const compass=(Math.round((heading+Math.PI/2)/(Math.PI/4))+8)%8;
-    // Üretilen sprite sayfasındaki gerçek pruva yönlerini pusula yönleriyle eşleştir.
-    // Sıra: K, KD, D, GD, G, GB, B, KB.
-    const frames=[4,3,6,5,0,1,2,3];
-    const frame=frames[compass],mirror=compass===7;
+    const frame=shipDirectionFrame(player.angle);
     const sx=(frame%4)*256,sy=Math.floor(frame/4)*256;
-    if(mirror)ctx.scale(-1,1);
     ctx.drawImage(directionalShipImage,sx,sy,256,256,-58,-58,116,116);
   }else ctx.drawImage(playerShipImage,-49,-49,98,98);
   ctx.restore();
