@@ -94,10 +94,13 @@ rasterItemAssets.fire=SPECIAL_AMMO.fire.icon;rasterItemAssets.grape=SPECIAL_AMMO
 (['iron','chain'] as QuickItemId[]).forEach(id=>fetch(`/assets/ammo-${id}-v1.b64`).then(r=>r.text()).then(data=>{rasterItemAssets[id]=`data:image/webp;base64,${data}`;renderQuickSlots();}));
 let eliteAtlasUrl='';const eliteAtlasImage=new Image();eliteAtlasImage.decoding='async';fetch('/assets/elite-ships-atlas-v1.b64').then(r=>r.text()).then(data=>{eliteAtlasUrl=`data:image/webp;base64,${data.trim()}`;eliteAtlasImage.src=eliteAtlasUrl;ui('eliteShipOverlay')?.style.setProperty('--elite-atlas',`url("${eliteAtlasUrl}")`);}).catch(()=>{});
 const eliteDirectionalImage=new Image();eliteDirectionalImage.decoding='async';
-const eliteDirectionalV2Parts=['aa','ab','ac','ad','ae','af','ag','ah','ai','aj','ak','al'] as const;
-Promise.all(eliteDirectionalV2Parts.map(part=>fetch(`/assets/elite-directional-sheets-v2.b64.${part}`).then(response=>response.text())))
+let eliteDirectionalReady=false;
+eliteDirectionalImage.onload=()=>{eliteDirectionalReady=true;};
+eliteDirectionalImage.onerror=()=>{eliteDirectionalReady=false;};
+const eliteDirectionalV3Parts=['aa','ab','ac','ad'] as const;
+Promise.all(eliteDirectionalV3Parts.map(part=>fetch(`/assets/elite-directional-sheets-v3.b64.${part}`).then(response=>{if(!response.ok)throw new Error(`elite atlas ${part}`);return response.text();})))
   .then(parts=>{eliteDirectionalImage.src=`data:image/webp;base64,${parts.join('')}`;})
-  .catch(()=>{});
+  .catch(()=>{eliteDirectionalReady=false;});
 const ui = (id:string) => document.getElementById(id)!;
 const keys = new Set<string>();
 const QUEST_STORAGE='kara-yelken-quests-v2';
@@ -934,7 +937,7 @@ function shipCompass(angle:number){return(Math.round(angle/(Math.PI/4))+8)%8;}
 function shipDirectionFrame(angle:number){return SHIP_DIRECTION_FRAMES[shipCompass(angle)];}
 function drawEliteDirectionalShip(s:Vec){
   const index=eliteShip().level-1;
-  if(!eliteDirectionalImage.complete||!eliteDirectionalImage.naturalWidth)return false;
+  if(!eliteDirectionalReady||!eliteDirectionalImage.naturalWidth)return false;
   // Büyük atlas: 5x3 elit gemi döşemesi; her döşeme Kara Yelken gibi 4x2 yön sayfasıdır.
   const tileW=eliteDirectionalImage.naturalWidth/5,tileH=eliteDirectionalImage.naturalHeight/3;
   const tileX=(index%5)*tileW,tileY=Math.floor(index/5)*tileH;
@@ -948,15 +951,8 @@ function drawEliteDirectionalShip(s:Vec){
 }
 function drawPlayerShip(){
   const s=worldToScreen(player);
-  if(eliteEnabled()){
-    if(drawEliteDirectionalShip(s))return;
-    // Ağ bağlantısında yön atlası henüz yüklenmediyse gemiyi görünür tutan geçici önizleme.
-    if(eliteAtlasImage.complete&&eliteAtlasImage.naturalWidth){
-      const index=eliteShip().level-1,col=index%5,row=Math.floor(index/5),bob=Math.sin(performance.now()/420)*1.8;
-      ctx.save();ctx.translate(s.x,s.y+bob);ctx.globalAlpha=state.invulnerable&&Math.floor(performance.now()/120)%2?.55:1;ctx.shadowColor='#000b';ctx.shadowBlur=13;
-      ctx.drawImage(eliteAtlasImage,col*300,row*300,300,300,-58,-58,116,116);ctx.restore();return;
-    }
-  }
+  if(eliteEnabled()&&drawEliteDirectionalShip(s))return;
+  // Elit atlas yüklenene kadar aynı yön karesindeki Kara Yelken görünür kalır; gemi asla kaybolmaz.
 
   if(!directionalShipImage.complete||!directionalShipImage.naturalWidth){
     if(!playerShipImage.complete||!playerShipImage.naturalWidth){drawShip(player,player.angle,'#173f48',1.1);return;}
