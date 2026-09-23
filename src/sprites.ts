@@ -6,6 +6,8 @@ const cache=new Map<string,HTMLImageElement>();
 function load(src:string){let image=cache.get(src);if(!image){image=new Image();image.decoding='async';image.src=src;cache.set(src,image);}return image;}
 const ready=(image:HTMLImageElement)=>image.complete&&image.naturalWidth>0;
 export function preload(srcs:string[]){srcs.forEach(load);}
+let fleetBaseV3='';
+fetch('/assets/fleet-base-v3.b64').then(r=>r.text()).then(data=>{fleetBaseV3=`data:image/webp;base64,${data.trim()}`;load(fleetBaseV3);}).catch(()=>{});
 
 // NPC gemileri: 16 yön, 8 sütun × 2 satır, 192 px kare; kare 0 = kuzey, saat yönünde 22,5°.
 // span: karenin kapsadığı dünya birimi. Oyunda 1 birim ≈ 1,23 px.
@@ -55,7 +57,7 @@ export function drawIslandSprite(ctx:CanvasRenderingContext2D,island:{look:strin
 export const fleetBaseUrl=(theme:string)=>`/assets/fleet-base-${theme}-v2.webp`;
 export const fleetTowerUrl=(theme:string)=>`/assets/fleet-towers-${theme}-v2.webp`;
 export function drawFleetBase(ctx:CanvasRenderingContext2D,theme:string,x:number,y:number){
-  const sheet=load(fleetBaseUrl(theme));if(!ready(sheet))return false;
+  const sheet=load(fleetBaseV3||fleetBaseUrl(theme));if(!ready(sheet))return false;
   ctx.drawImage(sheet,x-500,y-500,1000,1000);return true;
 }
 export const TOWER_LABEL_OFFSET=-74;
