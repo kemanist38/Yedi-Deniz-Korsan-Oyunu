@@ -3,6 +3,7 @@ import './style.css';
 type Vec = { x: number; y: number };
 type AmmoKind = 'iron'|'chain';
 type CannonKind = 'cast'|'long'|'rapid'|'heavy';
+type CannonStock=Record<CannonKind,number>;
 type Shot = Vec & { vx:number; vy:number; life:number; owner:'player'|'enemy'; damage:number; hit:boolean; ammo:AmmoKind; target?:Target };
 type SalvoRound = { delay:number; target:Target; side:number; slot:number; damage:number; ammo:AmmoKind };
 type EnemyRole='scout'|'raider'|'warship';
@@ -51,7 +52,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     <canvas id="sea"></canvas><div class="grain"></div>
     <section class="hud">
       <div class="brand">KARA YELKEN<small>GÖLGELER DENİZİ</small></div>
-      <nav class="top-shortcuts"><button id="openQuestTop"><i class="shortcut-mark">✦</i><span>GÖREVLER</span></button><button id="openShip"><i class="sprite icon-hull"></i><span>GEMİ</span></button><button class="market-main" id="openMarket"><i class="sprite icon-gold"></i><span>MARKET</span></button><button class="captain-shortcut" id="openCaptain"><i class="captain-face">☠</i><span>KAPTAN</span><b id="level">1</b></button><button disabled><i class="shortcut-mark">♜</i><span>FİLO</span></button><button disabled><i class="shortcut-mark">⚙</i><span>AYARLAR</span></button></nav>
+      <nav class="top-shortcuts"><button id="openQuestTop"><i class="shortcut-mark">✦</i><span>GÖREVLER</span></button><button id="openShip"><i class="sprite icon-hull"></i><span>ENVANTER</span></button><button class="market-main" id="openMarket"><i class="sprite icon-gold"></i><span>MARKET</span></button><button id="openDevelopment"><i class="shortcut-mark">♜</i><span>GELİŞTİRME</span></button><button class="captain-shortcut" id="openCaptain"><i class="captain-face">☠</i><span>KAPTAN</span><b id="level">1</b></button><button disabled><i class="shortcut-mark">⚙</i><span>AYARLAR</span></button></nav>
       <div class="resources"><div class="resource compact"><i class="sprite icon-gold"></i><span>ALTIN</span><b id="gold">000</b></div><div class="resource compact pearl"><i class="sprite icon-pearl"></i><span>İNCİ</span><b id="pearls">000</b></div></div>
       <div class="panel quest"><span class="eyebrow">Aktif görev</span><h3 id="questTitle">Görev seçilmedi</h3><p id="questDescription">Kaptan, yapmak istediğin görevi görev defterinden seçebilirsin.</p><div class="progress" id="quest">Hazır olduğunda bir görev başlat</div><button class="quest-open" id="openQuests">GÖREVLERİ AÇ</button></div>
       <section class="combat-targets" id="combatTargets" aria-live="polite"></section>
@@ -62,7 +63,8 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <div class="toast" id="toast"></div>
       <div class="quest-overlay" id="questOverlay"><section class="quest-log"><header><div><span class="eyebrow">Kaptanın görev defteri</span><h2>DENİZ GÖREVLERİ</h2></div><button id="closeQuests" aria-label="Görevleri kapat">×</button></header><p class="quest-intro">Aynı anda yalnızca bir görev yürütülebilir. İptal edilen veya tamamlanan görev 8 saat sonra yeniden açılır.</p><div class="quest-list" id="questList"></div></section></div>
       <div class="captain-overlay" id="captainOverlay"><section class="captain-profile"><header><div><span class="eyebrow">Oyuncu profili</span><h2>KAPTAN YASİN</h2></div><button id="closeCaptain" aria-label="Kaptan profilini kapat">×</button></header><div class="captain-identity"><div class="captain-portrait">☠<b id="captainLevel">1</b></div><div><span>AMİRAL GEMİSİ</span><strong>Kara Yelken</strong><small>Gölgeler Denizi Kaptanı</small></div></div><div class="captain-stat-grid"><article><span>TECRÜBE PUANI</span><b id="xpText">0 / 100</b><i class="xp"><em id="xpBar"></em></i></article><article><span>CAN PUANI</span><b id="hpText">100 / 100</b><i class="hp"><em id="hpBar" style="width:100%"></em></i></article><article><span>ELİT PUAN</span><b id="profileElite">0 / 100</b><i class="elite"><em id="profileEliteBar"></em></i></article><article><span>SAVAŞ PUANI</span><b id="profileBattle">0 / 500</b><i class="battle"><em id="profileBattleBar"></em></i></article></div></section></div>
-      <div class="ship-overlay" id="shipOverlay"><section class="ship-menu"><header><div><span class="eyebrow">Kaptanın amiral gemisi</span><h2>KARA YELKEN</h2></div><button id="closeShip" aria-label="Gemi menüsünü kapat">×</button></header><div class="ship-summary" id="shipSummary"></div><h3 class="ship-section-title">TOP DONANIMI</h3><div class="cannon-rack" id="cannonRack"></div><h3 class="ship-section-title">GEMİ GELİŞTİRMELERİ</h3><div class="upgrade-list" id="upgradeList"></div><div class="upgrade-confirm" id="upgradeConfirm"></div></section></div>
+      <div class="ship-overlay" id="shipOverlay"><section class="ship-menu"><header><div><span class="eyebrow">Gemi ambarı ve güverteler</span><h2>GEMİ ENVANTERİ</h2></div><button id="closeShip" aria-label="Gemi menüsünü kapat">×</button></header><div class="ship-summary" id="shipSummary"></div><h3 class="ship-section-title">TOP GÜVERTESİ</h3><p class="inventory-help">Depodaki topları gemiye taşı veya takılı topları tekrar depoya indir. Savaşta seçili top türü kullanılır.</p><div class="cannon-rack" id="cannonRack"></div></section></div>
+      <div class="development-overlay" id="developmentOverlay"><section class="development-menu"><header><div><span class="eyebrow">Kaptanın gelişim planı</span><h2>GELİŞTİRME</h2></div><button id="closeDevelopment" aria-label="Geliştirmeyi kapat">×</button></header><div class="development-tabs"><button class="active" data-development-tab="talents">YETENEKLER</button><button data-development-tab="castles">KALELER</button></div><div id="talentPanel"><div class="upgrade-list" id="upgradeList"></div><div class="upgrade-confirm" id="upgradeConfirm"></div></div><div class="castle-panel" id="castlePanel"><div class="castle-asset"><svg viewBox="0 0 120 100"><path d="M18 88V38h14V22h14v16h28V22h14v16h14v50H72V65H48v23z"/><path d="M12 88h96M45 52h30M27 48v12M93 48v12"/></svg></div><h3>Kaptan Kaleleri</h3><p>Kale sistemi ilerleyen haritalarda savunma, top menzili ve filo bonusları sağlayacak.</p><button disabled>SONRAKİ AŞAMADA</button></div></section></div>
       <div class="market-overlay" id="marketOverlay"><section class="market-menu"><header><div><span class="eyebrow">Tüccar loncası</span><h2>DENİZ MARKETİ</h2></div><button id="closeMarket" aria-label="Marketi kapat">×</button></header><div class="inventory-strip" id="inventoryStrip"></div><h3 class="market-heading">MÜHİMMAT</h3><div class="market-list" id="marketList"></div><h3 class="market-heading">İNCİ PAKETLERİ</h3><div class="pearl-shop"><div><b>◈ İnci Sandıkları</b><span>Gerçek ödeme sistemi kullanıcı hesaplarıyla birlikte açılacak.</span></div><button disabled>YAKINDA</button></div><div class="market-confirm" id="marketConfirm"></div></section></div>
       <div class="loadout-overlay" id="loadoutOverlay"><section class="loadout-menu"><header><div><span class="eyebrow">Hızlı kullanım düzeni</span><h2>MALZEMELER</h2></div><button id="closeLoadout">×</button></header><div class="loadout-tabs"><button data-tab="ammo" class="active">GÜLLELER</button><button data-tab="consumable">SARF</button><button data-tab="material">MALZEMELER</button></div><p>Malzemeyi sürükleyip alt kısımdaki 12 yuvadan birine bırak. Telefonda önce malzemeye, sonra hedef yuvaya dokun.</p><div class="loadout-items" id="loadoutItems"></div><div class="loadout-slots" id="loadoutSlots"></div></section></div>
     </section>
@@ -90,12 +92,17 @@ const keys = new Set<string>();
 const QUEST_STORAGE='kara-yelken-quests-v1';
 const ACCOUNT_STORAGE='kara-yelken-account-v1';
 let storedQuests:{activeQuest:number|null;progress:number[];cooldowns:number[]}|null=null;
-let storedAccount:{pearls?:number;gold:number;wood:number;fame:number;level:number;maxHp:number;hp:number;chainAmmo:number;elitePoints?:number;battlePoints?:number;cannonType?:CannonKind;quickSlots?:Array<QuickItemId|null>;upgrades:Record<UpgradeKind,number>}|null=null;
+let storedAccount:{pearls?:number;gold:number;wood:number;fame:number;level:number;maxHp:number;hp:number;chainAmmo:number;elitePoints?:number;battlePoints?:number;cannonType?:CannonKind;cannonInventory?:CannonStock;mountedCannons?:CannonStock;quickSlots?:Array<QuickItemId|null>;upgrades:Record<UpgradeKind,number>}|null=null;
 try{storedQuests=JSON.parse(localStorage.getItem(QUEST_STORAGE)||'null');}catch{storedQuests=null;}
 try{storedAccount=JSON.parse(localStorage.getItem(ACCOUNT_STORAGE)||'null');}catch{storedAccount=null;}
 const storedActive=storedQuests?.activeQuest;
 const upgrades:Record<UpgradeKind,number>={hull:storedAccount?.upgrades?.hull||0,damage:storedAccount?.upgrades?.damage||0,range:storedAccount?.upgrades?.range||0,reload:storedAccount?.upgrades?.reload||0,speed:storedAccount?.upgrades?.speed||0,repair:storedAccount?.upgrades?.repair||0};
+const defaultCannonStock:CannonStock={cast:12,long:6,rapid:4,heavy:2};
+const defaultMountedCannons:CannonStock={cast:18,long:0,rapid:0,heavy:0};
+const cannonInventory:CannonStock={...defaultCannonStock,...storedAccount?.cannonInventory};
+const mountedCannons:CannonStock={...defaultMountedCannons,...storedAccount?.mountedCannons};
 const state = { pearls:storedAccount?.pearls??30, gold:storedAccount?.gold??40, wood:storedAccount?.wood??10, fame:storedAccount?.fame??0, level:storedAccount?.level??1, hp:storedAccount?.hp??100, maxHp:storedAccount?.maxHp??100, elitePoints:storedAccount?.elitePoints??0,battlePoints:storedAccount?.battlePoints??0,cannon:18, cannonType:storedAccount?.cannonType&&CANNONS[storedAccount.cannonType]?storedAccount.cannonType:'cast' as CannonKind, activeQuest:Number.isInteger(storedActive)&&storedActive!>=0&&storedActive!<QUESTS.length?storedActive!:null as number|null, ammo:'iron' as AmmoKind, chainAmmo:storedAccount?.chainAmmo??40, attacking:false, repairing:false, invulnerable:0 };
+state.cannon=(Object.keys(mountedCannons) as CannonKind[]).reduce((sum,kind)=>sum+mountedCannons[kind],0);
 const quickSlots:Array<QuickItemId|null>=Array.from({length:12},(_,index)=>storedAccount?.quickSlots?.[index]??(['iron','chain','repairkit','speed'][index] as QuickItemId|undefined)??null);
 const questProgress=QUESTS.map((_,index)=>Math.max(0,Number(storedQuests?.progress?.[index])||0));
 const questCooldownUntil=QUESTS.map((_,index)=>Math.max(0,Number(storedQuests?.cooldowns?.[index])||0));
@@ -117,7 +124,7 @@ const islands = [
 
 function resize(){ const d=Math.min(devicePixelRatio,2); canvas.width=innerWidth*d; canvas.height=innerHeight*d; ctx.setTransform(d,0,0,d,0,0); }
 addEventListener('resize',resize); resize();
-addEventListener('keydown',e=>{ keys.add(e.key.toLowerCase()); if(['q','e',' '].includes(e.key.toLowerCase())) fire(e.key.toLowerCase()); if(e.key.toLowerCase()==='r') toggleAttack(); if(e.key.toLowerCase()==='f')toggleRepair();if(e.key==='Escape'){closeQuestLog();closeShipMenu();closeMarket();closeCaptainProfile();} });
+addEventListener('keydown',e=>{ keys.add(e.key.toLowerCase()); if(['q','e',' '].includes(e.key.toLowerCase())) fire(e.key.toLowerCase()); if(e.key.toLowerCase()==='r') toggleAttack(); if(e.key.toLowerCase()==='f')toggleRepair();if(e.key==='Escape'){closeQuestLog();closeShipMenu();closeMarket();closeCaptainProfile();closeDevelopment();} });
 addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
 addEventListener('beforeunload',saveAccount);
 canvas.addEventListener('pointerdown',e=>{
@@ -143,6 +150,10 @@ ui('questOverlay').addEventListener('pointerdown',e=>{if(e.target===ui('questOve
 ui('openShip').onclick=openShipMenu;
 ui('closeShip').onclick=closeShipMenu;
 ui('shipOverlay').addEventListener('pointerdown',e=>{if(e.target===ui('shipOverlay'))closeShipMenu();});
+ui('openDevelopment').onclick=openDevelopment;
+ui('closeDevelopment').onclick=closeDevelopment;
+ui('developmentOverlay').addEventListener('pointerdown',e=>{if(e.target===ui('developmentOverlay'))closeDevelopment();});
+document.querySelectorAll<HTMLButtonElement>('[data-development-tab]').forEach(button=>button.onclick=()=>setDevelopmentTab(button.dataset.developmentTab as 'talents'|'castles'));
 ui('openMarket').onclick=openMarket;
 ui('closeMarket').onclick=closeMarket;
 ui('marketOverlay').addEventListener('pointerdown',e=>{if(e.target===ui('marketOverlay'))closeMarket();});
@@ -232,9 +243,15 @@ const rewardQueue:string[]=[];
 function showReward(msg:string){ui('rewardToast').textContent=msg;ui('rewardToast').classList.remove('show');void ui('rewardToast').offsetWidth;ui('rewardToast').classList.add('show');rewardTimer=2.6;}
 function rewardNotice(msg:string){if(rewardTimer>0){rewardQueue.push(msg);return;}showReward(msg);}
 function saveQuestState(){localStorage.setItem(QUEST_STORAGE,JSON.stringify({activeQuest:state.activeQuest,progress:questProgress,cooldowns:questCooldownUntil}));}
-function saveAccount(){localStorage.setItem(ACCOUNT_STORAGE,JSON.stringify({pearls:state.pearls,gold:state.gold,wood:state.wood,fame:state.fame,level:state.level,maxHp:state.maxHp,hp:state.hp,chainAmmo:state.chainAmmo,elitePoints:state.elitePoints,battlePoints:state.battlePoints,cannonType:state.cannonType,quickSlots,upgrades}));}
+function saveAccount(){localStorage.setItem(ACCOUNT_STORAGE,JSON.stringify({pearls:state.pearls,gold:state.gold,wood:state.wood,fame:state.fame,level:state.level,maxHp:state.maxHp,hp:state.hp,chainAmmo:state.chainAmmo,elitePoints:state.elitePoints,battlePoints:state.battlePoints,cannonType:state.cannonType,cannonInventory,mountedCannons,quickSlots,upgrades}));}
 function effectiveRange(){return CANNONS[state.cannonType].range+upgrades.range*18;}
 function effectiveSpeed(){return 104+upgrades.speed*5;}
+function cannonCapacity(){return 30+upgrades.hull*2;}
+function mountedCannonCount(){return (Object.keys(mountedCannons) as CannonKind[]).reduce((sum,kind)=>sum+mountedCannons[kind],0);}
+function cannonAsset(kind:CannonKind){
+  const barrels=kind==='rapid'?3:kind==='heavy'?1:kind==='long'?1:2,width=kind==='long'?46:kind==='heavy'?31:39;
+  return `<svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="metal-${kind}" x1="0" x2="1"><stop stop-color="#53636a"/><stop offset=".5" stop-color="#cad2cb"/><stop offset="1" stop-color="#273339"/></linearGradient></defs><g fill="none" stroke="#d2a858" stroke-width="2"><circle cx="22" cy="48" r="9"/><circle cx="46" cy="48" r="9"/><path d="M14 42h39l-5-13H23z" fill="#493426"/></g>${Array.from({length:barrels},(_,i)=>`<rect x="${15+i*7}" y="${22+i*2}" width="${width}" height="${kind==='heavy'?10:6}" rx="3" fill="url(#metal-${kind})" stroke="#172329" transform="rotate(${i*3-3} 32 30)"/>`).join('')}<path d="M18 39h31" stroke="#c48d3c" stroke-width="3"/></svg>`;
+}
 function cooldownText(until:number){const minutes=Math.max(1,Math.ceil((until-Date.now())/60000)),hours=Math.floor(minutes/60),mins=minutes%60;return hours>0?`${hours} sa ${mins} dk`:`${mins} dk`;}
 let pendingUpgrade:UpgradeKind|null=null;
 function upgradeCost(kind:UpgradeKind){return Math.round(UPGRADES[kind].pearls*(1+upgrades[kind]*.55));}
@@ -243,28 +260,44 @@ function openShipMenu(){pendingUpgrade=null;renderShipMenu();ui('shipOverlay').c
 function closeShipMenu(){pendingUpgrade=null;ui('shipOverlay').classList.remove('open');}
 function renderShipMenu(){
   const activeCannon=CANNONS[state.cannonType];
-  ui('shipSummary').innerHTML=`<div><span>GÖVDE</span><b>${state.maxHp}</b></div><div><span>SALVO HASARI</span><b>${Math.round(state.cannon*5*(1+upgrades.damage*.11)*activeCannon.damage)}</b></div><div><span>MENZİL</span><b>${effectiveRange()}</b></div><div><span>HIZ</span><b>${effectiveSpeed()}</b></div>`;
+  state.cannon=mountedCannonCount();
+  ui('shipSummary').innerHTML=`<div><span>TOP KAPASİTESİ</span><b>${state.cannon} / ${cannonCapacity()}</b></div><div><span>SALVO HASARI</span><b>${Math.round(state.cannon*5*(1+upgrades.damage*.11)*activeCannon.damage)}</b></div><div><span>MENZİL</span><b>${effectiveRange()}</b></div><div><span>AKTİF TOP</span><b>${activeCannon.name}</b></div>`;
   const unlockLevel:Record<CannonKind,number>={cast:1,long:2,rapid:3,heavy:4};
-  ui('cannonRack').innerHTML=(Object.keys(CANNONS) as CannonKind[]).map(kind=>{const cannon=CANNONS[kind],locked=state.level<unlockLevel[kind],active=state.cannonType===kind;return `<button class="cannon-card ${active?'active':''}" data-cannon="${kind}" ${locked?'disabled':''}><i class="cannon-barrel">${kind==='rapid'?'≋':kind==='heavy'?'●':kind==='long'?'━':'◆'}</i><span>${locked?`SEVİYE ${unlockLevel[kind]} GEREKİR`:active?'KUŞANILDI':'KULLAN'}</span><strong>${cannon.name} Top</strong><small>Hasar ×${cannon.damage.toFixed(2)} · Menzil ${cannon.range} · Dolum ${cannon.reload.toFixed(2)} sn</small></button>`;}).join('');
+  ui('cannonRack').innerHTML=(Object.keys(CANNONS) as CannonKind[]).map(kind=>{const cannon=CANNONS[kind],locked=state.level<unlockLevel[kind],active=state.cannonType===kind;return `<article class="cannon-card ${active?'active':''} ${locked?'locked':''}"><div class="cannon-art">${cannonAsset(kind)}</div><span>${locked?`SEVİYE ${unlockLevel[kind]} GEREKİR`:active?'AKTİF TOP':'TOP SINIFI'}</span><strong>${cannon.name} Top</strong><small>Hasar ×${cannon.damage.toFixed(2)} · Menzil ${cannon.range} · Dolum ${cannon.reload.toFixed(2)} sn</small><div class="cannon-counts"><b>GEMİDE ${mountedCannons[kind]}</b><b>DEPODA ${cannonInventory[kind]}</b></div><div class="cannon-actions"><button data-mount="${kind}" ${locked||cannonInventory[kind]<=0||state.cannon>=cannonCapacity()?'disabled':''}>+ GEMİYE AL</button><button data-unmount="${kind}" ${mountedCannons[kind]<=0?'disabled':''}>− DEPOYA</button><button data-cannon="${kind}" ${locked||mountedCannons[kind]<=0?'disabled':''}>KULLAN</button></div></article>`;}).join('');
   document.querySelectorAll<HTMLButtonElement>('[data-cannon]').forEach(button=>button.onclick=()=>equipCannon(button.dataset.cannon as CannonKind));
+  document.querySelectorAll<HTMLButtonElement>('[data-mount]').forEach(button=>button.onclick=()=>moveCannon(button.dataset.mount as CannonKind,true));
+  document.querySelectorAll<HTMLButtonElement>('[data-unmount]').forEach(button=>button.onclick=()=>moveCannon(button.dataset.unmount as CannonKind,false));
+}
+function moveCannon(kind:CannonKind,toShip:boolean){
+  if(toShip){if(cannonInventory[kind]<=0||mountedCannonCount()>=cannonCapacity())return;cannonInventory[kind]--;mountedCannons[kind]++;}
+  else{if(mountedCannons[kind]<=0||mountedCannonCount()<=1)return;mountedCannons[kind]--;cannonInventory[kind]++;if(state.cannonType===kind&&mountedCannons[kind]===0){state.cannonType=(Object.keys(mountedCannons) as CannonKind[]).find(type=>mountedCannons[type]>0)||'cast';}}
+  state.cannon=mountedCannonCount();saveAccount();renderShipMenu();updateUI();
+}
+function openDevelopment(){pendingUpgrade=null;setDevelopmentTab('talents');ui('developmentOverlay').classList.add('open');}
+function closeDevelopment(){pendingUpgrade=null;ui('developmentOverlay').classList.remove('open');}
+function setDevelopmentTab(tab:'talents'|'castles'){
+  document.querySelectorAll<HTMLButtonElement>('[data-development-tab]').forEach(button=>button.classList.toggle('active',button.dataset.developmentTab===tab));
+  ui('talentPanel').classList.toggle('hidden',tab!=='talents');ui('castlePanel').classList.toggle('visible',tab==='castles');if(tab==='talents')renderUpgrades();
+}
+function renderUpgrades(){
   ui('upgradeList').innerHTML=(Object.keys(UPGRADES) as UpgradeKind[]).map(kind=>{const item=UPGRADES[kind],level=upgrades[kind],cost=upgradeCost(kind),maxed=level>=10;return `<article class="upgrade-card"><div class="upgrade-icon">${upgradeIcon(kind)}</div><div><span>SEVİYE ${level} / 10</span><h3>${item.name}</h3><p>${item.description}</p><small>${item.effect}</small></div><button data-upgrade="${kind}" ${maxed?'disabled':''}>${maxed?'AZAMİ':`◈ ${cost} İNCİ`}</button></article>`;}).join('');
   document.querySelectorAll<HTMLButtonElement>('[data-upgrade]').forEach(button=>button.onclick=()=>requestUpgrade(button.dataset.upgrade as UpgradeKind));
   if(!pendingUpgrade){ui('upgradeConfirm').classList.remove('visible');ui('upgradeConfirm').innerHTML='';return;}
   const item=UPGRADES[pendingUpgrade],cost=upgradeCost(pendingUpgrade);ui('upgradeConfirm').classList.add('visible');ui('upgradeConfirm').innerHTML=`<div><strong>${item.name} yükseltmesini onaylıyor musun?</strong><span>${cost} İnci harcanacak.</span></div><button id="confirmUpgrade">SATIN AL</button><button id="cancelUpgrade">VAZGEÇ</button>`;
-  ui('confirmUpgrade').onclick=buyUpgrade;ui('cancelUpgrade').onclick=()=>{pendingUpgrade=null;renderShipMenu();};
+  ui('confirmUpgrade').onclick=buyUpgrade;ui('cancelUpgrade').onclick=()=>{pendingUpgrade=null;renderUpgrades();};
 }
 function equipCannon(kind:CannonKind){
   const unlockLevel:Record<CannonKind,number>={cast:1,long:2,rapid:3,heavy:4};
   if(state.level<unlockLevel[kind]){toast(`Bu top için seviye ${unlockLevel[kind]} gerekli`);return;}
   state.cannonType=kind;player.cooldown=0;saveAccount();renderShipMenu();updateUI();toast(`${CANNONS[kind].name} Top kuşanıldı`);
 }
-function requestUpgrade(kind:UpgradeKind){pendingUpgrade=kind;renderShipMenu();}
+function requestUpgrade(kind:UpgradeKind){pendingUpgrade=kind;renderUpgrades();}
 function buyUpgrade(){
   if(!pendingUpgrade)return;const kind=pendingUpgrade,cost=upgradeCost(kind);
   if(state.pearls<cost){toast('Bu geliştirme için yeterli İncin yok');return;}
   state.pearls-=cost;upgrades[kind]++;
   if(kind==='hull'){state.maxHp+=20;state.hp+=20;}
-  pendingUpgrade=null;saveAccount();renderShipMenu();updateUI();rewardNotice(`${UPGRADES[kind].name}   SEVİYE ${upgrades[kind]}`);
+  pendingUpgrade=null;saveAccount();renderUpgrades();updateUI();rewardNotice(`${UPGRADES[kind].name}   SEVİYE ${upgrades[kind]}`);
 }
 const MARKET_ITEMS=[
   {name:'Zincir Güllesi Kesesi',amount:20,price:70,description:'Düşman gemisini 3 saniye boyunca yavaşlatan 20 atış.'},
