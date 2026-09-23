@@ -48,6 +48,15 @@ Sol üstteki **DÜNYA** butonu parşömen haritayı açar; oradan bağlı bir de
 - **Tayfa:** 6 subay (Topçu Başı, Serdümen, Marangoz, Gözcü, Levazımcı, Cerrah) altınla işe alınır ve 5 rütbeye kadar yükseltilir. Aynı anda görevde olabilecek subay sayısı 1 / 2 / 3'tür (seviye 1 / 3 / 6).
 - **Profil:** Tüm kaptan ve tayfa bonuslarının toplamı.
 
+## Boss etkinlikleri ve kaleler
+
+- **Hayalet Amiral:** Açık denizlerde ilk kez 90 saniye sonra, yenildikten sonra da 8 dakikada bir belirir. Canı yarıya inince muhafız çağırır ve beşli yaylım ateşine geçer. Batırılınca 3 yaldızlı sandık, altın, inci, şöhret, elit ve savaş puanı verir. Sağdaki etkinlik panelinden rota çizilebilir.
+- **Kaleler:** Gölgeler Denizi'nde Fırtına Kalesi, Kızıl Resifler'de Kan Kalesi, Fırtına Kuşağı'nda Kül Kalesi var.
+  - NPC kalesinin 4 kulesi yaklaşan gemiye ateş eder; surları yıkılan kale oyuncuya geçer.
+  - Oyuncunun kalesi dakikada altın ve kereste üretir; kuleleri düşman gemilerine ateş eder.
+  - Kale 10 dakikada bir Yağmacıların kuşatmasına uğrar; garnizon canı biterse kale düşer.
+  - GELİŞTİRME → KALELER sekmesinden hasılat toplanır ve kale 3. seviyeye kadar yükseltilir.
+
 ## Ganimet sandıkları
 
 - Batan her düşman gemisi, mevcut ödüllerine ek olarak bir ganimet sandığı bırakır; Derinlik Leviathanı yaldızlı sandık bırakır.

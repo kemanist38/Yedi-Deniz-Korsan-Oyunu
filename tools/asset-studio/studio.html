@@ -4,7 +4,7 @@
 <body style="margin:0;background:#0e3b48">
 <script type="module">
 import * as THREE from 'three';
-import {buildShip,buildLeviathan,buildChest,buildIsland,buildPortal,FLEET} from './models.js';
+import {buildShip,buildLeviathan,buildChest,buildIsland,buildPortal,buildFort,FLEET} from './models.js';
 import {paintSeaTile,paintWorldChart} from './paint.js';
 import {buildIcon} from './icons.js';
 import * as T from './textures.js';
@@ -43,7 +43,7 @@ function sheet(frames,cols){
 function anchorOf(cam,frame,p=new THREE.Vector3()){const v=p.clone().project(cam);return{x:+((v.x+1)/2*frame).toFixed(1),y:+((1-v.y)/2*frame).toFixed(1)};}
 function exportCanvas(c){return{webp:c.toDataURL('image/webp',.9),png:c.toDataURL('image/png')};}
 
-window.renderShipSheet=(key,{dirs=16,frame=192,span=104,lookY=9}={})=>{
+window.renderShipSheet=(key,{dirs=16,frame=192,span=104,lookY=9}=({ghost:{frame:240,span:130,lookY:11}})[key]||{})=>{
   const cam=camera(span,lookY),frames=[];
   for(let i=0;i<dirs;i++){const h=i*Math.PI*2/dirs,scene=stage(),ship=buildShip(FLEET[key],{heading:h});prepare(ship);ship.rotation.y=Math.PI-h;scene.add(ship);frames.push(shot(scene,cam,frame));}
   return{...exportCanvas(sheet(frames,dirs/2)),frame,dirs,anchor:anchorOf(cam,frame)};
@@ -53,7 +53,9 @@ window.renderPortraits=({frame=128}={})=>{
   for(const key of ['scout','raider','warship']){const scene=stage(),ship=buildShip(FLEET[key]);prepare(ship);ship.rotation.y=Math.PI-Math.PI*1.25;scene.add(ship);
     const span={scout:52,raider:64,warship:78}[key];frames.push(shot(scene,camera(span,{scout:9,raider:11,warship:13}[key]),frame));}
   {const scene=stage(),m=buildLeviathan(.6);prepare(m);scene.add(m);frames.push(shot(scene,camera(78,4),frame));}
-  return{...exportCanvas(sheet(frames,4)),frame};
+  {const scene=stage(),ship=buildShip(FLEET.ghost);prepare(ship);ship.rotation.y=Math.PI-Math.PI*1.25;scene.add(ship);frames.push(shot(scene,camera(88,15),frame));}
+  {const scene=stage(),f=buildFort('npc');prepare(f);scene.add(f);frames.push(shot(scene,camera(100,14),frame));}
+  return{...exportCanvas(sheet(frames,6)),frame};
 };
 window.renderLeviathan=({count=8,frame=256,span=132,look='deep'}={})=>{
   const cam=camera(span,2),frames=[];
@@ -83,5 +85,6 @@ window.renderIcon=(name,{frame=256,margin=.8}={})=>{const scene=stage(),icon=bui
 window.renderMineSprite=({frame=128,span=18}={})=>{const scene=stage(),m=buildIcon('icon-mine');m.userData.waterline=2.6;prepare(m);scene.add(m);
   const foam=new THREE.Mesh(new THREE.PlaneGeometry(16,16),new THREE.MeshBasicMaterial({map:T.foamTexture({seed:12,color:'220,245,240',strength:.7,inner:.3}),transparent:true,depthWrite:false}));foam.rotation.x=-Math.PI/2;foam.position.y=2.65;scene.add(foam);
   const cam=camera(span,3.5);return{...exportCanvas(shot(scene,cam,frame)),frame,anchor:anchorOf(cam,frame,new THREE.Vector3(0,2.6,0))};};
+window.renderFort=({frame=320,span=150}={})=>{const cam=camera(span,10),frames=['npc','player'].map(o=>{const scene=stage(),f=buildFort(o);prepare(f);scene.add(f);return shot(scene,cam,frame);});return{...exportCanvas(sheet(frames,2)),frame,anchor:anchorOf(cam,frame)};};
 window.studioReady=true;
 </script></body></html>

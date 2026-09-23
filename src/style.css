@@ -93,7 +93,7 @@ button { font: inherit; }
 .cannon-art img,.storage-art img,.detail-asset img,.transfer-asset img{width:100%;height:100%;object-fit:contain;user-select:none}.storage-art{width:86px;height:66px}.detail-asset{width:155px;height:118px}.transfer-asset{width:175px;height:125px}.cannon-art img{filter:drop-shadow(0 5px 5px #0008)}.detail-asset img,.transfer-asset img{filter:drop-shadow(0 8px 8px #000)}.storage-cannon:nth-child(1) .storage-art img{filter:drop-shadow(0 4px 5px #c4863350)}.storage-cannon:nth-child(2) .storage-art img{filter:drop-shadow(0 4px 5px #62cbd355)}.storage-cannon:nth-child(3) .storage-art img{filter:drop-shadow(0 4px 5px #75ded755)}.storage-cannon:nth-child(4) .storage-art img{filter:drop-shadow(0 4px 6px #e7654555)}.asset-loading{display:block;width:42px;height:42px;margin:auto;border:2px solid #98713d;border-top-color:#e7c174;border-radius:50%;animation:assetSpin .8s linear infinite}@keyframes assetSpin{to{transform:rotate(360deg)}}
 .raster-item{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 3px 4px #000b);user-select:none}.quick-slot>.raster-item{width:36px;height:36px;margin:auto}.loadout-items .raster-item{grid-row:1/3;width:50px;height:50px}.loadout-slots .raster-item{width:100%;height:100%}.ammo-icon .raster-item{width:48px;height:48px;margin:auto}
 
-.target-portrait{overflow:hidden}.target-portrait .portrait-art{display:block;width:100%;height:100%;background-repeat:no-repeat;background-size:400% 100%}
+.target-portrait{overflow:hidden}.target-portrait .portrait-art{display:block;width:100%;height:100%;background-repeat:no-repeat;background-size:600% 100%}
 /* Dünya haritaları */
 .map-badge{position:absolute;left:6px;top:5px;z-index:2;display:flex;flex-direction:column;padding:3px 7px 3px 8px;border-left:2px solid #d8b268;border-radius:3px;background:linear-gradient(90deg,#030d11d9,#030d1100);pointer-events:none}
 .map-badge strong{font:700 10px Cinzel;letter-spacing:.06em;color:#f3d496;text-shadow:0 1px 4px #000}
@@ -179,3 +179,29 @@ button { font: inherit; }
 .officer footer button[data-officer-toggle]{background:#0b2a2e;border-color:#6fd6c466;color:#9fe8dc}
 .officer footer button:disabled{background:#1a2a2e;border-color:#4a5a5a;color:#8a9a96;cursor:default}
 @media (max-width:760px){.talent-branches,.officer-grid{grid-template-columns:1fr}}
+/* Etkinlikler ve kaleler */
+.event-panel{pointer-events:none;position:absolute;right:22px;top:272px;z-index:11;display:grid;gap:6px;width:250px;opacity:0;transition:.2s}
+.event-panel.visible{pointer-events:auto;opacity:1}
+.event-row{display:grid;grid-template-columns:44px 1fr;align-items:center;gap:8px;width:100%;padding:5px 8px 5px 5px;border:1px solid #5a4a3a99;border-radius:7px;background:linear-gradient(90deg,#131a1cf0,#07171de8);color:#d8c69e;text-align:left;box-shadow:0 5px 16px #0009}
+button.event-row{cursor:pointer}
+.event-row img{width:44px;height:44px;border-radius:5px;object-fit:cover;background:#0c2228}
+.event-row small{display:block;font:700 7.5px Inter;letter-spacing:.14em;color:#9b7b45}
+.event-row strong{display:block;font:700 13px Cinzel;color:#f3d496}
+.event-row b{font:700 12px Inter;color:#8dffd0}
+.event-row i{display:block;height:5px;margin-top:4px;border-radius:3px;background:#07161c;overflow:hidden}
+.event-row i em{display:block;height:100%;background:linear-gradient(90deg,#3fd6a8,#8dffd0)}
+.event-row i.danger em{background:linear-gradient(90deg,#c0392b,#ff8a5a)}
+.event-row.boss{border-color:#6dffc488;box-shadow:0 0 16px #6dffc433}.event-row.boss small{color:#8dffd0}
+.event-row.fort.owned{border-color:#3fd6c088}
+.castle-list{display:grid;gap:10px;width:100%;text-align:left}
+.castle-card{display:grid;grid-template-columns:120px 1fr;gap:12px;padding:10px;border:1px solid #5a4a3a66;border-radius:8px;background:#071a20}
+.castle-card.owned{border-color:#3fd6c088;box-shadow:inset 0 0 20px #3fd6c012}
+.castle-art{width:120px;height:120px;border-radius:6px;background-size:200% 100%;background-color:#0c2a33}
+.castle-card span{font:700 8px Inter;letter-spacing:.16em;color:#9b7b45;text-transform:uppercase}
+.castle-card h3{margin:2px 0 4px;font:700 17px Cinzel;color:#f3d496}
+.castle-card p{margin:0 0 4px;font:500 12px/1.45 Inter;color:#b9cbc5}
+.castle-pending b{color:#8dffd0}
+.castle-card footer{grid-column:1/-1;display:flex;gap:6px}
+.castle-card footer button{flex:1;padding:8px;border:1px solid #c69b4e88;border-radius:5px;background:linear-gradient(180deg,#5a3a1c,#2e1c0c);color:#f6deb0;font:700 10px Inter;cursor:pointer}
+.castle-card footer button:disabled{background:#1a2a2e;border-color:#4a5a5a;color:#8a9a96;cursor:default}
+@media (max-width:720px){.event-panel{top:auto;bottom:250px;right:8px;width:210px}.castle-card{grid-template-columns:80px 1fr}.castle-art{width:80px;height:80px}}

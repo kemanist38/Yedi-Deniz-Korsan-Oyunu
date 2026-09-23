@@ -54,7 +54,8 @@ export function drawChestSprite(ctx:CanvasRenderingContext2D,kind:ChestKind,x:nu
 
 // Hedef kartı portreleri: 4 hücre (gözcü, yağmacı, savaş gemisi, canavar).
 export const PORTRAIT_SHEET='/assets/npc-portraits-v1.webp';
-export const PORTRAIT_INDEX={scout:0,raider:1,warship:2,monster:3} as const;
+export const PORTRAIT_INDEX={scout:0,raider:1,warship:2,monster:3,boss:4,fort:5} as const;
+export const PORTRAIT_COUNT=6;
 
 // Adalar: her görünüm için 2 varyantlı sayfa (512 px), 65° yukarıdan. Çizim boyu = 2.36 × ada yarıçapı.
 type IslandLookName='verdant'|'misty'|'coral'|'haven'|'crimson'|'storm';
@@ -95,4 +96,26 @@ export function drawMineSprite(ctx:CanvasRenderingContext2D,x:number,y:number,ti
   else{ctx.fillStyle='#1d1f22';ctx.beginPath();ctx.arc(x,y,9,0,Math.PI*2);ctx.fill();}
   if(!arming){ctx.fillStyle=Math.floor(time/400)%2?'#ff5a3a':'#ff5a3a55';ctx.beginPath();ctx.arc(x,y-11+bob,2.4,0,Math.PI*2);ctx.fill();}
   ctx.restore();
+}
+
+// Hayalet Amiral: 16 yön, 240 px kare.
+const BOSS_SHIP={frame:240,dirs:16,cols:8,anchorX:120,anchorY:135.1,size:170};
+const bossSheet=load('/assets/enemy-ghost-v1.webp');
+export const BOSS_LABEL_OFFSET=-76;
+export function drawBossSprite(ctx:CanvasRenderingContext2D,x:number,y:number,angle:number,time:number){
+  if(!ready(bossSheet))return false;
+  const step=Math.PI*2/BOSS_SHIP.dirs,index=((Math.round(angle/step)%BOSS_SHIP.dirs)+BOSS_SHIP.dirs)%BOSS_SHIP.dirs,k=BOSS_SHIP.size/BOSS_SHIP.frame,bob=Math.sin(time/520)*1.8;
+  ctx.save();ctx.shadowColor='#6dffc4';ctx.shadowBlur=18+Math.sin(time/300)*6;
+  ctx.drawImage(bossSheet,(index%BOSS_SHIP.cols)*BOSS_SHIP.frame,Math.floor(index/BOSS_SHIP.cols)*BOSS_SHIP.frame,BOSS_SHIP.frame,BOSS_SHIP.frame,x-BOSS_SHIP.anchorX*k,y+bob-BOSS_SHIP.anchorY*k,BOSS_SHIP.size,BOSS_SHIP.size);
+  ctx.restore();return true;
+}
+
+// Kale: 2 kare (NPC kızıl sancak, oyuncu turkuaz sancak), 320 px.
+const FORT={frame:320,anchorX:160,anchorY:175.9,size:210};
+const fortSheet=load('/assets/fort-v1.webp');
+export const FORT_LABEL_OFFSET=-92;
+export const FORT_ART='/assets/fort-v1.webp';
+export function drawFortSprite(ctx:CanvasRenderingContext2D,owner:'npc'|'player',x:number,y:number){
+  if(!ready(fortSheet))return false;const k=FORT.size/FORT.frame;
+  ctx.drawImage(fortSheet,owner==='player'?FORT.frame:0,0,FORT.frame,FORT.frame,x-FORT.anchorX*k,y-FORT.anchorY*k,FORT.size,FORT.size);return true;
 }
