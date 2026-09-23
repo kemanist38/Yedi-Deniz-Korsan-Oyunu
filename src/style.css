@@ -382,3 +382,32 @@ button.event-row{cursor:pointer}
   .cannon-side{grid-template-columns:42px 1fr;padding:4px}.cannon-row-art{width:42px;height:38px}
   .cannon-side small{display:none}.cannon-transfer-actions button{font-size:11px}
 }
+
+/* FİLO: hazine, bağış ve kule kaideleri */
+.top-shortcuts .guild-nav{background:url(/assets/fleet-towers-verdant-v2.webp) 83.3% 32%/400% 200% no-repeat}
+.guild-window{width:min(940px,94vw)}
+#guildPanel{display:grid;gap:12px;max-height:72vh;overflow:auto;padding:4px 2px}
+.guild-create{display:grid;gap:10px;padding:14px;border:1px solid #bd914b55;border-radius:8px;background:#071419cc}
+.guild-create p,.guild-note,.guild-empty{margin:0;font-size:12px;line-height:1.55;color:#cfd8d2}
+.guild-create label{display:grid;gap:4px;font:700 10px Inter;letter-spacing:.08em;color:#d8b268}
+.guild-create input,.guild-donate input{padding:8px 10px;border:1px solid #bd914b88;border-radius:6px;background:#04101399;color:#f3e6c8;font:600 13px Inter}
+.guild-create button,.guild-donate button,.guild-test{padding:9px 14px;border:1px solid #d8b268;border-radius:6px;background:linear-gradient(#5a3a1c,#2c1a0c);color:#ffe2a0;font:800 11px Inter;letter-spacing:.08em;cursor:pointer}
+.guild-donate button:disabled,.tower-slot:disabled{opacity:.45;cursor:not-allowed}
+.guild-head{display:flex;justify-content:space-between;gap:14px;align-items:center;padding:12px 14px;border:1px solid #bd914b55;border-radius:8px;background:linear-gradient(90deg,#0b2228,#071419)}
+.guild-head h3{margin:2px 0;font:700 20px Cinzel;color:#f3d496}.guild-head small{color:#9fb8b0;font-size:11px}
+.guild-treasury{display:grid;justify-items:end;gap:2px}.guild-treasury span{font:800 9px Inter;letter-spacing:.14em;color:#d8b268}
+.guild-treasury strong{display:flex;align-items:center;gap:6px;font:800 22px Inter;color:#e8f4ff}.guild-treasury .sprite{width:22px;height:22px}
+.guild-donate{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 12px;border:1px solid #bd914b33;border-radius:8px;background:#071419aa}
+.guild-donate>span{font:800 11px Inter;color:#f3d496;margin-right:auto}.guild-donate small{color:#9fb8b0;font-weight:600}.guild-donate input{width:90px}
+.guild-test{justify-self:start;border-color:#6fd6c4;background:linear-gradient(#1f4a48,#0c2224);color:#bff6ea}
+.guild-islands{display:grid;gap:10px}
+.guild-island{padding:12px;border:1px solid #bd914b44;border-radius:8px;background:#061216cc}
+.guild-island>header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.guild-island h4{margin:2px 0 0;font:700 15px Cinzel;color:#f3d496}.guild-island>header b{font:800 11px Inter;color:#9fe8dc}
+.tower-slots{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.tower-slot{display:grid;justify-items:center;gap:3px;padding:8px 6px;border:1px solid #bd914b44;border-radius:7px;background:#0a1c21;color:#e8dcb8;font:inherit}
+.tower-slot.empty{cursor:pointer;border-style:dashed}.tower-slot.empty:not(:disabled):hover{border-color:#d8b268;background:#12282c}
+.tower-slot small{font:700 10px Inter;color:#cfd8d2}.tower-slot b{font:800 9px Inter;letter-spacing:.06em;color:#ffe2a0}
+.tower-art{display:block;width:64px;height:64px;background:url(/assets/fleet-towers-verdant-v2.webp) 83.3% 32%/400% 200% no-repeat;filter:drop-shadow(0 4px 5px #000a)}
+.tower-art.ghost{opacity:.28;filter:grayscale(1)}
+.tower-slot em{display:block;width:80%;height:4px;border-radius:2px;background:#07161c;overflow:hidden}.tower-slot em span{display:block;height:100%;background:#3fd6c0}
+@media(max-width:760px){.tower-slots{grid-template-columns:repeat(2,1fr)}.guild-head{flex-direction:column;align-items:flex-start}.guild-treasury{justify-items:start}}

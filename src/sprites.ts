@@ -60,10 +60,11 @@ export function drawFleetBase(ctx:CanvasRenderingContext2D,theme:string,x:number
   const sheet=load(fleetBaseV3||fleetBaseUrl(theme));if(!ready(sheet))return false;
   ctx.drawImage(sheet,x-500,y-500,1000,1000);return true;
 }
-export const TOWER_LABEL_OFFSET=-74;
-export function drawFleetTower(ctx:CanvasRenderingContext2D,theme:string,owner:'npc'|'player',x:number,y:number){
-  const sheet=load(fleetTowerUrl(theme));if(!ready(sheet))return false;const size=152,k=size/256;
-  ctx.drawImage(sheet,owner==='player'?256:0,0,256,256,x-128*k,y-152.7*k,size,size);return true;
+// Kuleler adanın görselinden bağımsızdır: surdaki yuvarlak kaidelerin üstüne dikilir (200 px çizim).
+export const TOWER_LABEL_OFFSET=-104;
+export function drawFleetTower(ctx:CanvasRenderingContext2D,theme:string,owner:'npc'|'player',x:number,y:number,alpha=1){
+  const sheet=load(fleetTowerUrl(theme));if(!ready(sheet))return false;const size=200,k=size/256;
+  ctx.save();ctx.globalAlpha=alpha;ctx.drawImage(sheet,owner==='player'?256:0,0,256,256,x-128*k,y-152.7*k,size,size);ctx.restore();return true;
 }
 
 // Ganimet sandıkları: 2 kare (tahta, yaldızlı), 128 px.

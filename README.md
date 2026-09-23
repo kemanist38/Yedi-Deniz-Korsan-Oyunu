@@ -48,6 +48,12 @@ Filo adaları 5. seviye ve üstü denizlerde bulunur: sur halkasıyla çevrili, 
 - **Kendi filonun adası:** Lagünde gövde kendiliğinden onarılır ve kuleler düşmanlara ateş eder.
 - **Rakip ada:** Kuleleri yaklaşan gemiye ateş eder ve filo savaşı ölçeğinde dayanıklıdır; tek gemi yıkamaz. **Test modu (`FLEET_TEST_ENTRY`) açıkken rakip adaların lagününe de girilebilir.**
 
+### Filo (FİLO sekmesi)
+- **Filo kur:** Filoyu kuran oyuncu filo başkanı olur. Çok oyunculu mod gelene kadar filoda yalnızca sen varsın.
+- **İnci bağışı:** Oyuncular filo hazinesine inci bağışlar (+10, +50, +100 ya da istenen miktar).
+- **Kuleler adadan bağımsızdır:** Surdaki yuvarlak burçlar boş kule kaideleridir. Filo başkanı, hazinedeki inciyle kaideye kule diker; bedeli `20 + 10 × seviye` incidir. Dikilen kule adaya yaklaşan düşmanlara ateş eder.
+- Fethedilen adanın kaideleri boş gelir. Test modunda bulunduğun denizin adası FİLO sekmesinden doğrudan filoya katılabilir.
+
 ### Seviye ve görevler
 
 - **Tecrübe (TP):** Seviye atlamak için gereken TP sırasıyla 2.000 / 5.000 / 10.000 / 18.000 / 30.000 / 48.000 / 72.000 / 105.000'dir; en yüksek seviye 9.
