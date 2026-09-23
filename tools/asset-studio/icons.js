@@ -161,6 +161,63 @@ export function buildIcon(name){
     
     root.userData.cam={pos:[0,5,14],look:[0,3,0]};
   }
+  if(name==='ui-ring'||name==='ui-ring-attack'){
+    const attack=name==='ui-ring-attack',brass=std({color:'#c89a45',metalness:.9,roughness:.32}),dark=std({color:'#3a2616',metalness:.4,roughness:.5});
+    const [fc,fx]=T.canvas(256,256),fg=fx.createRadialGradient(110,100,10,128,128,130);fg.addColorStop(0,attack?'#8a2a1e':'#1f5a60');fg.addColorStop(.7,attack?'#4a120c':'#0c2a30');fg.addColorStop(1,attack?'#2a0806':'#061a1f');fx.fillStyle=fg;fx.fillRect(0,0,256,256);T.grain(fx,256,256,T.rng(attack?131:132),{alpha:.06,count:500});
+    const face=new THREE.Mesh(new THREE.CylinderGeometry(4.6,4.6,.4,64),std({map:T.toTexture(fc),metalness:.2,roughness:.6}));face.rotation.x=Math.PI/2;root.add(face);
+    const rim=new THREE.Mesh(new THREE.TorusGeometry(4.75,.42,16,72),brass);root.add(rim);
+    const inner=new THREE.Mesh(new THREE.TorusGeometry(4.05,.14,10,72),dark);inner.position.z=.25;root.add(inner);
+    for(let i=0;i<12;i++){const a=i/12*Math.PI*2,rv=new THREE.Mesh(new THREE.SphereGeometry(.2,10,8),brass);rv.position.set(Math.cos(a)*4.75,Math.sin(a)*4.75,.4);root.add(rv);}
+    root.userData.cam={pos:[0,0,16],look:[0,0,0]};root.userData.flat=true;
+  }
+  if(name==='ui-slot'){
+    const wood=std({map:T.chestWoodTexture({seed:141,wood:'#2a1c12',dark:'#1a110a'}),roughness:.8,metalness:0}),brass=std({color:'#b8904c',metalness:.9,roughness:.35});
+    const base=new THREE.Mesh(new THREE.BoxGeometry(9,9,.6),wood);root.add(base);
+    const inset=new THREE.Mesh(new THREE.BoxGeometry(7.8,7.8,.2),std({color:'#0a1c21',roughness:.9,metalness:0}));inset.position.z=.35;root.add(inset);
+    for(const [x,y] of [[-1,-1],[1,-1],[-1,1],[1,1]]){const c=new THREE.Mesh(new THREE.BoxGeometry(1.8,.5,.25),brass);c.position.set(x*3.8,y*4.25,.4);root.add(c);const c2=new THREE.Mesh(new THREE.BoxGeometry(.5,1.8,.25),brass);c2.position.set(x*4.25,y*3.8,.4);root.add(c2);const rv=new THREE.Mesh(new THREE.SphereGeometry(.2,8,6),brass);rv.position.set(x*4.1,y*4.1,.55);root.add(rv);}
+    root.userData.cam={pos:[0,0,16],look:[0,0,0]};root.userData.flat=true;
+  }
+  if(name==='icon-scroll'){
+    const paper=std({map:T.sailTexture({seed:151,base:'#e8d7ae',dirt:.2}),roughness:.95,metalness:0,side:THREE.DoubleSide});
+    const roll=new THREE.Mesh(new THREE.CylinderGeometry(1.3,1.3,9,28),paper);roll.rotation.z=Math.PI/2;roll.position.set(0,1.3,0);root.add(roll);
+    for(const x of [-4.7,4.7]){const k=new THREE.Mesh(new THREE.CylinderGeometry(.45,.45,1.2,14),std({color:'#6a3a1c',roughness:.6,metalness:0}));k.rotation.z=Math.PI/2;k.position.set(x,1.3,0);root.add(k);const ball=new THREE.Mesh(new THREE.SphereGeometry(.6,12,10),std({color:'#d4a64c',metalness:.9,roughness:.3}));ball.position.set(x*1.12,1.3,0);root.add(ball);}
+    const sheet=new THREE.Mesh(new THREE.PlaneGeometry(8.4,5,8,4),paper);const sp=sheet.geometry.attributes.position;for(let i=0;i<sp.count;i++)sp.setZ(i,Math.sin(sp.getY(i)*.6)*.3);sheet.geometry.computeVertexNormals();sheet.rotation.x=-1.25;sheet.position.set(0,.3,2.6);root.add(sheet);
+    const ribbon=new THREE.Mesh(new THREE.CylinderGeometry(1.36,1.36,.5,28),std({color:'#8a1f1a',roughness:.7,metalness:0}));ribbon.rotation.z=Math.PI/2;ribbon.position.set(-1.2,1.3,0);root.add(ribbon);
+    const seal=new THREE.Mesh(new THREE.CylinderGeometry(.95,1,.4,20),std({color:'#a3251d',roughness:.45,metalness:.1}));seal.rotation.x=.9;seal.position.set(-1.2,1.7,1.25);root.add(seal);
+    root.userData.cam={pos:[0,8,12],look:[0,1,1]};
+  }
+  if(name==='icon-gear'){
+    const brass=std({color:'#c89a45',metalness:.9,roughness:.3});
+    const shape=new THREE.Shape();const teeth=12;for(let i=0;i<=teeth*4;i++){const a=i/(teeth*4)*Math.PI*2,r=(i%4<2)?4.4:3.6;const x=Math.cos(a)*r,y=Math.sin(a)*r;i?shape.lineTo(x,y):shape.moveTo(x,y);}
+    const hole=new THREE.Path();hole.absarc(0,0,1.3,0,Math.PI*2,true);shape.holes.push(hole);
+    const gear=new THREE.Mesh(new THREE.ExtrudeGeometry(shape,{depth:1,bevelEnabled:true,bevelSize:.15,bevelThickness:.15,bevelSegments:2,curveSegments:24}),brass);root.add(gear);
+    for(let k=0;k<5;k++){const a=k/5*Math.PI*2,h=new THREE.Mesh(new THREE.CylinderGeometry(.55,.55,1.4,14),std({color:'#1b1c1e',metalness:.6,roughness:.5}));h.rotation.x=Math.PI/2;h.position.set(Math.cos(a)*2.4,Math.sin(a)*2.4,.5);root.add(h);}
+    const small=gear.clone();small.scale.setScalar(.5);small.position.set(4.2,-3.6,-.6);small.rotation.z=.2;root.add(small);
+    root.rotation.set(-.5,.3,0);root.userData.cam={pos:[0,2,15],look:[0,0,0]};
+  }
+  if(name==='icon-anvil'){
+    const iron2=iron(161),shape=new THREE.Shape();shape.moveTo(-5,1.4);shape.lineTo(3.2,1.4);shape.quadraticCurveTo(6.2,1.3,6.6,.3);shape.quadraticCurveTo(4,.2,3,-.4);shape.lineTo(2,-1);shape.lineTo(1.8,-2.4);shape.lineTo(3,-3.6);shape.lineTo(-4,-3.6);shape.lineTo(-2.8,-2.4);shape.lineTo(-3,-1);shape.lineTo(-5,-.2);shape.closePath();
+    const anvil=new THREE.Mesh(new THREE.ExtrudeGeometry(shape,{depth:3,bevelEnabled:true,bevelSize:.15,bevelThickness:.15,bevelSegments:2}),iron2);anvil.position.set(-.5,3.6,-1.5);root.add(anvil);
+    const glow=new THREE.Mesh(new THREE.BoxGeometry(3.4,.5,1.2),std({color:'#ff9a3a',emissive:'#ff6a10',emissiveIntensity:2.2}));glow.position.set(0,5.3,0);glow.rotation.y=.2;root.add(glow);
+    const handle=new THREE.Mesh(new THREE.CylinderGeometry(.3,.36,6,10),std({color:'#9a6a3a',roughness:.7,metalness:0}));handle.rotation.z=.9;handle.position.set(3.2,7.4,1.6);root.add(handle);
+    const head=new THREE.Mesh(new THREE.BoxGeometry(1.2,1.2,3),iron(162));head.position.set(1,8.9,1.6);head.rotation.set(0,Math.PI/2,.9);root.add(head);
+    root.userData.cam={pos:[0,7,14],look:[0,4,0]};
+  }
+  if(name==='gunner-vignette'){
+    const bronze=std({color:'#b07a3a',metalness:.9,roughness:.3}),wood=std({map:T.chestWoodTexture({seed:171,wood:'#6a3f22',dark:'#43240f'}),roughness:.8,metalness:0});
+    const barrel=new THREE.Mesh(new THREE.LatheGeometry([[0,0],[1.5,0],[1.6,.4],[1.35,.8],[1.25,5],[1.1,5.3],[1.05,9],[1.25,9.3],[1.25,9.8],[.7,9.8],[.7,9.5],[0,9.5]].map(([x,y])=>new THREE.Vector2(x,y)),40),bronze);
+    barrel.rotation.z=-Math.PI/2+.12;barrel.position.set(-4.5,3.4,0);root.add(barrel);
+    for(const x of [-2.6,2.2]){const ring=new THREE.Mesh(new THREE.TorusGeometry(1.32,.16,8,32),bronze);ring.rotation.y=Math.PI/2;ring.position.set(x,3.4-(x+4.5)*.12,0);root.add(ring);}
+    const knob=new THREE.Mesh(new THREE.SphereGeometry(.6,16,12),bronze);knob.position.set(-5.2,3.3,0);root.add(knob);
+    const carriage=new THREE.Mesh(new THREE.BoxGeometry(6.5,1.6,3.6),wood);carriage.position.set(-1.8,1.6,0);root.add(carriage);
+    for(const [x,z] of [[-4.2,2],[-4.2,-2],[.6,2],[.6,-2]]){const w=new THREE.Mesh(new THREE.CylinderGeometry(1.05,1.05,.6,20),wood);w.rotation.x=Math.PI/2;w.position.set(x,1.05,z);root.add(w);const hub=new THREE.Mesh(new THREE.CylinderGeometry(.3,.3,.7,10),iron(172));hub.rotation.x=Math.PI/2;hub.position.set(x,1.05,z);root.add(hub);}
+    const im=iron(173);[[3.4,.9,1.6],[5.2,.9,1.6],[4.3,.9,3.1],[4.3,2.4,2.1]].forEach(([x,y,z])=>{const b=new THREE.Mesh(new THREE.SphereGeometry(.9,20,16),im);b.position.set(x,y,z);root.add(b);});
+    const keg=new THREE.Mesh(new THREE.CylinderGeometry(1.4,1.4,2.8,20),std({map:T.chestWoodTexture({seed:174,wood:'#7a4a2a',dark:'#4a2a16'}),roughness:.8,metalness:0}));keg.position.set(5.2,1.4,-2);root.add(keg);
+    for(const y of [.3,1.4,2.5]){const h=new THREE.Mesh(new THREE.TorusGeometry(1.45,.1,8,24),iron(175));h.rotation.x=Math.PI/2;h.position.set(5.2,y,-2);root.add(h);}
+    const rod=new THREE.Mesh(new THREE.CylinderGeometry(.14,.14,9,8),std({color:'#8a5a30',roughness:.8,metalness:0}));rod.rotation.z=.35;rod.position.set(6.6,4.4,-2.6);root.add(rod);
+    const lantern=new THREE.Mesh(new THREE.CylinderGeometry(.7,.8,1.8,8),std({color:'#ffcf6a',emissive:'#ffa53a',emissiveIntensity:1.6}));lantern.position.set(2.2,.9,-2.6);root.add(lantern);
+    root.userData.cam={pos:[2,7,15],look:[.5,2.4,0]};
+  }
   if(name==='icon-chest'){
     const c=buildChestIcon();root.add(c);root.userData.cam={pos:[0,8,15],look:[0,3,0]};
   }
