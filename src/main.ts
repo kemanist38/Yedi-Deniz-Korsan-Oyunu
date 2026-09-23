@@ -153,7 +153,7 @@ function fire(side:string){
     shots.push({x:player.x+Math.cos(a)*24,y:player.y+Math.sin(a)*24,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,life:1.1,owner:'player',damage:state.cannon/3,hit:false,ammo:state.ammo});
   }
 }
-function toggleAttack(){if(!selected||!targetExists(selected)){toast('Önce bir hedef seç');return;}state.attacking=!state.attacking;if(state.attacking)state.repairing=false;ui('attack').classList.toggle('active',state.attacking);toast(state.attacking?'Otomatik saldırı başladı':'Saldırı durduruldu');}
+function toggleAttack(){if(!selected||!targetExists(selected)){toast('Önce bir hedef seç');return;}state.attacking=!state.attacking;if(state.attacking){state.repairing=false;fireAtTarget();}ui('attack').classList.toggle('active',state.attacking);toast(state.attacking?'Otomatik saldırı başladı':'Saldırı durduruldu');}
 function toggleRepair(){
   if(state.hp>=state.maxHp){toast('Gövde zaten tamamen sağlam');return;}
   const danger=enemies.some(e=>e.aggro&&dist(e,player)<520)||monsters.some(m=>m.aggro&&dist(m,player)<520);
@@ -175,7 +175,9 @@ function releaseSalvo(round:SalvoRound){
   const d=dist(player,round.target);
   const a=Math.atan2(round.target.y-player.y,round.target.x-player.x);
   const fx=Math.sin(player.angle),fy=-Math.cos(player.angle),rx=Math.cos(player.angle),ry=Math.sin(player.angle),speed=510;
-  const x=player.x+rx*round.side*(17+Math.abs(round.slot)*1.5)+fx*round.slot*11,y=player.y+ry*round.side*(17+Math.abs(round.slot)*1.5)+fy*round.slot*11;
+  const tx=(round.target.x-player.x)/Math.max(1,d),ty=(round.target.y-player.y)/Math.max(1,d),forwardDot=fx*tx+fy*ty;
+  const muzzle=forwardDot>.55?{x:fx*24,y:fy*24}:forwardDot<-.55?{x:-fx*20,y:-fy*20}:{x:rx*round.side*18,y:ry*round.side*18};
+  const x=player.x+muzzle.x,y=player.y+muzzle.y;
   shots.push({x,y,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,life:Math.max(1.1,d/speed+.5),owner:'player',damage:round.damage,hit:false,ammo:round.ammo,target:round.target});
   particles.push({x,y,vx:rx*round.side*12,vy:ry*round.side*12,life:.38,maxLife:.38,kind:'smoke'});
 }
@@ -272,7 +274,7 @@ function updateUI(){
   ui('repair').classList.toggle('active',state.repairing);
   ui('cannonName').textContent=CANNONS[state.cannonType].name;
   const valid=selected&&targetExists(selected);ui('targetCard').classList.toggle('visible',!!valid);
-  if(valid&&selected){const range=Math.round(dist(player,selected)),liningUp=state.attacking&&range<=effectiveRange()-45&&Math.abs(angleDelta(broadsideCourse(selected),player.angle))>=.16;ui('targetName').textContent=selected.name;ui('targetRange').textContent=liningUp?'Borda alınıyor…':`${range} menzil`;ui('targetTier').textContent=selected.kind==='ship'?`Sınıf ${selected.tier}`:'Deniz Canavarı';(ui('targetHp') as HTMLElement).style.width=`${selected.hp/selected.maxHp*100}%`;}
+  if(valid&&selected){const range=Math.round(dist(player,selected)),firing=state.attacking&&range<=effectiveRange();ui('targetName').textContent=selected.name;ui('targetRange').textContent=firing?'Ateş ediliyor…':`${range} menzil`;ui('targetTier').textContent=selected.kind==='ship'?`Sınıf ${selected.tier}`:'Deniz Canavarı';(ui('targetHp') as HTMLElement).style.width=`${selected.hp/selected.maxHp*100}%`;}
 }
 
 function update(dt:number){
@@ -301,14 +303,14 @@ function update(dt:number){
   monsters.forEach(m=>{m.phase+=dt;m.cooldown-=dt;m.slowTimer=Math.max(0,m.slowTimer-dt);if(m.aggro){m.combatTimer-=dt;if(m.combatTimer<=0||Math.hypot(m.x-m.homeX,m.y-m.homeY)>720)m.aggro=false;}if(m.aggro&&dist(m,player)<430&&m.cooldown<=0)monsterFire(m);});
   if(state.attacking&&selected){
     const d=dist(player,selected),cannonRange=effectiveRange();
-    if(d>cannonRange-45){
+    if(d>cannonRange){
       const away=Math.atan2(player.y-selected.y,player.x-selected.x);
-      destination=navigablePoint({x:selected.x+Math.cos(away)*(cannonRange-85),y:selected.y+Math.sin(away)*(cannonRange-85)});
+      destination=navigablePoint({x:selected.x+Math.cos(away)*(cannonRange-35),y:selected.y+Math.sin(away)*(cannonRange-35)});
     }else{
-      destination=null;player.speed+=(0-player.speed)*Math.min(1,dt*5);
+      destination=null;player.speed+=(effectiveSpeed()*.42-player.speed)*Math.min(1,dt*1.4);
       const course=broadsideCourse(selected),delta=angleDelta(course,player.angle);
       player.angle+=clamp(delta,-2.6*dt,2.6*dt);
-      if(Math.abs(delta)<.16&&player.speed<9)fireAtTarget();
+      fireAtTarget();
     }
   }
   for(const e of enemies){
