@@ -423,3 +423,21 @@ button.event-row{cursor:pointer}
 .nick-form button{padding:8px 12px;border:1px solid #d8b268;border-radius:6px;background:linear-gradient(#5a3a1c,#2c1a0c);color:#ffe2a0;font:800 11px Inter;letter-spacing:.06em;cursor:pointer}
 .nick-form :disabled{opacity:.5;cursor:not-allowed}
 @media(max-width:760px){.guild-create-row{grid-template-columns:1fr}.nick-form input{width:130px}}
+
+/* Kule tipleri, üst yapı görseli ve filo yetkileri */
+.tower-art{position:relative}
+.tower-top-art{position:absolute;left:1px;top:-8px;width:54px;height:54px;background:url(/assets/fleet-tower-tops-v1.webp) 0 0/400% 100% no-repeat;filter:drop-shadow(0 2px 2px #000a)}
+.tower-art.ghost .tower-top-art{opacity:.9}
+.guild-types{display:grid;gap:6px}
+.tower-types{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.tower-type{display:flex;gap:8px;align-items:center;padding:8px;border:1px solid #bd914b44;border-radius:8px;background:#0a1c21;color:#e8dcb8;text-align:left;cursor:pointer;font:inherit}
+.tower-type.active{border-color:#ffd24a;box-shadow:0 0 0 1px #ffd24a66,0 0 14px #ffd24a33;background:#14282a}
+.tower-type>div{display:grid;gap:2px}.tower-type b{font:800 12px Inter;color:#f3d496}.tower-type small{font:600 10px Inter;line-height:1.35;color:#cfd8d2}.tower-type em{font:700 9px Inter;font-style:normal;color:#5fd8e0}
+.tower-type .tower-art{flex:none;width:48px;height:69px}.tower-type .tower-top-art{width:46px;height:46px;left:1px;top:-7px}
+.guild-members{display:grid;gap:6px;padding:10px 12px;border:1px solid #bd914b33;border-radius:8px;background:#071419aa}
+.guild-members p{margin:0;font-size:11.5px;line-height:1.5;color:#cfd8d2}
+.member-row{display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:6px;background:#0a1c21}.member-row b{font:700 13px Inter;color:#f4f1ea}.member-row small{margin-left:auto;font:600 11px Inter;color:#9fb8b0}
+.role{font:800 9px Inter;font-style:normal;letter-spacing:.08em;padding:3px 7px;border-radius:10px;border:1px solid}
+.role.leader{color:#ffd24a;border-color:#ffd24a88}.role.deputy{color:#5fd8e0;border-color:#5fd8e088}.role.member{color:#cfd8d2;border-color:#cfd8d255}
+.guild-test-role{display:flex;align-items:center;gap:8px;font:800 10px Inter;color:#bff6ea}.guild-test-role select{padding:5px 8px;border-radius:6px;border:1px solid #6fd6c4;background:#0c2224;color:#e8fff8;font:600 12px Inter}
+@media(max-width:760px){.tower-types{grid-template-columns:1fr 1fr}}

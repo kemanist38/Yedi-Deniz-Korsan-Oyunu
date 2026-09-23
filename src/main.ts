@@ -1,13 +1,13 @@
 import './style.css';
 import {ACTIONS,loadSettings,saveSettings,keyLabel,normalizeKey,DEFAULT_BINDS,type ActionId} from './settings';
 import {setAudio,unlockAudio,playCannon,playEnemyCannon,playHit,playExplosion,playCoins,playWind,playShield,playSplash,playLevelUp,playMapJump,playClick} from './audio';
-import {drawSeaSparkle,drawNpcShip,drawMonsterSheet,drawBossSprite,drawChestSprite,drawIslandSprite,drawFleetBase,drawBastion,drawMineSprite,seaTilePattern,islandSheetUrl,shipLabelOffset,portraitStyle,preload,fleetBaseUrl,fleetTowerUrl,BOSS_LABEL_OFFSET,TOWER_LABEL_OFFSET,WORLD_CHART} from './sprites';
+import {drawSeaSparkle,drawNpcShip,drawMonsterSheet,drawBossSprite,drawChestSprite,drawIslandSprite,drawFleetBase,drawBastion,drawTowerTop,drawMineSprite,seaTilePattern,islandSheetUrl,shipLabelOffset,portraitStyle,preload,fleetBaseUrl,fleetTowerUrl,BOSS_LABEL_OFFSET,TOWER_LABEL_OFFSET,WORLD_CHART} from './sprites';
 import {MAPS,GRID,THEMES,NPCS,MONSTERS,QUESTS,QUEST_COOLDOWN_MS,FLEET,WORLD,MAX_LEVEL,xpNeed,neighbor,tierOf,fleetTower,fleetReward,BOSS_PORTRAIT,PORTRAIT_COUNT,PORTRAIT_COLS,PORTRAIT_ATLAS,GRID_COLS,GRID_ROWS,CELL_W,CELL_H,colName,rowName,gridCell,coordLabel,type MapKey,type WorldIsland,type NpcDef,type MonsterDef,type Dir,type QuestDef} from './campaign';
 import {ABILITIES,SPECIAL_AMMO,MINE,SPEED_BOOST,SHIELD_FACTOR,ARSENAL_MARKET,loadArsenal,saveArsenal,type AbilityId} from './arsenal';
 import {BOSS,loadFleetOwners,saveFleetOwners} from './conquest';
 import {TALENTS,OFFICERS,OFFICER_MAX_RANK,officerCost,officerSlots,talentPoints,loadCrew,saveCrew,spentPoints,computeBonus,type TalentId,type OfficerId} from './crew';
 import {FLEET_MASK} from './fleetMask';
-import {loadGuild,saveGuild,islandSlots,towerCost,tagError,TOWER_SLOTS,GUILD_NAME_MAX,GUILD_TAG_MAX,type Guild} from './guild';
+import {loadGuild,saveGuild,islandSlots,towerTypeCost,tagError,canBuild,TOWER_TYPES,ROLE_NAMES,TOWER_SLOTS,type TowerType,type GuildRole,GUILD_NAME_MAX,GUILD_TAG_MAX,type Guild} from './guild';
 import {loadProfile,saveProfile,nickError,rankOf,NICK_CHANGE_COST,NICK_COOLDOWN_MS,NICK_MAX} from './profile';
 import {createChest,chestRewardText,CHEST_PICKUP_RADIUS,CHEST_CLICK_RADIUS,DRIFT_RESPAWN_SECONDS,type LootChest} from './loot';
 import {ELITE_SHIPS,eliteById,type EliteShipId} from './elite-ships';
@@ -16,7 +16,7 @@ type Vec = { x: number; y: number };
 type AmmoKind = 'iron'|'chain'|'fire'|'grape';
 type CannonKind = 'cast'|'long'|'rapid'|'heavy';
 type CannonStock=Record<CannonKind,number>;
-type Shot = Vec & { vx:number; vy:number; life:number; owner:'player'|'enemy'; damage:number; hit:boolean; ammo:AmmoKind; target?:Target };
+type Shot = Vec & { vx:number; vy:number; life:number; owner:'player'|'enemy'; damage:number; hit:boolean; ammo:AmmoKind; target?:Target; slow?:number; splash?:number };
 type SalvoRound = { delay:number; target:Target; side:number; slot:number; damage:number; ammo:AmmoKind };
 type EnemyRole='light'|'heavy';
 type Enemy = Vec & { kind:'ship'; def?:NpcDef; burnTimer?:number; tower?:boolean; towerIndex?:number; boss?:boolean; summoned?:boolean; hitRadius?:number; fireRange?:number; rewardXp?:number; role:EnemyRole; angle:number; hp:number; maxHp:number; cooldown:number; speed:number; damage:number; reload:number; rewardGold:number; rewardWood:number; rewardFame:number; color:string; name:string; tier:number; aggro:boolean; wander:number; slowTimer:number; homeX:number; homeY:number; combatTimer:number };
@@ -194,8 +194,9 @@ const islands:WorldIsland[]=[];
 let jumpPrompt:{dir:Dir;to:MapKey}|null=null;
 const fleetOwners=loadFleetOwners();
 const fleetOwner=(key:MapKey=currentMap)=>fleetOwners[key]??'npc';
-const ownTowers:{x:number;y:number;cooldown:number;slot:number}[]=[];
+const ownTowers:{x:number;y:number;cooldown:number;slot:number;type:TowerType}[]=[];
 let guild:Guild|null=loadGuild();
+let buildType:TowerType='cannon';
 const profile=loadProfile();
 function escapeHtml(t:string){return t.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));}
 let bossNextAt=performance.now()+BOSS.firstDelaySeconds*1000;
@@ -288,7 +289,7 @@ function randomSeaPoint(minPlayerDist:number){
 function setupFleetIsland(){
   const map=mapDef(),f=map.fleet,t=fleetTower(map.tier);ownTowers.length=0;towersDestroyedHere=0;if(!hasFleetIsland())return;
   // Kendi adanda yalnızca filonun diktiği kuleler vardır; boş kaideler FİLO sekmesinden inciyle doldurulur.
-  if(fleetOwner()==='player'){if(guild){const slots=islandSlots(guild,currentMap);FLEET.towers.forEach(([dx,dy],i)=>{if(slots[i])ownTowers.push({x:f.x+dx,y:f.y+dy,cooldown:Math.random()*2,slot:i});});}return;}
+  if(fleetOwner()==='player'){if(guild){const slots=islandSlots(guild,currentMap);FLEET.towers.forEach(([dx,dy],i)=>{const t=slots[i];if(t)ownTowers.push({x:f.x+dx,y:f.y+dy,cooldown:Math.random()*2,slot:i,type:t.type});});}return;}
   FLEET.towers.forEach(([dx,dy],i)=>{const tower:Enemy={kind:'ship',role:'heavy',tower:true,towerIndex:i,x:f.x+dx,y:f.y+dy,angle:0,hp:t.hp,maxHp:t.hp,cooldown:Math.random()*2,speed:0,damage:t.damage,reload:t.reload,rewardGold:0,rewardWood:0,rewardFame:0,color:'#555',name:`${f.name} Kulesi`,tier:map.tier,aggro:false,wander:0,slowTimer:0,homeX:f.x+dx,homeY:f.y+dy,combatTimer:0,hitRadius:34,fireRange:t.range};enemies.push(tower);});
 }
 function populateMap(){
@@ -656,21 +657,28 @@ function renderGuild(){
   const panel=ui('guildPanel');
   if(!guild){panel.innerHTML=`<div class="guild-create"><p>Henüz bir filon yok. Filo kurduğunda <b>filo başkanı</b> sen olursun. Filo üyeleri hazineye <b>inci bağışlar</b>. Başkan da bu hazineyle filo adalarındaki boş kaidelere kule diker.</p><div class="guild-create-row"><label>Kısaltma (tag)<input id="guildTag" maxlength="${GUILD_TAG_MAX}" placeholder="Ör. TC★"/></label><label>Filo adı<input id="guildName" maxlength="${GUILD_NAME_MAX}" placeholder="Ör. Türk Korsanları"/></label></div><small class="guild-hint">Kısaltma gemi adının önünde görünür: <b>[TC★]${escapeHtml(profile.nick)}</b></small><button id="guildCreate">FİLO KUR</button></div>`;
     const tagInput=ui('guildTag') as HTMLInputElement;tagInput.oninput=()=>{tagInput.value=tagInput.value.toLocaleUpperCase('tr').replace(/\*/g,'★');};
-    ui('guildCreate').onclick=()=>{const name=(ui('guildName') as HTMLInputElement).value.trim(),tag=tagInput.value.trim(),te=tagError(tag);if(te){toast(te);return;}if(name.length<3){toast('Filo adı en az 3 harf olmalı');return;}const g:Guild={name,tag,treasury:0,donated:0,created:Date.now(),towers:{}};guild=g;for(const k of ownedFleetIslands())islandSlots(g,k);saveGuild(g);setupFleetIsland();rewardNotice(`[${tag}] ${name.toLocaleUpperCase('tr')} FİLOSU KURULDU`);renderGuild();};return;}
-  const g=guild,islands=ownedFleetIslands(),map=mapDef(),here=hasFleetIsland()?map.fleet.name:'';
-  const islandHtml=islands.length?islands.map(k=>{const m=MAPS[k],slots=islandSlots(g,k),cost=towerCost(m.tier),built=slots.filter(Boolean).length;
-    return`<article class="guild-island"><header><div><span class="eyebrow">${m.key} · Seviye ${m.tier}</span><h4>${m.fleet.name}</h4></div><b>${built} / ${TOWER_SLOTS} kule</b></header><div class="tower-slots">${slots.map((t,i)=>t?`<div class="tower-slot built"><i class="tower-art" style="background-position:${(i%4)/3*100}% ${Math.floor(i/4)*100}%"></i><small>Kule ${i+1}</small><em><span style="width:${Math.round(t.hp/t.maxHp*100)}%"></span></em></div>`:`<button class="tower-slot empty" data-build="${k}:${i}" ${g.treasury<cost?'disabled':''}><i class="tower-art ghost" style="background-position:${(i%4)/3*100}% ${Math.floor(i/4)*100}%"></i><small>Kaide ${i+1}</small><b>DİK · ${cost} İnci</b></button>`).join('')}</div></article>`;}).join('')
+    ui('guildCreate').onclick=()=>{const name=(ui('guildName') as HTMLInputElement).value.trim(),tag=tagInput.value.trim(),te=tagError(tag);if(te){toast(te);return;}if(name.length<3){toast('Filo adı en az 3 harf olmalı');return;}const g:Guild={name,tag,role:'leader',treasury:0,donated:0,created:Date.now(),towers:{}};guild=g;for(const k of ownedFleetIslands())islandSlots(g,k);saveGuild(g);setupFleetIsland();rewardNotice(`[${tag}] ${name.toLocaleUpperCase('tr')} FİLOSU KURULDU`);renderGuild();};return;}
+  const g=guild,islands=ownedFleetIslands(),map=mapDef(),here=hasFleetIsland()?map.fleet.name:'',allowed=canBuild(g.role);
+  const art=(slot:number,type:TowerType|null,ghost=false)=>`<i class="tower-art ${ghost?'ghost':''}" style="background-position:${(slot%4)/3*100}% ${Math.floor(slot/4)*100}%">${type?`<i class="tower-top-art" style="background-position:${TOWER_TYPES[type].frame/3*100}% 0"></i>`:''}</i>`;
+  const typeCards=(Object.keys(TOWER_TYPES) as TowerType[]).map(t=>{const d=TOWER_TYPES[t];return`<button class="tower-type ${buildType===t?'active':''}" data-type="${t}">${art(3,t)}<div><b>${d.name}</b><small>${d.desc}</small><em>Maliyet ×${d.cost} · Hasar ×${d.damage} · Menzil ×${d.range}</em></div></button>`;}).join('');
+  const islandHtml=islands.length?islands.map(k=>{const m=MAPS[k],slots=islandSlots(g,k),cost=towerTypeCost(m.tier,buildType),built=slots.filter(Boolean).length;
+    return`<article class="guild-island"><header><div><span class="eyebrow">${m.key} · Seviye ${m.tier}</span><h4>${m.fleet.name}</h4></div><b>${built} / ${TOWER_SLOTS} kule</b></header><div class="tower-slots">${slots.map((t,i)=>t?`<div class="tower-slot built">${art(i,t.type)}<small>${TOWER_TYPES[t.type].name}</small><em><span style="width:${Math.round(t.hp/t.maxHp*100)}%"></span></em></div>`:`<button class="tower-slot empty" data-build="${k}:${i}" ${!allowed||g.treasury<cost?'disabled':''}>${art(i,buildType,true)}<small>Kaide ${i+1}</small><b>${allowed?`DİK · ${cost} İnci`:'YETKİ YOK'}</b></button>`).join('')}</div></article>`;}).join('')
     :`<p class="guild-empty">Filonun henüz bir adası yok. Adalar 5. seviye ve üstü denizlerdedir. Bir adanın bütün kulelerini yıkınca ada filona katılır ve kaideleri boşalır.</p>`;
   const testClaim=FLEET_TEST_ENTRY&&hasFleetIsland()&&fleetOwner()!=='player'?`<button class="guild-test" id="guildClaim">TEST: ${here} adasını filona kat</button>`:'';
-  panel.innerHTML=`<div class="guild-head"><div><span class="eyebrow">Filo</span><h3><em class="guild-tag">[${escapeHtml(g.tag)}]</em> ${escapeHtml(g.name)}</h3><small>Başkan: ${escapeHtml(profile.nick)} (sen) · Üye: 1</small></div><div class="guild-treasury"><span>FİLO HAZİNESİ</span><strong><i class="sprite icon-pearl"></i>${g.treasury} İnci</strong><small>Senin bağışın: ${g.donated} İnci</small></div></div>
+  const testRole=FLEET_TEST_ENTRY?`<label class="guild-test-role">TEST · rolün <select id="guildRole">${(Object.keys(ROLE_NAMES) as GuildRole[]).map(r=>`<option value="${r}" ${g.role===r?'selected':''}>${ROLE_NAMES[r]}</option>`).join('')}</select></label>`:'';
+  panel.innerHTML=`<div class="guild-head"><div><span class="eyebrow">Filo</span><h3><em class="guild-tag">[${escapeHtml(g.tag)}]</em> ${escapeHtml(g.name)}</h3><small>${ROLE_NAMES[g.role]}: ${escapeHtml(profile.nick)} (sen) · Üye: 1</small></div><div class="guild-treasury"><span>FİLO HAZİNESİ</span><strong><i class="sprite icon-pearl"></i>${g.treasury} İnci</strong><small>Senin bağışın: ${g.donated} İnci</small></div></div>
+    <div class="guild-members"><span class="eyebrow">Filo üyeleri ve yetkiler</span><div class="member-row"><b>[${escapeHtml(g.tag)}]${escapeHtml(profile.nick)}</b><em class="role ${g.role}">${ROLE_NAMES[g.role]}</em><small>Bağış: ${g.donated} İnci</small></div><p>Kule dikme yetkisi yalnızca <b>Filo Başkanı</b> ve <b>Başkan Yardımcısı</b>ndadır. Başkan, üyelerden birini yardımcı atar. Diğer üyeler hazineye inci bağışlar.</p>${testRole}</div>
     <div class="guild-donate"><span>İnci bağışla <small>(elindeki: ${state.pearls})</small></span>${[10,50,100].map(n=>`<button data-donate="${n}" ${state.pearls<n?'disabled':''}>+${n}</button>`).join('')}<input id="donateAmount" type="number" min="1" max="${state.pearls}" placeholder="Miktar"/><button id="donateCustom">BAĞIŞLA</button></div>
-    <p class="guild-note">Kuleler adanın parçası değildir. Surdaki yuvarlak kaideler boştur; kuleyi yalnızca <b>filo başkanı</b>, filo hazinesindeki inciyle diker. Dikilen kule adana yaklaşan düşmanlara ateş eder.</p>
+    <div class="guild-types"><span class="eyebrow">Dikilecek kule tipi</span><div class="tower-types">${typeCards}</div></div>
     ${testClaim}<div class="guild-islands">${islandHtml}</div>`;
   const donate=(n:number)=>{n=Math.floor(n);if(!(n>0)){toast('Geçerli bir miktar gir');return;}if(state.pearls<n){toast('Yeterli incin yok');return;}state.pearls-=n;g.treasury+=n;g.donated+=n;saveGuild(g);saveAccount();updateUI();playCoins();rewardNotice(`FİLO HAZİNESİNE +${n} İNCİ BAĞIŞLANDI`);renderGuild();};
   panel.querySelectorAll<HTMLButtonElement>('[data-donate]').forEach(b=>b.onclick=()=>donate(Number(b.dataset.donate)));
   ui('donateCustom').onclick=()=>donate(Number((ui('donateAmount') as HTMLInputElement).value));
-  panel.querySelectorAll<HTMLButtonElement>('[data-build]').forEach(b=>b.onclick=()=>{const [k,i]=b.dataset.build!.split(':') as [MapKey,string],m=MAPS[k],cost=towerCost(m.tier),slots=islandSlots(g,k);
-    if(g.treasury<cost){toast(`Filo hazinesinde ${cost} inci gerekli`);return;}g.treasury-=cost;const hp=fleetTower(m.tier).hp;slots[+i]={hp,maxHp:hp};saveGuild(g);if(k===currentMap)setupFleetIsland();playCoins();rewardNotice(`${m.fleet.name.toLocaleUpperCase('tr')}   ${+i+1}. KAİDEYE KULE DİKİLDİ   −${cost} İNCİ`);renderGuild();});
+  panel.querySelectorAll<HTMLButtonElement>('[data-type]').forEach(b=>b.onclick=()=>{buildType=b.dataset.type as TowerType;renderGuild();});
+  panel.querySelectorAll<HTMLButtonElement>('[data-build]').forEach(b=>b.onclick=()=>{if(!canBuild(g.role)){toast('Kule dikme yetkisi yalnızca başkan ve yardımcısında');return;}
+    const [k,i]=b.dataset.build!.split(':') as [MapKey,string],m=MAPS[k],type=buildType,cost=towerTypeCost(m.tier,type),slots=islandSlots(g,k);
+    if(g.treasury<cost){toast(`Filo hazinesinde ${cost} inci gerekli`);return;}g.treasury-=cost;const hp=fleetTower(m.tier).hp;slots[+i]={hp,maxHp:hp,type};saveGuild(g);if(k===currentMap)setupFleetIsland();playCoins();rewardNotice(`${m.fleet.name.toLocaleUpperCase('tr')}   ${+i+1}. KAİDEYE ${TOWER_TYPES[type].name.toLocaleUpperCase('tr')} DİKİLDİ   −${cost} İNCİ`);renderGuild();});
+  const role=document.getElementById('guildRole') as HTMLSelectElement|null;if(role)role.onchange=()=>{g.role=role.value as GuildRole;saveGuild(g);renderGuild();toast(`Test: rolün ${ROLE_NAMES[g.role]}`);};
   const claim=document.getElementById('guildClaim');if(claim)claim.onclick=()=>{fleetOwners[currentMap]='player';saveFleetOwners(fleetOwners);g.towers[currentMap]=Array(TOWER_SLOTS).fill(null);saveGuild(g);enemies.splice(0,enemies.length,...enemies.filter(e=>!e.tower));setupFleetIsland();rewardNotice(`TEST · ${map.fleet.name.toLocaleUpperCase('tr')} FİLONA KATILDI`);renderGuild();};
 }
 function openCrew(){renderCrew();ui('crewOverlay').classList.add('open');}
@@ -807,13 +815,13 @@ function update(dt:number){
     if(s.owner==='player'){
       for(let j=enemies.length-1;j>=0&&s.life>0;j--){
         const e=enemies[j];
-        if(dist(s,e)<(e.hitRadius??25)){const hit=s.damage;s.hit=true;if(eliteEnabled()&&activeEliteShip==='crimson')state.hp=Math.min(effectiveMaxHp(),state.hp+hit*.07);if(eliteEnabled()&&activeEliteShip==='magma'&&Math.random()<.2)e.burnTimer=3;e.aggro=true;e.combatTimer=12;if(s.ammo==='chain')e.slowTimer=3;if(s.ammo==='fire')e.burnTimer=SPECIAL_AMMO.fire.burnSeconds;e.hp-=hit;damageText(e.x,e.y,hit);burst(e.x,e.y);playHit();s.life=0;
+        if(dist(s,e)<(e.hitRadius??25)){const hit=s.damage;s.hit=true;if(s.slow)e.slowTimer=Math.max(e.slowTimer,s.slow);if(s.splash)towerSplash(s,e);if(eliteEnabled()&&activeEliteShip==='crimson')state.hp=Math.min(effectiveMaxHp(),state.hp+hit*.07);if(eliteEnabled()&&activeEliteShip==='magma'&&Math.random()<.2)e.burnTimer=3;e.aggro=true;e.combatTimer=12;if(s.ammo==='chain')e.slowTimer=3;if(s.ammo==='fire')e.burnTimer=SPECIAL_AMMO.fire.burnSeconds;e.hp-=hit;damageText(e.x,e.y,hit);burst(e.x,e.y);playHit();s.life=0;
           if(e.hp<=0)sinkEnemy(e);
         }
       }
       for(let j=monsters.length-1;j>=0&&s.life>0;j--){
         const m=monsters[j];
-        if(dist(s,m)<m.radius){const hit=s.damage;s.hit=true;if(eliteEnabled()&&activeEliteShip==='crimson')state.hp=Math.min(effectiveMaxHp(),state.hp+hit*.07);if(eliteEnabled()&&activeEliteShip==='magma'&&Math.random()<.2)m.burnTimer=3;m.aggro=true;m.combatTimer=12;if(s.ammo==='chain')m.slowTimer=3;if(s.ammo==='fire')m.burnTimer=SPECIAL_AMMO.fire.burnSeconds;m.hp-=hit;damageText(m.x,m.y,hit);burst(m.x,m.y);playHit();s.life=0;
+        if(dist(s,m)<m.radius){const hit=s.damage;s.hit=true;if(s.slow)m.slowTimer=Math.max(m.slowTimer,s.slow);if(s.splash)towerSplash(s,m);if(eliteEnabled()&&activeEliteShip==='crimson')state.hp=Math.min(effectiveMaxHp(),state.hp+hit*.07);if(eliteEnabled()&&activeEliteShip==='magma'&&Math.random()<.2)m.burnTimer=3;m.aggro=true;m.combatTimer=12;if(s.ammo==='chain')m.slowTimer=3;if(s.ammo==='fire')m.burnTimer=SPECIAL_AMMO.fire.burnSeconds;m.hp-=hit;damageText(m.x,m.y,hit);burst(m.x,m.y);playHit();s.life=0;
           if(m.hp<=0)defeatMonster(m);
         }
       }
@@ -861,13 +869,21 @@ function destroyTower(){
   fleetOwners[currentMap]='player';saveFleetOwners(fleetOwners);if(guild){guild.towers[currentMap]=Array(TOWER_SLOTS).fill(null);saveGuild(guild);}const r=fleetReward(mapDef().tier);state.gold+=r.gold;state.pearls+=r.pearls;state.fame+=r.xp;saveAccount();
   setupFleetIsland();rewardNotice(`${f.name.toLocaleUpperCase('tr')} FİLONA KATILDI   +${r.gold} Altın   +${r.pearls} İnci   +${r.xp} TP`);
 }
+// Filonun diktiği kuleler: tipine göre top, havan (alan hasarı), zincir (yavaşlatma) ya da fener (dost onarımı).
 function updateOwnTowers(dt:number){
   if(!hasFleetIsland()||fleetOwner()!=='player')return;const t=fleetTower(mapDef().tier);
-  for(const tw of ownTowers){tw.cooldown-=dt;if(tw.cooldown>0)continue;
-    const target=enemies.filter(e=>!e.tower&&dist(e,tw)<t.range).sort((a,b)=>dist(a,tw)-dist(b,tw))[0]??monsters.find(m=>dist(m,tw)<t.range);
-    if(!target)continue;tw.cooldown=t.reload;const a=Math.atan2(target.y-(tw.y-30),target.x-tw.x);
-    shots.push({x:tw.x,y:tw.y-30,vx:Math.cos(a)*420,vy:Math.sin(a)*420,life:2.4,owner:'player',damage:t.ownDamage,hit:false,ammo:theme().fleet==='lava'?'fire':'iron',target});}
+  for(const tw of ownTowers){const def=TOWER_TYPES[tw.type],range=t.range*def.range;
+    if(tw.type==='beacon'){if(dist(player,tw)<range&&state.hp<effectiveMaxHp()){state.hp=Math.min(effectiveMaxHp(),state.hp+effectiveMaxHp()*.03*dt);if(Math.random()<dt*6)particles.push({x:player.x+(Math.random()-.5)*40,y:player.y+(Math.random()-.5)*30,vx:0,vy:-20,life:.6,maxLife:.6,kind:'foam'});}continue;}
+    tw.cooldown-=dt;if(tw.cooldown>0)continue;
+    const target=enemies.filter(e=>!e.tower&&dist(e,tw)<range).sort((a,b)=>dist(a,tw)-dist(b,tw))[0]??monsters.find(m=>dist(m,tw)<range);
+    if(!target)continue;tw.cooldown=t.reload*def.reload;const sy=tw.y-40,a=Math.atan2(target.y-sy,target.x-tw.x),speed=tw.type==='mortar'?300:420;
+    shots.push({x:tw.x,y:sy,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,life:2.8,owner:'player',damage:t.ownDamage*def.damage,hit:false,ammo:tw.type==='chain'?'chain':theme().fleet==='lava'?'fire':'iron',target,
+      slow:tw.type==='chain'?3:undefined,splash:tw.type==='mortar'?90:undefined});}
 }
+// Havan: isabet noktasının çevresindeki diğer düşmanlara %60 hasar
+function towerSplash(s:Shot,hit:Target){burst(hit.x,hit.y,true);
+  for(const o of [...enemies,...monsters] as Target[]){if(o===hit||(o.kind==='ship'&&o.tower)||dist(o,hit)>(s.splash??0))continue;const dmg=s.damage*.6;o.hp-=dmg;damageText(o.x,o.y,dmg);
+    if(o.hp<=0){if(o.kind==='ship')sinkEnemy(o);else defeatMonster(o);}}}
 function spawnBoss(){
   const map=mapDef(),p=randomSeaPoint(800),tier=map.tier,hp=Math.round(BOSS.hp(tier));
   enemies.push({kind:'ship',role:'heavy',x:p.x,y:p.y,angle:Math.random()*6,boss:true,name:BOSS.name,hp,maxHp:hp,cooldown:1,damage:BOSS.damage(tier),reload:BOSS.reload,speed:BOSS.speed,hitRadius:BOSS.hitRadius,rewardGold:0,rewardWood:0,rewardFame:0,color:'#2f5a4a',tier,aggro:false,wander:0,slowTimer:0,homeX:p.x,homeY:p.y,combatTimer:0});
@@ -1060,7 +1076,7 @@ function drawMonster(m:Monster){const s=worldToScreen(m);if(drawMonsterSheet(ctx
 function drawFleetIsland(){
   if(!hasFleetIsland())return;const f=mapDef().fleet,s=worldToScreen(f),th=theme().fleet,owned=fleetOwner()==='player';
   const baseOk=drawFleetBase(ctx,th,s.x,s.y);
-  if(owned)for(const tw of ownTowers){const p=worldToScreen(tw);drawBastion(ctx,tw.slot,p.x,p.y);}
+  if(owned)for(const tw of ownTowers){const p=worldToScreen(tw);drawBastion(ctx,tw.slot,p.x,p.y);drawTowerTop(ctx,TOWER_TYPES[tw.type].frame,tw.slot,p.x,p.y);}
   if(!baseOk){ctx.fillStyle='#4a7a3c';ctx.beginPath();ctx.arc(s.x,s.y,FLEET.islandR,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#3a3c42';ctx.lineWidth=18;ctx.beginPath();ctx.arc(s.x,s.y,FLEET.wallR,Math.PI/2+FLEET.gap/2,Math.PI/2-FLEET.gap/2+Math.PI*2);ctx.stroke();}
   ctx.textAlign='center';ctx.font='700 14px Cinzel';ctx.fillStyle=owned?'#9fe8dc':'#f0b8a8';ctx.shadowColor='#000';ctx.shadowBlur=6;ctx.fillText(f.name,s.x,s.y-FLEET.islandR-24);ctx.font='700 9px Inter';ctx.fillText(owned?'FİLO ADAN · LAGÜNDE ONARIM':fleetEnterable()?'RAKİP FİLO · TEST: GİRİŞ AÇIK (GÜNEY KANALI)':'RAKİP FİLO · GİRİŞ YASAK',s.x,s.y-FLEET.islandR-10);ctx.shadowBlur=0;
 }
@@ -1072,7 +1088,7 @@ function draw(){
   drawCoordGrid();drawMapEdges();islands.forEach(drawIsland);drawFleetIsland();lootChests.forEach(drawLootChest);sparkles.forEach(drawSparkle);mines.forEach(m=>{const p=worldToScreen(m);drawMineSprite(ctx,p.x,p.y,performance.now(),m.arm>0,m.life<5);});monsters.forEach(drawMonster);
   particles.forEach(p=>{const s=worldToScreen(p),a=Math.max(0,p.life/p.maxLife);ctx.globalAlpha=a;if(p.kind==='damage'){ctx.fillStyle='#ffd878';ctx.font='700 14px Inter';ctx.textAlign='center';ctx.fillText(p.text||'',s.x,s.y);}else{ctx.fillStyle=p.kind==='foam'?'#b9e2df':p.kind==='spark'?'#ffb340':'#3f4545';ctx.beginPath();ctx.arc(s.x,s.y,p.kind==='smoke'?7*(1-a)+3:p.kind==='foam'?4:2,0,7);ctx.fill();}ctx.globalAlpha=1;});
   shots.forEach(s=>{const p=worldToScreen(s);ctx.fillStyle=s.owner==='player'?(s.ammo==='fire'?'#ff8a2a':s.ammo==='grape'?'#d8d2c0':'#ffd889'):'#ff7450';ctx.shadowColor=ctx.fillStyle;ctx.shadowBlur=9;ctx.beginPath();ctx.arc(p.x,p.y,4,0,7);ctx.fill();ctx.shadowBlur=0;});
-  [...enemies].sort((a,b)=>a.y-b.y).forEach(e=>{const s=worldToScreen(e),raster=e.tower?drawBastion(ctx,e.towerIndex??0,s.x,s.y):e.boss?drawBossSprite(ctx,s.x,s.y,e.angle,performance.now()):e.def?drawNpcShip(ctx,e.def.sprite,e.def.span,s.x,s.y,e.angle,performance.now()):false;if(!raster)drawShip(e,e.angle,e.color);const top=raster?(e.tower?TOWER_LABEL_OFFSET:e.boss?BOSS_LABEL_OFFSET:shipLabelOffset(e.def!.span)):-42;ctx.fillStyle='#07161c';ctx.fillRect(s.x-25,s.y+top,50,5);ctx.fillStyle=e.tower?'#e0823f':e.role==='heavy'?'#e04b3f':'#50a8b4';ctx.fillRect(s.x-25,s.y+top,50*e.hp/e.maxHp,5);ctx.fillStyle='#d7cbb5';ctx.font='10px Inter';ctx.textAlign='center';ctx.fillText(e.name,s.x,s.y+top-7);});
+  [...enemies].sort((a,b)=>a.y-b.y).forEach(e=>{const s=worldToScreen(e),raster=e.tower?drawBastion(ctx,e.towerIndex??0,s.x,s.y)&&(drawTowerTop(ctx,0,e.towerIndex??0,s.x,s.y)||true):e.boss?drawBossSprite(ctx,s.x,s.y,e.angle,performance.now()):e.def?drawNpcShip(ctx,e.def.sprite,e.def.span,s.x,s.y,e.angle,performance.now()):false;if(!raster)drawShip(e,e.angle,e.color);const top=raster?(e.tower?TOWER_LABEL_OFFSET:e.boss?BOSS_LABEL_OFFSET:shipLabelOffset(e.def!.span)):-42;ctx.fillStyle='#07161c';ctx.fillRect(s.x-25,s.y+top,50,5);ctx.fillStyle=e.tower?'#e0823f':e.role==='heavy'?'#e04b3f':'#50a8b4';ctx.fillRect(s.x-25,s.y+top,50*e.hp/e.maxHp,5);ctx.fillStyle='#d7cbb5';ctx.font='10px Inter';ctx.textAlign='center';ctx.fillText(e.name,s.x,s.y+top-7);});
   if(selected&&targetExists(selected)){const t=worldToScreen(selected);ctx.strokeStyle='#f1c662';ctx.lineWidth=2;ctx.beginPath();ctx.arc(t.x,t.y,selected.kind==='monster'?selected.radius+10:34,0,7);ctx.stroke();}
   drawPlayerShip();drawPlayerLabel();
   if(abilityActive('shield')){const p=worldToScreen(player),t=performance.now()/1000,g=ctx.createRadialGradient(p.x,p.y,30,p.x,p.y,62);g.addColorStop(0,'#9fe8ff00');g.addColorStop(.75,'#9fe8ff30');g.addColorStop(1,'#d4a64c88');ctx.fillStyle=g;ctx.beginPath();ctx.arc(p.x,p.y,62,0,Math.PI*2);ctx.fill();ctx.strokeStyle=`rgba(212,166,76,${.55+Math.sin(t*6)*.25})`;ctx.lineWidth=2;ctx.beginPath();ctx.arc(p.x,p.y,62,0,Math.PI*2);ctx.stroke();}
