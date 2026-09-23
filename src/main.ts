@@ -180,24 +180,29 @@ function showReward(msg:string){ui('rewardToast').textContent=msg;ui('rewardToas
 function rewardNotice(msg:string){if(rewardTimer>0){rewardQueue.push(msg);return;}showReward(msg);}
 function saveQuestState(){localStorage.setItem(QUEST_STORAGE,JSON.stringify({activeQuest:state.activeQuest,progress:questProgress,cooldowns:questCooldownUntil}));}
 function cooldownText(until:number){const minutes=Math.max(1,Math.ceil((until-Date.now())/60000)),hours=Math.floor(minutes/60),mins=minutes%60;return hours>0?`${hours} sa ${mins} dk`:`${mins} dk`;}
+let pendingCancel:number|null=null;
 function openQuestLog(){renderQuestLog();ui('questOverlay').classList.add('open');}
-function closeQuestLog(){ui('questOverlay').classList.remove('open');}
+function closeQuestLog(){pendingCancel=null;ui('questOverlay').classList.remove('open');}
 function renderQuestLog(){
   ui('questList').innerHTML=QUESTS.map((quest,index)=>{
     const cooling=questCooldownUntil[index]>Date.now(),active=state.activeQuest===index,progress=questProgress[index];
     const status=cooling?cooldownText(questCooldownUntil[index]):active?'GÖREVİ İPTAL ET':progress>0?'DEVAM ET':'GÖREVİ BAŞLAT';
-    return `<article class="quest-entry ${active?'active':''} ${cooling?'completed':''}"><div class="quest-number">${String(index+1).padStart(2,'0')}</div><div class="quest-copy"><span>${quest.target==='ship'?'GEMİ AVI':'DENİZ CANAVARI'}</span><h3>${quest.title}</h3><p>${quest.description}</p><div class="quest-rewards"><b>${quest.gold} ALTIN</b><b>${quest.wood} KERESTE</b><b>${quest.fame} ŞÖHRET</b></div><small>${cooling?'Yeniden açılmasına: '+cooldownText(questCooldownUntil[index]):`${Math.min(progress,quest.required)} / ${quest.required} ${quest.target==='ship'?'Düşman':'Canavar'}`}</small></div><button data-quest="${index}" ${cooling?'disabled':''}>${status}</button></article>`;
+    const action=pendingCancel===index?`<div class="cancel-confirm"><strong>Emin misin?</strong><button data-confirm-cancel="${index}">İPTALİ ONAYLA</button><button data-keep-quest="${index}">VAZGEÇ</button></div>`:`<button data-quest="${index}" ${cooling?'disabled':''}>${status}</button>`;
+    return `<article class="quest-entry ${active?'active':''} ${cooling?'completed':''}"><div class="quest-number">${String(index+1).padStart(2,'0')}</div><div class="quest-copy"><span>${cooling?'8 SAAT BEKLEME':quest.target==='ship'?'GEMİ AVI':'DENİZ CANAVARI'}</span><h3>${quest.title}</h3><p>${quest.description}</p><div class="quest-rewards"><b>${quest.gold} ALTIN</b><b>${quest.wood} KERESTE</b><b>${quest.fame} ŞÖHRET</b></div><small>${cooling?'Yeniden açılmasına: '+cooldownText(questCooldownUntil[index]):`${Math.min(progress,quest.required)} / ${quest.required} ${quest.target==='ship'?'Düşman':'Canavar'}`}</small></div>${action}</article>`;
   }).join('');
-  document.querySelectorAll<HTMLButtonElement>('[data-quest]').forEach(button=>button.onclick=()=>{const index=Number(button.dataset.quest);state.activeQuest===index?cancelQuest(index):startQuest(index);});
+  document.querySelectorAll<HTMLButtonElement>('[data-quest]').forEach(button=>button.onclick=()=>{const index=Number(button.dataset.quest);state.activeQuest===index?requestQuestCancel(index):startQuest(index);});
+  document.querySelectorAll<HTMLButtonElement>('[data-confirm-cancel]').forEach(button=>button.onclick=()=>cancelQuest(Number(button.dataset.confirmCancel)));
+  document.querySelectorAll<HTMLButtonElement>('[data-keep-quest]').forEach(button=>button.onclick=()=>{pendingCancel=null;renderQuestLog();});
 }
 function startQuest(index:number){
   if(questCooldownUntil[index]>Date.now())return;
   if(state.activeQuest!==null){toast(`Önce ${QUESTS[state.activeQuest].title} görevini iptal et`);return;}
   state.activeQuest=index;saveQuestState();closeQuestLog();toast(`${QUESTS[index].title} görevi başladı`);updateUI();
 }
+function requestQuestCancel(index:number){if(state.activeQuest!==index)return;pendingCancel=index;renderQuestLog();}
 function cancelQuest(index:number){
   if(state.activeQuest!==index)return;
-  state.activeQuest=null;questProgress[index]=0;saveQuestState();renderQuestLog();toast(`${QUESTS[index].title} görevi iptal edildi`);updateUI();
+  state.activeQuest=null;questProgress[index]=0;questCooldownUntil[index]=Date.now()+8*60*60*1000;pendingCancel=null;saveQuestState();renderQuestLog();toast(`${QUESTS[index].title} iptal edildi — 8 saat sonra yeniden açılacak`);updateUI();
 }
 function recordQuestProgress(target:'ship'|'monster'){
   if(state.activeQuest===null)return;
