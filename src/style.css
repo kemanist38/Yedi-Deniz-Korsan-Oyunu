@@ -344,3 +344,9 @@ button.event-row{cursor:pointer}
 .combat-action.elite>span{max-width:82px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:6px}
 .elite-ability-icon{display:block;width:42px;height:42px;border-radius:50%;background-image:var(--elite-atlas);background-repeat:no-repeat;background-size:500% 300%;background-position:var(--elite-x) var(--elite-y);filter:drop-shadow(0 3px 5px #000)}
 @media(max-width:760px){.combat-action.elite{min-width:64px}.combat-action.elite>span{max-width:64px}}
+
+/* Başlangıç gemisi ve elit satın alma durumu */
+.starter-ship-art{display:grid;width:100%;height:112px;place-items:center;background:radial-gradient(circle,#31515b66,#07171b 68%);filter:drop-shadow(0 8px 8px #000b)}
+.starter-ship-art .sprite{width:76px;height:76px}.starter-preview{display:grid;width:100%;height:220px;place-items:center;border-radius:8px;background:radial-gradient(circle,#31515b88,#07171b 70%);box-shadow:inset 0 0 28px #0008}
+.starter-preview .sprite{width:130px;height:130px}.elite-card.starter-card{border-color:#648d9266}.elite-card.starter-card.active{border-color:#8ed6d2;box-shadow:inset 0 0 22px #55bdb530}
+.combat-action.elite.ship-hidden{display:none}
