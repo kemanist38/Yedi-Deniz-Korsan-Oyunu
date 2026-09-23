@@ -1,11 +1,12 @@
 import './style.css';
 import {ACTIONS,loadSettings,saveSettings,keyLabel,normalizeKey,DEFAULT_BINDS,type ActionId} from './settings';
 import {setAudio,unlockAudio,playCannon,playEnemyCannon,playHit,playExplosion,playCoins,playWind,playShield,playSplash,playLevelUp,playMapJump,playClick} from './audio';
-import {drawSeaSparkle,drawNpcShip,drawMonsterSheet,drawBossSprite,drawChestSprite,drawIslandSprite,drawFleetBase,drawFleetTower,drawMineSprite,seaTilePattern,islandSheetUrl,shipLabelOffset,portraitStyle,preload,fleetBaseUrl,fleetTowerUrl,BOSS_LABEL_OFFSET,TOWER_LABEL_OFFSET,WORLD_CHART} from './sprites';
+import {drawSeaSparkle,drawNpcShip,drawMonsterSheet,drawBossSprite,drawChestSprite,drawIslandSprite,drawFleetBase,drawMineSprite,seaTilePattern,islandSheetUrl,shipLabelOffset,portraitStyle,preload,fleetBaseUrl,fleetTowerUrl,BOSS_LABEL_OFFSET,TOWER_LABEL_OFFSET,WORLD_CHART} from './sprites';
 import {MAPS,GRID,THEMES,NPCS,MONSTERS,QUESTS,QUEST_COOLDOWN_MS,FLEET,WORLD,MAX_LEVEL,xpNeed,neighbor,tierOf,fleetTower,fleetReward,BOSS_PORTRAIT,PORTRAIT_COUNT,PORTRAIT_COLS,PORTRAIT_ATLAS,GRID_COLS,GRID_ROWS,CELL_W,CELL_H,colName,rowName,gridCell,coordLabel,type MapKey,type WorldIsland,type NpcDef,type MonsterDef,type Dir,type QuestDef} from './campaign';
 import {ABILITIES,SPECIAL_AMMO,MINE,SPEED_BOOST,SHIELD_FACTOR,ARSENAL_MARKET,loadArsenal,saveArsenal,type AbilityId} from './arsenal';
 import {BOSS,loadFleetOwners,saveFleetOwners} from './conquest';
 import {TALENTS,OFFICERS,OFFICER_MAX_RANK,officerCost,officerSlots,talentPoints,loadCrew,saveCrew,spentPoints,computeBonus,type TalentId,type OfficerId} from './crew';
+import {FLEET_MASK} from './fleetMask';
 import {createChest,chestRewardText,CHEST_PICKUP_RADIUS,CHEST_CLICK_RADIUS,DRIFT_RESPAWN_SECONDS,type LootChest} from './loot';
 import {ELITE_SHIPS,eliteById,type EliteShipId} from './elite-ships';
 
@@ -333,39 +334,68 @@ function randomSafePlayerPoint(){
 {const loginSpot=randomSafePlayerPoint();player.x=loginSpot.x;player.y=loginSpot.y;camera.x=player.x;camera.y=player.y;}
 function clamp(n:number,a:number,b:number){return Math.max(a,Math.min(b,n));}
 function dist(a:Vec,b:Vec){return Math.hypot(a.x-b.x,a.y-b.y);}
-// Filo adası: ada diski kara; kendi adanda yalnızca lagün ve güneydeki kanal suyu seyredilebilir.
-const FLEET_MARGIN=20;
+// Filo adası: görselden üretilen seyir maskesi (src/fleetMask.ts). Kara hücreleri geçilmez; açık deniz, kanal ve
+// lagün suyu seyredilebilir. Test süresince tüm filo adalarına girilebilir (FLEET_TEST_ENTRY).
+const FLEET_TEST_ENTRY=true;
+const FM_N=FLEET_MASK.n,FM_CELL=FLEET_MASK.cell,FM_HALF=FM_N*FM_CELL/2;
+const fleetGrid=(()=>{const g=new Uint8Array(FM_N*FM_N);let k=0;for(const part of FLEET_MASK.rle.split(',')){const v=+part[0],n=parseInt(part.slice(1),36);g.fill(v,k,k+n);k+=n;}return g;})();
+const fleetEnterable=()=>hasFleetIsland()&&(fleetOwner()==='player'||FLEET_TEST_ENTRY);
+function fleetCellOf(p:Vec){const f=mapDef().fleet;return{i:Math.floor((p.x-f.x+FM_HALF)/FM_CELL),j:Math.floor((p.y-f.y+FM_HALF)/FM_CELL)};}
+function fleetCellValue(i:number,j:number){return i<0||j<0||i>=FM_N||j>=FM_N?1:fleetGrid[j*FM_N+i];}
+// 0 kara, 1 açık deniz, 2 lagün/kanal (adanın içi)
+function fleetNav(p:Vec){if(!hasFleetIsland())return 1;const c=fleetCellOf(p);return fleetCellValue(c.i,c.j);}
+function fleetCellCenter(i:number,j:number):Vec{const f=mapDef().fleet;return{x:f.x-FM_HALF+(i+.5)*FM_CELL,y:f.y-FM_HALF+(j+.5)*FM_CELL};}
+function nearestFleetWater(p:Vec){const c=fleetCellOf(p);for(let r=1;r<=30;r++){let best:Vec|null=null,bd=Infinity;for(let j=c.j-r;j<=c.j+r;j++)for(let i=c.i-r;i<=c.i+r;i++){if(Math.max(Math.abs(i-c.i),Math.abs(j-c.j))!==r||!fleetCellValue(i,j))continue;const q=fleetCellCenter(i,j),d=dist(q,p);if(d<bd){bd=d;best=q;}}if(best)return best;}return null;}
+let fleetSafe:Vec|null=null;
 function fleetCollision(p:Vec):{x:number;y:number;name:string}|null{
-  if(!hasFleetIsland())return null;const f=mapDef().fleet,dx=p.x-f.x,dy=p.y-f.y,d=Math.hypot(dx,dy),a=Math.atan2(dy,dx),outR=FLEET.islandR+14;
-  if(d>=outR)return null;
-  const out={x:f.x+Math.cos(a)*outR,y:f.y+Math.sin(a)*outR,name:f.name};if(fleetOwner()!=='player')return out;
-  const L=FLEET.lagoon,lx=dx-L.x,ly=dy-L.y,ld=Math.hypot(lx,ly),lr=L.r-FLEET_MARGIN,cw=FLEET.channelW-FLEET_MARGIN;
-  if(ld<lr||(Math.abs(dx)<cw&&dy>L.y))return null;
-  const options=[out,{x:f.x+L.x+(ld>.01?lx/ld:0)*lr,y:f.y+L.y+(ld>.01?ly/ld:1)*lr,name:f.name},{x:f.x+clamp(dx,-cw+1,cw-1),y:f.y+Math.max(dy,L.y+1),name:f.name}];
-  return options.reduce((best,o)=>dist(o,p)<dist(best,p)?o:best);
+  if(!hasFleetIsland())return null;const f=mapDef().fleet;
+  if(!fleetEnterable()){const dx=p.x-f.x,dy=p.y-f.y,d=Math.hypot(dx,dy),a=Math.atan2(dy,dx),outR=FLEET.islandR+14;return d<outR?{x:f.x+Math.cos(a)*outR,y:f.y+Math.sin(a)*outR,name:f.name}:null;}
+  if(fleetNav(p))return null;
+  // Oyuncu için kıyı boyunca kayma: son güvenli konumdan yalnızca x ya da y hareketi denenir.
+  if(p===player&&fleetSafe&&dist(fleetSafe,p)<40){for(const c of [{x:p.x,y:fleetSafe.y},{x:fleetSafe.x,y:p.y},fleetSafe])if(fleetNav(c))return{...c,name:f.name};}
+  const w=nearestFleetWater(p);return w?{...w,name:f.name}:null;
 }
-function insideIsland(p:Vec){return hasFleetIsland()&&dist(p,mapDef().fleet)<FLEET.islandR;}
-// Kendi adanın lagününe kanal ağzından gir/çık; adayı dolaşırken çember üzerinde ara noktalar kullan.
+// Geminin gövde genişliği kadar kalın çizgi: merkez ve iki yandaki paralel çizgiler açık olmalı.
+function fleetWideLine(a:Vec,b:Vec){const d=dist(a,b)||1,nx=-(b.y-a.y)/d*10,ny=(b.x-a.x)/d*10;return fleetClearLine(a,b)&&fleetClearLine({x:a.x+nx,y:a.y+ny},{x:b.x+nx,y:b.y+ny})&&fleetClearLine({x:a.x-nx,y:a.y-ny},{x:b.x-nx,y:b.y-ny});}
+function fleetClearLine(a:Vec,b:Vec){const d=dist(a,b),n=Math.ceil(d/6);for(let k=1;k<=n;k++){const t=k/n;if(!fleetNav({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t}))return false;}return true;}
+// Maske üzerinde yol bulma: ızgara çevresine deniz payı eklenir (PAD); maliyet kıyıya yakın hücrelerde artar, böylece
+// rota kıyıdan uzak ve dar geçitlerin ortasından geçer. Hedef değişmedikçe mesafe alanı önbellekte tutulur.
+const FM_PAD=16,PN=FM_N+FM_PAD*2;
+const padGrid=(()=>{const g=new Uint8Array(PN*PN).fill(1);for(let j=0;j<FM_N;j++)for(let i=0;i<FM_N;i++)g[(j+FM_PAD)*PN+i+FM_PAD]=fleetGrid[j*FM_N+i];return g;})();
+const padClear=(()=>{const c=new Uint8Array(PN*PN);for(let j=0;j<PN;j++)for(let i=0;i<PN;i++){if(!padGrid[j*PN+i])continue;let r=1;search:for(;r<=4;r++)for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++){const x=i+dx,y=j+dy;if(x>=0&&y>=0&&x<PN&&y<PN&&!padGrid[y*PN+x])break search;}c[j*PN+i]=r;}return c;})();
+function padCellOf(p:Vec){const c=fleetCellOf(p);return{i:clamp(c.i+FM_PAD,0,PN-1),j:clamp(c.j+FM_PAD,0,PN-1)};}
+function padCenter(i:number,j:number){return fleetCellCenter(i-FM_PAD,j-FM_PAD);}
+function padNearestOpen(c:{i:number;j:number}){if(padGrid[c.j*PN+c.i])return c;for(let r=1;r<30;r++)for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++){const i=c.i+dx,j=c.j+dy;if(i>=0&&j>=0&&i<PN&&j<PN&&padGrid[j*PN+i])return{i,j};}return c;}
+let fleetField:{key:string;dist:Float32Array}|null=null;
+function buildFleetField(t:{i:number;j:number}){
+  const D=new Float32Array(PN*PN).fill(Infinity),heap:number[]=[],push=(k:number)=>{heap.push(k);let n=heap.length-1;while(n>0){const p=(n-1)>>1;if(D[heap[p]]<=D[heap[n]])break;[heap[p],heap[n]]=[heap[n],heap[p]];n=p;}},
+    pop=()=>{const top=heap[0],last=heap.pop()!;if(heap.length){heap[0]=last;let n=0;for(;;){const l=n*2+1,r=l+1;let m=n;if(l<heap.length&&D[heap[l]]<D[heap[m]])m=l;if(r<heap.length&&D[heap[r]]<D[heap[m]])m=r;if(m===n)break;[heap[m],heap[n]]=[heap[n],heap[m]];n=m;}}return top;};
+  const s0=t.j*PN+t.i;D[s0]=0;push(s0);
+  while(heap.length){const k=pop(),x=k%PN,y=(k-x)/PN;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){if(!dx&&!dy)continue;const nx=x+dx,ny=y+dy;if(nx<0||ny<0||nx>=PN||ny>=PN)continue;const j=ny*PN+nx;if(!padGrid[j])continue;if(dx&&dy&&(!padGrid[y*PN+nx]||!padGrid[ny*PN+x]))continue;
+    const cl=padClear[j],cost=(dx&&dy?1.414:1)*(cl>=3?1:cl===2?1.8:3.5),nd=D[k]+cost;if(nd<D[j]){D[j]=nd;push(j);}}}
+  return D;
+}
 function routeVia(target:Vec):Vec{
-  const f=mapDef().fleet;if(!hasFleetIsland()||fleetOwner()!=='player')return target;
-  const pin=insideIsland(player),tin=insideIsland(target);if(pin===tin)return target;
-  const L=FLEET.lagoon,mouth={x:f.x,y:f.y+FLEET.islandR+80},lagoon={x:f.x+L.x,y:f.y+L.y},inCol=Math.abs(player.x-f.x)<FLEET.channelW-15&&player.y>f.y+L.y-10;
-  if(pin)return inCol?mouth:lagoon;
-  if(inCol)return lagoon;
-  const a=Math.atan2(player.y-f.y,player.x-f.x),rest=angleDelta(Math.PI/2,a);if(Math.abs(rest)<.3)return mouth;
-  const na=a+Math.sign(rest)*Math.min(.6,Math.abs(rest)),R=FLEET.islandR+150;return{x:f.x+Math.cos(na)*R,y:f.y+Math.sin(na)*R};
+  if(!fleetEnterable()||fleetWideLine(player,target))return target;
+  const t=padNearestOpen(padCellOf(target)),key=`${currentMap}:${t.i},${t.j}`;
+  if(fleetField?.key!==key)fleetField={key,dist:buildFleetField(t)};
+  const D=fleetField.dist;let c=padNearestOpen(padCellOf(player));if(!Number.isFinite(D[c.j*PN+c.i]))return target;
+  // Yol boyunca kalın çizgiyle görülebilen en uzak hücre; kıyıya çok yakınken ince çizgiye, o da olmazsa sıradaki hücreye düşülür.
+  let way:Vec|null=null,first:Vec|null=null;
+  for(let step=0;step<80;step++){const here=D[c.j*PN+c.i];if(here<=0){if(fleetWideLine(player,target)||(!way&&fleetClearLine(player,target)))return target;break;}let next=c,nd=here;
+    for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const i=c.i+dx,j=c.j+dy;if(i<0||j<0||i>=PN||j>=PN)continue;const v=D[j*PN+i];if(v<nd){nd=v;next={i,j};}}
+    if(next===c)break;c=next;const cand=padCenter(c.i,c.j);if(!first)first=cand;
+    if(fleetWideLine(player,cand))way=cand;else if(!way&&step<3&&fleetClearLine(player,cand))way=cand;else if(way||step>=3)break;}
+  return way??first??target;
 }
-function insideOwnLagoon(p:Vec){
-  if(!hasFleetIsland()||fleetOwner()!=='player')return false;const f=mapDef().fleet,L=FLEET.lagoon,dx=p.x-f.x,dy=p.y-f.y;
-  return Math.hypot(dx-L.x,dy-L.y)<L.r||(Math.abs(dx)<FLEET.channelW&&dy>L.y&&Math.hypot(dx,dy)<FLEET.islandR);
-}
+function insideOwnLagoon(p:Vec){return hasFleetIsland()&&fleetOwner()==='player'&&fleetNav(p)===2;}
 function navigablePoint(point:Vec){
   const fc=fleetCollision(point);if(fc)return{x:fc.x,y:fc.y};
   for(const island of islands){const shore=island.r*.72+38,d=dist(point,island);if(d<shore){const a=Math.atan2(point.y-island.y,point.x-island.x);return{x:island.x+Math.cos(a)*shore,y:island.y+Math.sin(a)*shore};}}
   return{x:clamp(point.x,25,WORLD-25),y:clamp(point.y,25,WORLD-25)};
 }
 function resolveIslandCollision(){
-  const fc=fleetCollision(player);if(fc){player.x=fc.x;player.y=fc.y;player.speed*=.28;destination=null;routeTarget=null;if(collisionNotice<=0){toast(fleetOwner()==='player'?`${fc.name} karasına çıkılamaz — lagün girişi güneydeki kanalda`:`${fc.name} rakip filonun adası — içeri girilemez`);collisionNotice=2;}}
+  const fc=fleetCollision(player);if(!fc&&hasFleetIsland())fleetSafe={x:player.x,y:player.y};if(fc){const hard=!fleetSafe||(fc.x!==player.x&&fc.y!==player.y);player.x=fc.x;player.y=fc.y;player.speed*=hard?.5:.9;if(!routeTarget)destination=null;if(collisionNotice<=0){toast(fleetEnterable()?`${fc.name} karasına çıkılamaz — lagüne güneydeki kanaldan girilir`:`${fc.name} rakip filonun adası — içeri girilemez`);collisionNotice=2;}}
   for(const island of islands){const shore=island.r*.72+28,d=dist(player,island);if(d<shore){const a=d>.01?Math.atan2(player.y-island.y,player.x-island.x):player.angle-Math.PI/2;player.x=island.x+Math.cos(a)*shore;player.y=island.y+Math.sin(a)*shore;player.speed*=.28;destination=null;if(collisionNotice<=0){toast(`${island.name} kıyısına daha fazla yaklaşamazsın`);collisionNotice=2;}}}
 }
 function setZoom(value:number){camera.targetZoom=clamp(value,.5,1.15);ui('zoomValue').textContent=`${Math.round(camera.targetZoom*100)}%`;}
@@ -817,7 +847,7 @@ function updateEvents(dt:number){
   const owned=fleetOwner()==='player',left=enemies.filter(e=>e.tower).length;
   if(hasFleetIsland())rows.push(`<button class="event-row fort ${owned?'owned':''}" data-event-route="fort"><i class="event-art fleet-art" style="background-image:url(${fleetBaseUrl(theme().fleet)})"></i><span><small>${owned?'FİLO ADAN · İÇERİDE ONARIM':`RAKİP FİLO ADASI · FİLO SAVAŞI GEREKİR`}</small><strong>${map.fleet.name}</strong>${owned?'':`<i class="danger"><em style="width:${left/FLEET.towers.length*100}%"></em></i>`}</span></button>`);
   panel.innerHTML=rows.join('');panel.classList.toggle('visible',rows.length>0);
-  panel.querySelectorAll<HTMLButtonElement>('[data-event-route]').forEach(b=>b.onclick=()=>{const f=mapDef().fleet,target=b.dataset.eventRoute==='boss'?enemies.find(e=>e.boss):fleetOwner()==='player'?{x:f.x+FLEET.lagoon.x,y:f.y+FLEET.lagoon.y}:{x:f.x,y:f.y+FLEET.islandR+120};if(!target)return;routeTarget=navigablePoint({x:target.x,y:target.y});destination=routeVia(routeTarget);toast('Rota çizildi');});
+  panel.querySelectorAll<HTMLButtonElement>('[data-event-route]').forEach(b=>b.onclick=()=>{const f=mapDef().fleet,target=b.dataset.eventRoute==='boss'?enemies.find(e=>e.boss):fleetEnterable()?{x:f.x+FLEET.lagoon.x,y:f.y+FLEET.lagoon.y}:{x:f.x,y:f.y+FLEET.islandR+120};if(!target)return;routeTarget=navigablePoint({x:target.x,y:target.y});destination=routeVia(routeTarget);toast('Rota çizildi');});
 }
 function formatClock(sec:number){const m=Math.floor(sec/60),s2=Math.floor(sec%60);return`${m}:${String(s2).padStart(2,'0')}`;}
 // Tema hava efektleri: ekran uzayında sürüklenen parçacıklar
@@ -981,8 +1011,7 @@ function drawMonster(m:Monster){const s=worldToScreen(m);if(drawMonsterSheet(ctx
 function drawFleetIsland(){
   if(!hasFleetIsland())return;const f=mapDef().fleet,s=worldToScreen(f),th=theme().fleet,owned=fleetOwner()==='player';
   if(!drawFleetBase(ctx,th,s.x,s.y)){ctx.fillStyle='#4a7a3c';ctx.beginPath();ctx.arc(s.x,s.y,FLEET.islandR,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#3a3c42';ctx.lineWidth=18;ctx.beginPath();ctx.arc(s.x,s.y,FLEET.wallR,Math.PI/2+FLEET.gap/2,Math.PI/2-FLEET.gap/2+Math.PI*2);ctx.stroke();}
-  if(owned)for(const tw of ownTowers){const p=worldToScreen(tw);drawFleetTower(ctx,th,'player',p.x,p.y);}
-  ctx.textAlign='center';ctx.font='700 14px Cinzel';ctx.fillStyle=owned?'#9fe8dc':'#f0b8a8';ctx.shadowColor='#000';ctx.shadowBlur=6;ctx.fillText(f.name,s.x,s.y-FLEET.islandR-24);ctx.font='700 9px Inter';ctx.fillText(owned?'FİLO ADAN · LAGÜNDE ONARIM':'RAKİP FİLO · GİRİŞ YASAK',s.x,s.y-FLEET.islandR-10);ctx.shadowBlur=0;
+  ctx.textAlign='center';ctx.font='700 14px Cinzel';ctx.fillStyle=owned?'#9fe8dc':'#f0b8a8';ctx.shadowColor='#000';ctx.shadowBlur=6;ctx.fillText(f.name,s.x,s.y-FLEET.islandR-24);ctx.font='700 9px Inter';ctx.fillText(owned?'FİLO ADAN · LAGÜNDE ONARIM':fleetEnterable()?'RAKİP FİLO · TEST: GİRİŞ AÇIK (GÜNEY KANALI)':'RAKİP FİLO · GİRİŞ YASAK',s.x,s.y-FLEET.islandR-10);ctx.shadowBlur=0;
 }
 function draw(){
   const w=innerWidth,h=innerHeight,map=mapDef(),th=theme();const sea=ctx.createLinearGradient(0,0,0,h);sea.addColorStop(0,th.sea[0]);sea.addColorStop(1,th.sea[1]);ctx.fillStyle=sea;ctx.fillRect(0,0,w,h);
@@ -992,7 +1021,7 @@ function draw(){
   drawCoordGrid();drawMapEdges();islands.forEach(drawIsland);drawFleetIsland();lootChests.forEach(drawLootChest);sparkles.forEach(drawSparkle);mines.forEach(m=>{const p=worldToScreen(m);drawMineSprite(ctx,p.x,p.y,performance.now(),m.arm>0,m.life<5);});monsters.forEach(drawMonster);
   particles.forEach(p=>{const s=worldToScreen(p),a=Math.max(0,p.life/p.maxLife);ctx.globalAlpha=a;if(p.kind==='damage'){ctx.fillStyle='#ffd878';ctx.font='700 14px Inter';ctx.textAlign='center';ctx.fillText(p.text||'',s.x,s.y);}else{ctx.fillStyle=p.kind==='foam'?'#b9e2df':p.kind==='spark'?'#ffb340':'#3f4545';ctx.beginPath();ctx.arc(s.x,s.y,p.kind==='smoke'?7*(1-a)+3:p.kind==='foam'?4:2,0,7);ctx.fill();}ctx.globalAlpha=1;});
   shots.forEach(s=>{const p=worldToScreen(s);ctx.fillStyle=s.owner==='player'?(s.ammo==='fire'?'#ff8a2a':s.ammo==='grape'?'#d8d2c0':'#ffd889'):'#ff7450';ctx.shadowColor=ctx.fillStyle;ctx.shadowBlur=9;ctx.beginPath();ctx.arc(p.x,p.y,4,0,7);ctx.fill();ctx.shadowBlur=0;});
-  [...enemies].sort((a,b)=>a.y-b.y).forEach(e=>{const s=worldToScreen(e),raster=e.tower?drawFleetTower(ctx,th.fleet,'npc',s.x,s.y):e.boss?drawBossSprite(ctx,s.x,s.y,e.angle,performance.now()):e.def?drawNpcShip(ctx,e.def.sprite,e.def.span,s.x,s.y,e.angle,performance.now()):false;if(!raster)drawShip(e,e.angle,e.color);const top=raster?(e.tower?TOWER_LABEL_OFFSET:e.boss?BOSS_LABEL_OFFSET:shipLabelOffset(e.def!.span)):-42;ctx.fillStyle='#07161c';ctx.fillRect(s.x-25,s.y+top,50,5);ctx.fillStyle=e.tower?'#e0823f':e.role==='heavy'?'#e04b3f':'#50a8b4';ctx.fillRect(s.x-25,s.y+top,50*e.hp/e.maxHp,5);ctx.fillStyle='#d7cbb5';ctx.font='10px Inter';ctx.textAlign='center';ctx.fillText(e.name,s.x,s.y+top-7);});
+  [...enemies].sort((a,b)=>a.y-b.y).forEach(e=>{const s=worldToScreen(e),raster=e.tower?true:e.boss?drawBossSprite(ctx,s.x,s.y,e.angle,performance.now()):e.def?drawNpcShip(ctx,e.def.sprite,e.def.span,s.x,s.y,e.angle,performance.now()):false;if(!raster)drawShip(e,e.angle,e.color);const top=raster?(e.tower?TOWER_LABEL_OFFSET:e.boss?BOSS_LABEL_OFFSET:shipLabelOffset(e.def!.span)):-42;ctx.fillStyle='#07161c';ctx.fillRect(s.x-25,s.y+top,50,5);ctx.fillStyle=e.tower?'#e0823f':e.role==='heavy'?'#e04b3f':'#50a8b4';ctx.fillRect(s.x-25,s.y+top,50*e.hp/e.maxHp,5);ctx.fillStyle='#d7cbb5';ctx.font='10px Inter';ctx.textAlign='center';ctx.fillText(e.name,s.x,s.y+top-7);});
   if(selected&&targetExists(selected)){const t=worldToScreen(selected);ctx.strokeStyle='#f1c662';ctx.lineWidth=2;ctx.beginPath();ctx.arc(t.x,t.y,selected.kind==='monster'?selected.radius+10:34,0,7);ctx.stroke();}
   drawPlayerShip();
   if(abilityActive('shield')){const p=worldToScreen(player),t=performance.now()/1000,g=ctx.createRadialGradient(p.x,p.y,30,p.x,p.y,62);g.addColorStop(0,'#9fe8ff00');g.addColorStop(.75,'#9fe8ff30');g.addColorStop(1,'#d4a64c88');ctx.fillStyle=g;ctx.beginPath();ctx.arc(p.x,p.y,62,0,Math.PI*2);ctx.fill();ctx.strokeStyle=`rgba(212,166,76,${.55+Math.sin(t*6)*.25})`;ctx.lineWidth=2;ctx.beginPath();ctx.arc(p.x,p.y,62,0,Math.PI*2);ctx.stroke();}
@@ -1046,4 +1075,4 @@ function drawMinimap(){const W=170,H=125,sx=(x:number)=>x/WORLD*W,sy=(y:number)=
   mini.fillStyle='#f4dd9d';mini.beginPath();mini.arc(sx(player.x),sy(player.y),3,0,7);mini.fill();}
 let last=performance.now();function loop(now:number){const dt=Math.min(.033,(now-last)/1000);last=now;update(dt);draw();requestAnimationFrame(loop);}renderQuickSlots();updateUI();requestAnimationFrame(loop);
 // Yalnızca geliştirme sunucusunda: tarayıcı testleri için durum erişimi.
-if(import.meta.env.DEV)(window as any).__ky={state,player,camera,enemies,monsters,respawn,enterMap,mapDef,fleetOwner,lootChests,sparkles,sinkEnemy,get destination(){return destination;}};
+if(import.meta.env.DEV)(window as any).__ky={state,player,camera,enemies,monsters,respawn,enterMap,mapDef,fleetOwner,lootChests,sparkles,sinkEnemy,route:(v:Vec)=>{routeTarget=navigablePoint(v);destination=routeVia(routeTarget);},fleetNav,get routeTarget(){return routeTarget;},get selected(){return selected;},get destination(){return destination;}};

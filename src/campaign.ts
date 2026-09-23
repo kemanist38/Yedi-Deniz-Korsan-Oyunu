@@ -105,8 +105,10 @@ export function coordLabel(p:{x:number;y:number}){const g=gridCell(p);return`${c
 // Seafight tarzı: düzensiz kumsallı ada (islandR), koyu sur halkası (wallR, açıklık güneyde),
 // sur içinde lagün (lagoon) ve lagünü denize bağlayan kanal (|x|<channelW). Burç lagünün kuzeyinde.
 // tools/asset-studio/fleet.js ile aynı tutulmalıdır.
-export const FLEET={islandR:440,wallR:340,gap:.56,lagoon:{x:0,y:95,r:150},channelW:60,keep:{x:0,y:-165},
-  towers:Array.from({length:8},(_,k)=>{const a=Math.PI/2+.28+(Math.PI*2-.56)*k/7;return[Math.round(Math.cos(a)*340),Math.round(Math.sin(a)*340)];}) as [number,number][],
+// Filo adası görseli (fleet-base-v3, 1000 birim): güneyden kanalla girilen lagün kalesi. Seyir alanı src/fleetMask.ts
+// maskesinden gelir; kuleler görseldeki 8 sur kulesinin üzerindedir. lagoon: lagünün ortası (rota hedefi).
+export const FLEET={islandR:440,wallR:340,gap:.56,lagoon:{x:10,y:-20,r:150},channelW:60,keep:{x:0,y:-330},
+  towers:[[-244,-247],[-367,-113],[-322,42],[-100,164],[100,164],[322,42],[367,-113],[244,-247]] as [number,number][],
   base:{frame:1024,span:1000},tower:{frame:256,span:120,anchorY:0}};
 // Kuleler filo savaşı ölçeğinde: tek gemi yıkamaz, saldırı kesilince hızla onarılır.
 export const fleetTower=(tier:number)=>{const t=tier-1;return{hp:Math.round(40000*(1+.6*t)),damage:Math.round(7*(1+.35*t)),reload:2.2,range:460,ownDamage:Math.round(24*(1+.5*t))};};
