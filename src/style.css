@@ -139,3 +139,43 @@ button { font: inherit; }
 .combat-action small{position:relative;z-index:1;font-weight:700}
 .combat-action span{position:relative;z-index:1}
 @media (max-width:720px){.combat-action b img{width:24px;height:24px}.combat-action.attack b img{width:30px;height:30px}}
+/* Kaptan yetenekleri ve tayfa */
+.captain-face img{width:26px;height:26px;object-fit:contain}
+.captain-portrait img{width:64px;height:64px;object-fit:contain;filter:drop-shadow(0 3px 4px #000a)}
+.captain-profile{width:min(900px,94vw);max-height:88vh;overflow:auto}
+.captain-tabs{display:flex;gap:6px;margin-top:14px}
+.captain-tabs button{position:relative;padding:8px 16px;border:1px solid #c49a5355;border-radius:6px;background:#0a2026;color:#b9a37a;font:700 11px Cinzel;letter-spacing:.1em;cursor:pointer}
+.captain-tabs button.active{border-color:#d4a64c;background:linear-gradient(180deg,#3a2a18,#1a140c);color:#f3d496}
+.captain-tabs b{position:absolute;top:-7px;right:-7px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:#c0392b;color:#fff;font:700 10px/18px Inter}
+.captain-tabs b:empty{display:none}
+.captain-tab.hidden{display:none}
+.bonus-summary{margin-top:12px;padding:10px 12px;border:1px solid #d0a95b33;border-radius:7px;background:#06161b}
+.bonus-summary div{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.bonus-summary b{padding:3px 8px;border-radius:4px;background:#10262c;font:600 11px Inter;color:#d8c69e}
+.talent-points{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:14px 0 10px;font:600 13px Inter;color:#c9d6d1}
+.talent-points b{color:#f3d496;font-size:16px}.talent-points small{color:#7f9a96}
+.talent-points button{margin-left:auto;padding:6px 10px;border:1px solid #6fd6c466;border-radius:5px;background:#0b2a2e;color:#9fe8dc;font:700 10px Inter;cursor:pointer}
+.talent-branches{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.talent-branch{padding:10px;border:1px solid #c49a5333;border-radius:8px;background:#071a20}
+.talent-branch header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.talent-branch header img{width:36px;height:36px;object-fit:contain}
+.talent-branch h3{margin:0;font:700 15px Cinzel;color:#f3d496}
+.talent{display:grid;grid-template-columns:40px 1fr auto;align-items:center;gap:8px;width:100%;margin-top:6px;padding:6px;border:1px solid #5a4a3a66;border-radius:6px;background:#0c2228;color:#d8c69e;text-align:left;cursor:pointer}
+.talent img{width:40px;height:40px;object-fit:contain;filter:grayscale(.6) brightness(.8)}
+.talent.owned img{filter:none}
+.talent strong{display:block;font:700 12px Cinzel}.talent small{font:500 10px Inter;color:#8fa9a4}
+.talent b{font:700 12px Inter;color:#f3d496}
+.talent.owned{border-color:#b8904c}.talent.maxed{border-color:#6fd6c4;background:#0b2a2a}
+.talent:disabled{cursor:default}.talent:not(:disabled):hover{border-color:#f3d496;background:#13303a}
+.officer-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.officer{display:grid;grid-template-columns:64px 1fr;gap:8px;padding:10px;border:1px solid #5a4a3a66;border-radius:8px;background:#071a20}
+.officer>img{width:64px;height:64px;object-fit:contain;filter:grayscale(.8) brightness(.7)}
+.officer.hired>img{filter:none}.officer.active{border-color:#6fd6c4;box-shadow:inset 0 0 18px #6fd6c418}
+.officer span{font:700 8px Inter;letter-spacing:.14em;color:#9b7b45;text-transform:uppercase}
+.officer h4{margin:2px 0;font:700 15px Cinzel;color:#f3d496}.officer small{display:block;font:500 11px Inter;color:#9fb4ae}
+.officer i{font-style:normal;color:#d4a64c;letter-spacing:.08em}
+.officer footer{grid-column:1/-1;display:flex;gap:6px}
+.officer footer button{flex:1;padding:7px 6px;border:1px solid #c69b4e88;border-radius:5px;background:linear-gradient(180deg,#5a3a1c,#2e1c0c);color:#f6deb0;font:700 10px Inter;cursor:pointer}
+.officer footer button[data-officer-toggle]{background:#0b2a2e;border-color:#6fd6c466;color:#9fe8dc}
+.officer footer button:disabled{background:#1a2a2e;border-color:#4a5a5a;color:#8a9a96;cursor:default}
+@media (max-width:760px){.talent-branches,.officer-grid{grid-template-columns:1fr}}

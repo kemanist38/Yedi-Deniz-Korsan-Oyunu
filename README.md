@@ -41,6 +41,13 @@ Sol üstteki **DÜNYA** butonu parşömen haritayı açar; oradan bağlı bir de
 - **Saçma:** ×1,6 hasar, menzil %35 kısa.
 - Ateş güllesi, saçma ve mayınlar marketten alınır; hızlı yuvalardan seçilir. İlk açılışta tanıtım stoğu verilir.
 
+## Kaptan yetenekleri ve tayfa
+
+**KAPTAN** penceresinde üç sekme bulunur:
+- **Yetenekler:** Her seviyede 1 puan. Topçuluk, Denizcilik ve Yağma dallarında 12 yetenek. 5 İnci karşılığında puanlar sıfırlanabilir.
+- **Tayfa:** 6 subay (Topçu Başı, Serdümen, Marangoz, Gözcü, Levazımcı, Cerrah) altınla işe alınır ve 5 rütbeye kadar yükseltilir. Aynı anda görevde olabilecek subay sayısı 1 / 2 / 3'tür (seviye 1 / 3 / 6).
+- **Profil:** Tüm kaptan ve tayfa bonuslarının toplamı.
+
 ## Ganimet sandıkları
 
 - Batan her düşman gemisi, mevcut ödüllerine ek olarak bir ganimet sandığı bırakır; Derinlik Leviathanı yaldızlı sandık bırakır.
