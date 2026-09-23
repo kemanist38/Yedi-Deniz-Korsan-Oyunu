@@ -54,7 +54,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <div class="panel quest"><span class="eyebrow">Aktif görev</span><h3 id="questTitle">Görev seçilmedi</h3><p id="questDescription">Kaptan, yapmak istediğin görevi görev defterinden seçebilirsin.</p><div class="progress" id="quest">Hazır olduğunda bir görev başlat</div><button class="quest-open" id="openQuests">GÖREVLERİ AÇ</button></div>
       <section class="combat-targets" id="combatTargets" aria-live="polite"></section>
       <div class="bottom-command"><div class="status-bars"><div class="status-pair"><div class="status-line xp-line"><span>TP</span><i><em id="xpHudBar"></em></i><b id="xpHudText">0 / 100</b></div><div class="status-line elite-line"><span>EP</span><i><em id="eliteBar"></em></i><b id="eliteText">0 / 100</b></div></div><button class="recenter" id="recenterShip" aria-label="Gemiyi haritada ortala">✥</button><div class="status-pair"><div class="status-line hp-line"><span>CP</span><i><em id="hpHudBar"></em></i><b id="hpHudText">100 / 100</b></div><div class="status-line battle-line"><span>SP</span><i><em id="battleBar"></em></i><b id="battleText">0 / 100</b></div></div></div><div class="quick-inventory" id="quickInventory"></div></div>
-      <div class="combat-controls" id="combatControls"><button class="combat-action attack" id="attack" title="Saldır"><b><img src="/assets/icon-attack-v1.webp" alt="" draggable="false"/></b><span id="attackLabel">SALDIR</span><small id="reloadText">HAZIR</small></button><button class="combat-action repair" id="repair" title="Tamir et"><b><img src="/assets/icon-repair-v1.webp" alt="" draggable="false"/></b><span>TAMİR</span><small data-bind="repair"></small></button><button class="combat-action speed ability" id="ability-speed" title="Rüzgâr Hamlesi"><b><img src="/assets/icon-speed-v1.webp" alt="" draggable="false"/></b><span>HIZ</span><small data-bind="speed"></small></button><button class="combat-action shield ability" id="ability-shield" title="Demir Kalkan"><b><img src="/assets/icon-shield-v1.webp" alt="" draggable="false"/></b><span>KALKAN</span><small data-bind="shield"></small></button><button class="combat-action mine ability" id="ability-mine" title="Deniz Mayını"><b><img src="/assets/icon-mine-v1.webp" alt="" draggable="false"/></b><span>MAYIN</span><small data-bind="mine"></small></button></div>
+      <div class="combat-controls" id="combatControls"><button class="combat-action attack" id="attack" title="Saldır"><b><img src="/assets/icon-attack-v1.webp" alt="" draggable="false"/></b><span id="attackLabel">SALDIR</span><small id="reloadText">HAZIR</small></button><button class="combat-action repair" id="repair" title="Tamir et"><b><img src="/assets/icon-repair-v1.webp" alt="" draggable="false"/></b><span>TAMİR</span><small data-bind="repair"></small></button><button class="combat-action speed ability" id="ability-speed" title="Rüzgâr Hamlesi"><b><img src="/assets/icon-speed-v1.webp" alt="" draggable="false"/></b><span>HIZ</span><small data-bind="speed"></small></button><button class="combat-action shield ability" id="ability-shield" title="Demir Kalkan"><b><img src="/assets/icon-shield-v1.webp" alt="" draggable="false"/></b><span>KALKAN</span><small data-bind="shield"></small></button><button class="combat-action mine ability" id="ability-mine" title="Deniz Mayını"><b><img src="/assets/icon-mine-v1.webp" alt="" draggable="false"/></b><span>MAYIN</span><small data-bind="mine"></small></button><button class="combat-action elite ability" id="ability-elite" title="Elit gemi yeteneği"><b><span class="elite-ability-icon" id="eliteAbilityIcon"></span></b><span id="eliteAbilityName">ELİT</span><small id="eliteAbilityTime">HAZIR</small></button></div>
       <div class="map-cluster"><div class="map-badge" id="mapBadge"><strong id="mapName"></strong><small id="mapSubtitle"></small><b class="map-coord" id="mapCoord" title="Konum koordinatı">1/1 - 00AA</b></div><canvas id="minimap" width="170" height="125"></canvas><button class="world-map-button" id="openWorldMap" aria-label="Dünya haritalarını görüntüle">◎<span>DÜNYA</span></button><div class="panel zoom-controls"><button id="zoomOut" aria-label="Uzaklaştır">−</button><span id="zoomValue">70%</span><button id="zoomIn" aria-label="Yakınlaştır">+</button></div></div>
       <div class="reward-toast" id="rewardToast"></div>
       <div class="toast" id="toast"></div>
@@ -88,7 +88,7 @@ const cannonAssetSources:Record<CannonKind,string>={cast:'',long:'',rapid:'',hea
 const rasterItemAssets:Partial<Record<QuickItemId,string>>={};
 rasterItemAssets.fire=SPECIAL_AMMO.fire.icon;rasterItemAssets.grape=SPECIAL_AMMO.grape.icon;rasterItemAssets.mine=ABILITIES.mine.icon;rasterItemAssets.shield=ABILITIES.shield.icon;rasterItemAssets.speed=ABILITIES.speed.icon;rasterItemAssets.repairkit='/assets/icon-repair-v1.webp';
 (['iron','chain'] as QuickItemId[]).forEach(id=>fetch(`/assets/ammo-${id}-v1.b64`).then(r=>r.text()).then(data=>{rasterItemAssets[id]=`data:image/webp;base64,${data}`;renderQuickSlots();}));
-let eliteAtlasUrl='';fetch('/assets/elite-ships-atlas-v1.b64').then(r=>r.text()).then(data=>{eliteAtlasUrl=`data:image/webp;base64,${data.trim()}`;ui('eliteShipOverlay')?.style.setProperty('--elite-atlas',`url("${eliteAtlasUrl}")`);}).catch(()=>{});
+let eliteAtlasUrl='';const eliteAtlasImage=new Image();eliteAtlasImage.decoding='async';fetch('/assets/elite-ships-atlas-v1.b64').then(r=>r.text()).then(data=>{eliteAtlasUrl=`data:image/webp;base64,${data.trim()}`;eliteAtlasImage.src=eliteAtlasUrl;ui('eliteShipOverlay')?.style.setProperty('--elite-atlas',`url("${eliteAtlasUrl}")`);}).catch(()=>{});
 const ui = (id:string) => document.getElementById(id)!;
 const keys = new Set<string>();
 const QUEST_STORAGE='kara-yelken-quests-v2';
@@ -136,6 +136,35 @@ const lootChests:LootChest[]=[];
 const abilityTimers:Record<AbilityId,{active:number;cooldown:number}>={speed:{active:0,cooldown:0},shield:{active:0,cooldown:0},mine:{active:0,cooldown:0}};
 const mines:{x:number;y:number;life:number;arm:number}[]=[];
 const abilityActive=(id:AbilityId)=>abilityTimers[id].active>0;
+const eliteAbility={active:0,cooldown:0};
+let soulStacks=0,soulTimer=0,shadowReady=true,valhallaTimer=0;
+const eliteShip=()=>eliteById(activeEliteShip);
+const eliteMaxHpFactor=()=>activeEliteShip==='glacial'?1.2:activeEliteShip==='void'?1.15:1;
+const eliteIncomingFactor=()=>activeEliteShip==='ironclad'?.75:activeEliteShip==='void'?.87:1;
+function eliteSpeedFactor(){
+  if(activeEliteShip==='tempest')return 1.22;
+  if(activeEliteShip==='void')return 1.1;
+  if(activeEliteShip==='jade')return 1.08;
+  if(activeEliteShip==='crimson'&&selected&&selected.hp/selected.maxHp<.3)return 2;
+  return 1;
+}
+function eliteDamageFactor(target:Target){
+  let n=1;
+  if(activeEliteShip==='magma')n*=1.1;
+  if(activeEliteShip==='void')n*=1.15;
+  if(activeEliteShip==='ironclad'&&target.kind==='ship'&&target.tower)n*=1.4;
+  if(activeEliteShip==='ragnarok')n*=1+Math.floor((1-state.hp/state.maxHp)*10)*.04;
+  if(activeEliteShip==='bone')n*=1+soulStacks*.05;
+  if(activeEliteShip==='sovereign'&&eliteAbility.active>0)n*=1.15;
+  return n;
+}
+function eliteReloadFactor(){return activeEliteShip==='jade'?.85:activeEliteShip==='ironclad'?1.1:1;}
+function eliteCritFactor(){
+  let chance=activeEliteShip==='kraken'?.1:activeEliteShip==='void'?.1:0;
+  if(activeEliteShip==='shadow'&&shadowReady){shadowReady=false;return 2;}
+  if(Math.random()<chance)return activeEliteShip==='bone'?2.25:2;
+  return 1;
+}
 let driftClock=0;
 let wakeClock=0;
 let collisionNotice=0;
@@ -185,7 +214,7 @@ canvas.addEventListener('pointerdown',e=>{
 });
 ui('attack').onclick=toggleAttack;
 ui('repair').onclick=toggleRepair;
-ui('ability-speed').onclick=()=>activateAbility('speed');ui('ability-shield').onclick=()=>activateAbility('shield');ui('ability-mine').onclick=dropMine;
+ui('ability-speed').onclick=()=>activateAbility('speed');ui('ability-shield').onclick=()=>activateAbility('shield');ui('ability-mine').onclick=dropMine;ui('ability-elite').onclick=activateEliteAbility;
 function recenterShip(){camera.x=player.x;camera.y=player.y;destination=null;toast('Kamera gemiye ortalandı');}
 ui('recenterShip').onclick=recenterShip;
 ui('openWorldMap').onclick=openWorldMap;ui('closeWorldMap').onclick=closeWorldMap;
@@ -327,15 +356,15 @@ function toggleRepair(){
 }
 function fireAtTarget(){
   const cannon=CANNONS[state.cannonType];
-  if(!selected||player.cooldown>0||dist(player,selected)>effectiveRange())return;
+  if(!selected||player.cooldown>0||dist(player,selected)>effectiveRange()||(activeEliteShip==='phantom'&&eliteAbility.active>0))return;
   if(state.ammo==='chain'&&state.chainAmmo<=0){state.ammo='iron';toast('Zincir güllesi tükendi');}
   if((state.ammo==='fire'||state.ammo==='grape')&&arsenal[state.ammo]<=0){toast(`${SPECIAL_AMMO[state.ammo].name} tükendi`);state.ammo='iron';renderQuickSlots();}
   const fx=Math.sin(player.angle),fy=-Math.cos(player.angle),tx=selected.x-player.x,ty=selected.y-player.y;
-  const side=fx*ty-fy*tx>0?-1:1,damage=state.cannon*5*(1+upgrades.damage*.11)*cannon.damage*bonus.damage*(state.ammo==='chain'?1.45:1)*(state.ammo==='fire'||state.ammo==='grape'?SPECIAL_AMMO[state.ammo].damage:1);
+  const side=fx*ty-fy*tx>0?-1:1,damage=state.cannon*5*(1+upgrades.damage*.11)*cannon.damage*bonus.damage*eliteDamageFactor(selected)*eliteCritFactor()*(state.ammo==='chain'?1.45:1)*(state.ammo==='fire'||state.ammo==='grape'?SPECIAL_AMMO[state.ammo].damage:1);
   salvoQueue.push({delay:0,target:selected,side,slot:0,damage,ammo:state.ammo});
   if(state.ammo==='chain'){state.chainAmmo-=1;saveAccount();}
   else if(state.ammo==='fire'||state.ammo==='grape'){arsenal[state.ammo]-=1;saveArsenal(arsenal);renderQuickSlots();}
-  player.cooldown=cannon.reload*Math.max(.6,1-upgrades.reload*.04)*bonus.reload*(state.ammo==='chain'?1.18:1)*(state.ammo==='fire'||state.ammo==='grape'?SPECIAL_AMMO[state.ammo].reload:1);
+  player.cooldown=eliteAbility.active>0&&activeEliteShip==='ironclad'?0:cannon.reload*Math.max(.6,1-upgrades.reload*.04)*bonus.reload*eliteReloadFactor()*(state.ammo==='chain'?1.18:1)*(state.ammo==='fire'||state.ammo==='grape'?SPECIAL_AMMO[state.ammo].reload:1);
 }
 function releaseSalvo(round:SalvoRound){
   if(!targetExists(round.target))return;
@@ -378,7 +407,7 @@ function rewardNotice(msg:string){if(rewardTimer>0){rewardQueue.push(msg);return
 function saveQuestState(){localStorage.setItem(QUEST_STORAGE,JSON.stringify({active:state.activeQuest,progress:questProgress,cooldowns:questCooldownUntil}));}
 function saveAccount(){localStorage.setItem(ACCOUNT_STORAGE,JSON.stringify({pearls:state.pearls,gold:state.gold,wood:state.wood,fame:state.fame,level:state.level,maxHp:state.maxHp,hp:state.hp,chainAmmo:state.chainAmmo,elitePoints:state.elitePoints,battlePoints:state.battlePoints,cannonType:state.cannonType,cannonInventory,mountedCannons,quickSlots,upgrades,eliteShip:activeEliteShip,currentMap}));try{localStorage.setItem(WORLD_STORAGE,currentMap);}catch{}}
 function effectiveRange(){return(CANNONS[state.cannonType].range+upgrades.range*18+bonus.range)*(state.ammo==='grape'?SPECIAL_AMMO.grape.rangeFactor:1);}
-function effectiveSpeed(){return(104+upgrades.speed*5)*bonus.speed*(abilityActive('speed')?SPEED_BOOST:1);}
+function effectiveSpeed(){return(104+upgrades.speed*5)*bonus.speed*eliteSpeedFactor()*(abilityActive('speed')?SPEED_BOOST:1);}
 function cannonCapacity(){return 30+upgrades.hull*2;}
 function mountedCannonCount(){return (Object.keys(mountedCannons) as CannonKind[]).reduce((sum,kind)=>sum+mountedCannons[kind],0);}
 function cannonAsset(kind:CannonKind){
@@ -415,7 +444,7 @@ function renderEliteShips(){
   ui('eliteShipGrid').querySelectorAll<HTMLElement>('[data-elite]').forEach(el=>el.onclick=()=>{previewEliteShip=el.dataset.elite as EliteShipId;renderEliteShips();});
   const ship=eliteById(previewEliteShip),locked=ship.level>unlocked;
   ui('eliteShipDetail').innerHTML=`<span class="eyebrow">Elit ${ship.level}</span><span class="elite-art elite-preview" role="img" aria-label="${ship.name}" style="--elite-x:${((ship.level-1)%5)*25}%;--elite-y:${Math.floor((ship.level-1)/5)*50}%"></span><h3>${ship.name}</h3><em>${ship.english}</em><b>${ship.role}</b><dl><dt>Pasif</dt><dd>${ship.passive}</dd><dt>${ship.ability}</dt><dd>${ship.abilityDescription}</dd></dl><button id="equipEliteShip" ${locked||ship.id===activeEliteShip?'disabled':''}>${ship.id===activeEliteShip?'AKTİF GEMİ':locked?'KİLİTLİ':'GEMİYİ SEÇ'}</button>`;
-  const equip=document.getElementById('equipEliteShip') as HTMLButtonElement|null;if(equip&&!equip.disabled)equip.onclick=()=>{activeEliteShip=ship.id;saveAccount();renderEliteShips();toast(`${ship.name} amiral gemisi seçildi`);};
+  const equip=document.getElementById('equipEliteShip') as HTMLButtonElement|null;if(equip&&!equip.disabled)equip.onclick=()=>{const oldFactor=eliteMaxHpFactor();activeEliteShip=ship.id;const newFactor=eliteMaxHpFactor();state.hp=Math.min(state.maxHp,Math.max(1,state.hp*newFactor/oldFactor));eliteAbility.active=0;eliteAbility.cooldown=0;shadowReady=true;saveAccount();renderEliteShips();updateUI();toast(`${ship.name} amiral gemisi seçildi`);};
 }
 function openDevelopment(){pendingUpgrade=null;renderUpgrades();ui('developmentOverlay').classList.add('open');}
 function closeDevelopment(){pendingUpgrade=null;ui('developmentOverlay').classList.remove('open');}
@@ -580,12 +609,13 @@ function updateUI(){
   ui('pearls').textContent=String(state.pearls).padStart(3,'0');ui('gold').textContent=String(state.gold).padStart(3,'0');
   document.querySelectorAll<HTMLElement>('#quickInventory [data-quick-item]').forEach(slot=>{const item=slot.dataset.quickItem as QuickItemId;const count=slot.querySelector('b');if(count)count.textContent=quickCount(item);slot.classList.toggle('active',item===state.ammo);});
   ui('hpText').textContent=`${Math.ceil(state.hp)} / ${state.maxHp}`; (ui('hpBar') as HTMLElement).style.width=`${state.hp/state.maxHp*100}%`;
-  const need=xpNeed(state.level),needText=Number.isFinite(need)?String(need):'AZAMİ';ui('xpText').textContent=`${state.fame} / ${needText}`;(ui('xpBar') as HTMLElement).style.width=`${Number.isFinite(need)?Math.min(100,state.fame/need*100):100}%`;ui('level').textContent=String(state.level);ui('captainLevel').textContent=String(state.level);ui('profileElite').textContent=`${state.elitePoints} / 100`;ui('profileBattle').textContent=`${state.battlePoints} / 500`;(ui('profileEliteBar') as HTMLElement).style.width=`${Math.min(100,state.elitePoints)}%`;(ui('profileBattleBar') as HTMLElement).style.width=`${Math.min(100,state.battlePoints/5)}%`;
-  (ui('xpHudBar') as HTMLElement).style.width=`${Number.isFinite(need)?Math.min(100,state.fame/need*100):100}%`;ui('xpHudText').textContent=`${state.fame} / ${needText}`;(ui('hpHudBar') as HTMLElement).style.width=`${Math.max(0,state.hp/state.maxHp*100)}%`;ui('hpHudText').textContent=`${Math.ceil(state.hp)} / ${state.maxHp}`;(ui('eliteBar') as HTMLElement).style.width=`${Math.min(100,state.elitePoints)}%`;ui('eliteText').textContent=`${state.elitePoints} / 100`;(ui('battleBar') as HTMLElement).style.width=`${Math.min(100,state.battlePoints/5)}%`;ui('battleText').textContent=`${state.battlePoints} / 500`;
+  const need=xpNeed(state.level),needText=Number.isFinite(need)?String(need):'AZAMİ';ui('xpText').textContent=`${state.fame} / ${needText}`;(ui('xpBar') as HTMLElement).style.width=`${Number.isFinite(need)?Math.min(100,state.fame/need*100):100}%`;ui('level').textContent=String(state.level);ui('captainLevel').textContent=String(state.level);ui('profileElite').textContent=`${state.elitePoints} / 1500`;ui('profileBattle').textContent=`${state.battlePoints} / 500`;(ui('profileEliteBar') as HTMLElement).style.width=`${Math.min(100,state.elitePoints/15)}%`;(ui('profileBattleBar') as HTMLElement).style.width=`${Math.min(100,state.battlePoints/5)}%`;
+  (ui('xpHudBar') as HTMLElement).style.width=`${Number.isFinite(need)?Math.min(100,state.fame/need*100):100}%`;ui('xpHudText').textContent=`${state.fame} / ${needText}`;(ui('hpHudBar') as HTMLElement).style.width=`${Math.max(0,state.hp/state.maxHp*100)}%`;ui('hpHudText').textContent=`${Math.ceil(state.hp)} / ${state.maxHp}`;(ui('eliteBar') as HTMLElement).style.width=`${Math.min(100,state.elitePoints/15)}%`;ui('eliteText').textContent=`${state.elitePoints} / 1500`;(ui('battleBar') as HTMLElement).style.width=`${Math.min(100,state.battlePoints/5)}%`;ui('battleText').textContent=`${state.battlePoints} / 500`;
   const quest=state.activeQuest===null?null:questById(state.activeQuest);ui('questTitle').textContent=quest?.title||'Görev seçilmedi';ui('questDescription').textContent=quest?.description||'Kaptan, yapmak istediğin görevi görev defterinden seçebilirsin.';ui('quest').textContent=quest?`${questProgress[quest.id]??0} / ${quest.required} ${questUnit(quest)}`:'Hazır olduğunda bir görev başlat';
   ui('reloadText').textContent=player.cooldown>0?`${player.cooldown.toFixed(1)} sn`:'HAZIR';ui('attack').classList.toggle('reloading',player.cooldown>0);
   ui('attackLabel').textContent=state.attacking?'SALDIRIYI İPTAL ET':'SALDIR';ui('attack').classList.toggle('active',state.attacking);
   ui('repair').classList.toggle('active',state.repairing);
+  const elite=eliteShip(),eliteIndex=elite.level-1,eliteButton=ui('ability-elite');ui('eliteAbilityName').textContent=elite.ability.toLocaleUpperCase('tr');ui('eliteAbilityTime').textContent=eliteAbility.active>0?`${Math.ceil(eliteAbility.active)} SN`:eliteAbility.cooldown>0?`${Math.ceil(eliteAbility.cooldown)}`:'HAZIR';eliteButton.classList.toggle('active',eliteAbility.active>0);eliteButton.style.setProperty('--cd',Math.min(1,eliteAbility.cooldown/45).toFixed(3));const eliteIcon=ui('eliteAbilityIcon') as HTMLElement;eliteIcon.style.setProperty('--elite-x',`${eliteIndex%5*25}%`);eliteIcon.style.setProperty('--elite-y',`${Math.floor(eliteIndex/5)*50}%`);
   renderCombatTargets();
 }
 
@@ -621,7 +651,7 @@ function update(dt:number){
     }
     player.speed=clamp(player.speed,0,effectiveSpeed()+4);
     player.x=clamp(player.x+Math.sin(player.angle)*player.speed*dt,25,WORLD-25);player.y=clamp(player.y-Math.cos(player.angle)*player.speed*dt,25,WORLD-25);resolveIslandCollision();
-  player.cooldown=Math.max(0,player.cooldown-dt);state.invulnerable=Math.max(0,state.invulnerable-dt);collisionNotice=Math.max(0,collisionNotice-dt);camera.x+=(player.x-camera.x)*Math.min(1,dt*3);camera.y+=(player.y-camera.y)*Math.min(1,dt*3);camera.zoom+=(camera.targetZoom-camera.zoom)*Math.min(1,dt*7);
+  player.cooldown=Math.max(0,player.cooldown-dt);eliteAbility.active=Math.max(0,eliteAbility.active-dt);eliteAbility.cooldown=Math.max(0,eliteAbility.cooldown-dt);valhallaTimer=Math.max(0,valhallaTimer-dt);soulTimer=Math.max(0,soulTimer-dt);if(soulTimer<=0)soulStacks=0;if(activeEliteShip==='ironclad'&&eliteAbility.active>0)player.cooldown=0;state.invulnerable=Math.max(0,state.invulnerable-dt);collisionNotice=Math.max(0,collisionNotice-dt);camera.x+=(player.x-camera.x)*Math.min(1,dt*3);camera.y+=(player.y-camera.y)*Math.min(1,dt*3);camera.zoom+=(camera.targetZoom-camera.zoom)*Math.min(1,dt*7);
   for(let i=salvoQueue.length-1;i>=0;i--){salvoQueue[i].delay-=dt;if(salvoQueue[i].delay<=0){releaseSalvo(salvoQueue[i]);salvoQueue.splice(i,1);}}
   if(state.repairing){state.hp=Math.min(state.maxHp,state.hp+state.maxHp*(.035+upgrades.repair*.008)*bonus.repair*dt);if(state.hp>=state.maxHp){state.repairing=false;saveAccount();ui('repair').classList.remove('active');toast('Gövde tamamen onarıldı');}}
   wakeClock-=dt;if(Math.abs(player.speed)>8&&wakeClock<=0){wakeClock=.1;particles.push({x:player.x-Math.sin(player.angle)*22,y:player.y+Math.cos(player.angle)*22,vx:-Math.sin(player.angle)*8,vy:Math.cos(player.angle)*8,life:.75,maxLife:.75,kind:'foam'});}
@@ -653,17 +683,17 @@ function update(dt:number){
     if(s.owner==='player'){
       for(let j=enemies.length-1;j>=0&&s.life>0;j--){
         const e=enemies[j];
-        if(dist(s,e)<(e.hitRadius??25)){const hit=s.damage;s.hit=true;e.aggro=true;e.combatTimer=12;if(s.ammo==='chain')e.slowTimer=3;if(s.ammo==='fire')e.burnTimer=SPECIAL_AMMO.fire.burnSeconds;e.hp-=hit;damageText(e.x,e.y,hit);burst(e.x,e.y);playHit();s.life=0;
+        if(dist(s,e)<(e.hitRadius??25)){const hit=s.damage;s.hit=true;if(activeEliteShip==='crimson')state.hp=Math.min(state.maxHp,state.hp+hit*.07);if(activeEliteShip==='magma'&&Math.random()<.2)e.burnTimer=3;e.aggro=true;e.combatTimer=12;if(s.ammo==='chain')e.slowTimer=3;if(s.ammo==='fire')e.burnTimer=SPECIAL_AMMO.fire.burnSeconds;e.hp-=hit;damageText(e.x,e.y,hit);burst(e.x,e.y);playHit();s.life=0;
           if(e.hp<=0)sinkEnemy(e);
         }
       }
       for(let j=monsters.length-1;j>=0&&s.life>0;j--){
         const m=monsters[j];
-        if(dist(s,m)<m.radius){const hit=s.damage;s.hit=true;m.aggro=true;m.combatTimer=12;if(s.ammo==='chain')m.slowTimer=3;if(s.ammo==='fire')m.burnTimer=SPECIAL_AMMO.fire.burnSeconds;m.hp-=hit;damageText(m.x,m.y,hit);burst(m.x,m.y);playHit();s.life=0;
+        if(dist(s,m)<m.radius){const hit=s.damage;s.hit=true;if(activeEliteShip==='crimson')state.hp=Math.min(state.maxHp,state.hp+hit*.07);if(activeEliteShip==='magma'&&Math.random()<.2)m.burnTimer=3;m.aggro=true;m.combatTimer=12;if(s.ammo==='chain')m.slowTimer=3;if(s.ammo==='fire')m.burnTimer=SPECIAL_AMMO.fire.burnSeconds;m.hp-=hit;damageText(m.x,m.y,hit);burst(m.x,m.y);playHit();s.life=0;
           if(m.hp<=0)defeatMonster(m);
         }
       }
-    }else if(state.invulnerable<=0&&dist(s,player)<22){s.hit=true;state.repairing=false;const taken=s.damage*bonus.taken*(abilityActive('shield')?SHIELD_FACTOR:1);state.hp-=taken;damageText(player.x,player.y,Math.round(taken));playHit(true);burst(player.x,player.y);s.life=0;if(state.hp<=0)respawn();}
+    }else if(state.invulnerable<=0&&dist(s,player)<22){s.hit=true;if(activeEliteShip==='phantom'&&Math.random()<.15){damageText(player.x,player.y,0);s.life=0;continue;}state.repairing=false;const taken=s.damage*bonus.taken*eliteIncomingFactor()*(abilityActive('shield')?SHIELD_FACTOR:1);state.hp-=taken;damageText(player.x,player.y,Math.round(taken));playHit(true);burst(player.x,player.y);s.life=0;if(state.hp<=0){if(activeEliteShip==='ragnarok'&&valhallaTimer>0){state.hp=1;}else respawn();}}
     if(s.life<=0)shots.splice(i,1);
   }
   updateLootChests(dt);updateArsenal(dt);updateEvents(dt);
@@ -682,12 +712,12 @@ function sinkEnemy(e:Enemy){
   if(e.tower){destroyTower();return;}
   if(e.boss){burst(e.x,e.y,true);defeatBoss(e);return;}
   const battle=e.role==='heavy'?8:4,scale=1+.55*(e.tier-1);lootChests.push(createChest(e.role==='heavy'?'warship':'raider',e.x,e.y,bonus.gilded,scale));
-  const bountyGold=Math.round(e.rewardGold*bonus.bounty);state.gold+=e.rewardGold+bountyGold;state.wood+=e.rewardWood;state.fame+=e.rewardFame;state.battlePoints=Math.min(500,state.battlePoints+battle);saveAccount();
+  if(activeEliteShip==='bone'){soulStacks=Math.min(3,soulStacks+1);soulTimer=30;}const eliteLoot=activeEliteShip==='sovereign'?1.2:1;const bountyGold=Math.round(e.rewardGold*bonus.bounty);state.gold+=Math.round((e.rewardGold+bountyGold)*eliteLoot);state.wood+=e.rewardWood;state.fame+=e.rewardFame;state.battlePoints=Math.min(500,state.battlePoints+battle);saveAccount();
   rewardNotice(`+${e.rewardGold+bountyGold} Altın   +${e.rewardWood} Kereste   +${e.rewardFame} TP   +${battle} Savaş Puanı`);toast(`${e.name} batırıldı`);if(e.def)recordQuestProgress('npc',e.def.id);setTimeout(spawnEnemy,1800);
 }
 function defeatMonster(m:Monster){
   playExplosion();const d=m.def;
-  state.gold+=d.gold;state.wood+=d.wood;state.fame+=d.xp;state.pearls+=d.pearls;state.elitePoints=Math.min(100,state.elitePoints+10);state.battlePoints=Math.min(500,state.battlePoints+20);saveAccount();
+  if(activeEliteShip==='bone'){soulStacks=Math.min(3,soulStacks+1);soulTimer=30;}const eliteLoot=activeEliteShip==='sovereign'?1.2:1;state.gold+=Math.round(d.gold*eliteLoot);state.wood+=d.wood;state.fame+=d.xp;state.pearls+=Math.round(d.pearls*eliteLoot);state.elitePoints=Math.min(1500,state.elitePoints+10);state.battlePoints=Math.min(500,state.battlePoints+20);saveAccount();
   rewardNotice(`+${d.gold} Altın   +${d.pearls} İnci   +${d.xp} TP   +10 Elit Puan`);recordQuestProgress('monster',d.id);lootChests.push(createChest('monster',m.x,m.y,bonus.gilded,1+.5*(d.tier-1)));
   const p=randomSeaPoint(900);m.hp=m.maxHp;m.aggro=false;m.burnTimer=0;m.x=p.x;m.y=p.y;m.homeX=m.x;m.homeY=m.y;m.combatTimer=0;selected=null;state.attacking=false;toast(`${m.name} yenildi`);
 }
@@ -773,6 +803,29 @@ function drawWeather(){
   const tint={embers:'rgba(255,80,20,.07)',spores:'rgba(80,160,40,.06)',motes:'rgba(60,20,110,.12)',dust:'rgba(140,50,30,.06)',fog:'rgba(200,215,210,.05)'}[w as string];
   if(tint){ctx.fillStyle=tint;ctx.fillRect(0,0,W,H);}
 }
+function activateEliteAbility(){
+  if(eliteAbility.cooldown>0){toast(`${eliteShip().ability} ${Math.ceil(eliteAbility.cooldown)} sn sonra hazır`);return;}
+  const needsTarget=['glacial','kraken','crimson','tempest','jade','void'].includes(activeEliteShip);
+  if(needsTarget&&(!selected||!targetExists(selected))){toast('Bu yetenek için önce hedef seç');return;}
+  eliteAbility.cooldown=45*bonus.cooldown;eliteAbility.active=0;
+  const base=Math.max(30,state.cannon*4*(1+state.level*.04));
+  if(activeEliteShip==='phantom'){eliteAbility.active=5;state.attacking=false;toast('Hayalet Formu: 5 saniye dokunulmazsın');}
+  else if(activeEliteShip==='magma'){for(const t of [...enemies,...monsters])if(dist(t,player)<=360){t.hp-=base;t.burnTimer=3;t.aggro=true;t.combatTimer=12;damageText(t.x,t.y,base);burst(t.x,t.y,true);}toast('Lav Püskürtme!');}
+  else if(activeEliteShip==='glacial'&&selected){selected.slowTimer=4;selected.aggro=true;selected.combatTimer=12;toast('Donma Dalgası: hedef %50 yavaşladı');}
+  else if(activeEliteShip==='kraken'&&selected){selected.slowTimer=3;selected.aggro=true;selected.combatTimer=12;toast('Dokunaç Tuzağı: hedef durduruldu');}
+  else if(activeEliteShip==='ironclad'){eliteAbility.active=5;player.cooldown=0;toast('Gülle Yağmuru: 5 saniye sıfır dolum');}
+  else if(activeEliteShip==='crimson'&&selected){if(selected.hp/selected.maxHp>=.3){eliteAbility.cooldown=0;toast('Kan Hırsı için hedefin Canı %30 altında olmalı');return;}eliteAbility.active=10;toast('Kan Hırsı etkin!');}
+  else if(activeEliteShip==='atlantean'){eliteAbility.active=6;state.invulnerable=Math.max(state.invulnerable,6);playShield();toast('Koruma Kubbesi: 6 saniye dokunulmazlık');}
+  else if(activeEliteShip==='bone'){soulStacks=3;soulTimer=30;eliteAbility.active=30;toast('Ruh Hasadı: 3 hasar yükü');}
+  else if(activeEliteShip==='tempest'&&selected){const chain=[selected,...[...enemies,...monsters].filter(t=>t!==selected&&dist(t,selected!)<260).sort((a,b)=>dist(a,selected!)-dist(b,selected!)).slice(0,2)];chain.forEach((t,i)=>{const hit=base*(1-i*.2);t.hp-=hit;t.aggro=true;t.combatTimer=12;damageText(t.x,t.y,hit);burst(t.x,t.y);});toast('Yıldırım Zinciri hedeflere sıçradı');}
+  else if(activeEliteShip==='plague'){eliteAbility.active=10;for(const t of [...enemies,...monsters])if(dist(t,player)<330){t.slowTimer=10;t.burnTimer=10;t.aggro=true;t.combatTimer=12;}toast('Zehirli Sis yayıldı');}
+  else if(activeEliteShip==='sovereign'){eliteAbility.active=10;toast("Kralın Emri: 10 saniye +%15 hasar");}
+  else if(activeEliteShip==='shadow'){shadowReady=true;eliteAbility.active=8;toast('Gölge Formu: sonraki saldırı kesin kritik');}
+  else if(activeEliteShip==='jade'&&selected){selected.slowTimer=4;selected.aggro=true;selected.combatTimer=12;toast('Havai Fişek Yağmuru hedefi kör etti');}
+  else if(activeEliteShip==='ragnarok'){valhallaTimer=4;eliteAbility.active=4;toast('Valhalla Çağrısı: 4 saniye batmazsın');}
+  else if(activeEliteShip==='void'&&selected){eliteAbility.active=3;for(const t of [...enemies,...monsters])if(dist(t,selected)<360){t.x+=(selected.x-t.x)*.55;t.y+=(selected.y-t.y)*.55;t.hp-=base*.8;t.aggro=true;t.combatTimer=12;damageText(t.x,t.y,base*.8);}toast('Tekillik düşmanları merkeze çekti');}
+  playShield();
+}
 function activateAbility(id:'speed'|'shield'){
   const t=abilityTimers[id],a=ABILITIES[id];
   if(t.cooldown>0){toast(`${a.name} ${Math.ceil(t.cooldown)} sn sonra hazır`);return;}
@@ -835,6 +888,8 @@ function drawShip(p:Vec,angle:number,color:string,scale=1){
 }
 function drawPlayerShip(){
   const s=worldToScreen(player);
+  if(eliteAtlasImage.complete&&eliteAtlasImage.naturalWidth){const index=eliteShip().level-1,col=index%5,row=Math.floor(index/5),bob=Math.sin(performance.now()/420)*1.8;ctx.save();ctx.translate(s.x,s.y+bob);ctx.rotate(player.angle+Math.PI/4);ctx.globalAlpha=state.invulnerable&&Math.floor(performance.now()/120)%2?.55:1;ctx.shadowColor='#000b';ctx.shadowBlur=13;ctx.drawImage(eliteAtlasImage,col*300,row*300,300,300,-58,-58,116,116);ctx.restore();return;}
+
   if(!directionalShipImage.complete||!directionalShipImage.naturalWidth){
     if(!playerShipImage.complete||!playerShipImage.naturalWidth){drawShip(player,player.angle,'#173f48',1.1);return;}
   }
