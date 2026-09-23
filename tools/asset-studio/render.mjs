@@ -18,7 +18,13 @@ const jobs={
   'leviathan-v1':()=>page.evaluate(()=>renderLeviathan()),
   'loot-chests-v1':()=>page.evaluate(()=>renderChests()),
   'npc-portraits-v1':()=>page.evaluate(()=>renderPortraits()),
+  'leviathan-storm-v1':()=>page.evaluate(()=>renderLeviathan({look:'storm'})),
+  'portal-v1':()=>page.evaluate(()=>renderPortal()),
+  'sea-tile-v1':()=>page.evaluate(()=>renderSeaTile()),
+  'world-chart-v1':()=>page.evaluate(()=>renderWorldChart()),
 };
+for(const [look,a,b] of [['verdant',11,12],['misty',21,22],['coral',31,32],['haven',41,42],['crimson',51,52],['storm',61,62]])
+  jobs[`islands-${look}-v1`]=()=>page.evaluate(([look,a,b])=>renderIslands([[look,a],[look,b]]),[look,a,b]);
 for(const [name,job] of Object.entries(jobs)){
   if(only.length&&!only.includes(name))continue;
   const t=Date.now(),r=await job();

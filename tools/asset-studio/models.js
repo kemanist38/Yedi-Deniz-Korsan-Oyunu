@@ -210,20 +210,24 @@ function taperedTube(curve,r0,r1,mat,seg=48,radial=10){
     for(let j=0;j<=radial;j++){const k=i*(radial+1)+j,v=new THREE.Vector3(pa.getX(k),pa.getY(k),pa.getZ(k)).sub(c).multiplyScalar(rad).add(c);pa.setXYZ(k,v.x,v.y,v.z);}}
   geo.computeVertexNormals();return new THREE.Mesh(geo,mat);
 }
-export function buildLeviathan(phase){
-  const root=new THREE.Group(),seed=909;
-  const skin=std({map:T.skinTexture({seed}),roughness:.55,metalness:.05});
-  const tmat=std({map:T.tentacleTexture({seed:seed+1}),roughness:.5});
+export const LEVIATHAN_LOOKS={
+  deep:{seed:909,skin:{},tentacle:{},eye:['#ffcf3a','#ff9a1f'],spike:'#1a3a36',brow:'#16322f',foam:'214,240,232'},
+  storm:{seed:919,skin:{base:'#3d3563',dark:'#191331',light:'#8577b8',spots:'#8fe8ff'},tentacle:{top:'#231c42',mid:'#4f4485',under:'#b9b3d9'},eye:['#b8fbff','#34d6ff'],spike:'#15102b',brow:'#1c1636',foam:'200,214,255'},
+};
+export function buildLeviathan(phase,look='deep'){
+  const L=LEVIATHAN_LOOKS[look],root=new THREE.Group(),seed=L.seed;
+  const skin=std({map:T.skinTexture({seed,...L.skin}),roughness:.55,metalness:.05});
+  const tmat=std({map:T.tentacleTexture({seed:seed+1,...L.tentacle}),roughness:.5});
   // Gövde: sudan yükselen kubbe ve sırt dikenleri
   const bodyGeo=new THREE.SphereGeometry(20,48,32),bp=bodyGeo.attributes.position,r=T.rng(seed);
   for(let i=0;i<bp.count;i++){const v=new THREE.Vector3(bp.getX(i),bp.getY(i),bp.getZ(i));const n=1+.05*Math.sin(v.x*.5+v.z*.3)+.04*Math.sin(v.z*.9-v.y*.4);v.multiplyScalar(n);bp.setXYZ(i,v.x*1.05,v.y*.62,v.z*1.25);}
   bodyGeo.computeVertexNormals();const body=new THREE.Mesh(bodyGeo,skin);body.position.set(0,-2+Math.sin(phase)*.8,0);root.add(body);
-  for(let i=0;i<7;i++){const z=-16+i*4.6,h=5.5-Math.abs(i-2.5)*.9;const sp=new THREE.Mesh(new THREE.ConeGeometry(1.5,h,6),std({color:'#1a3a36',roughness:.4}));sp.position.set(0,10.5-Math.abs(z)*.14+h/2-1+Math.sin(phase)*.8,z);sp.rotation.x=-.35;root.add(sp);}
+  for(let i=0;i<7;i++){const z=-16+i*4.6,h=5.5-Math.abs(i-2.5)*.9;const sp=new THREE.Mesh(new THREE.ConeGeometry(1.5,h,6),std({color:L.spike,roughness:.4}));sp.position.set(0,10.5-Math.abs(z)*.14+h/2-1+Math.sin(phase)*.8,z);sp.rotation.x=-.35;root.add(sp);}
   // Gözler ve ağız (+Z yönü = ekranın aşağısı, oyuncuya bakar)
-  const eyeMat=std({color:'#ffcf3a',emissive:'#ff9a1f',emissiveIntensity:2.2,roughness:.2});
+  const eyeMat=std({color:L.eye[0],emissive:L.eye[1],emissiveIntensity:2.2,roughness:.2});
   for(const sx of [-1,1]){const e=new THREE.Mesh(new THREE.SphereGeometry(2.4,16,12),eyeMat);e.scale.set(1.35,.62,1);e.rotation.z=sx*.38;e.position.set(sx*6.6,5.4+Math.sin(phase)*.8,19.6);root.add(e);
     const pupil=new THREE.Mesh(new THREE.BoxGeometry(.55,2.6,.6),std({color:'#110c05'}));pupil.position.set(sx*6.6,5.4+Math.sin(phase)*.8,21.8);root.add(pupil);
-    const brow=new THREE.Mesh(new THREE.ConeGeometry(1.4,5,6),std({color:'#16322f'}));brow.position.set(sx*7.4,7.6+Math.sin(phase)*.8,18.6);brow.rotation.z=sx*1.25;brow.rotation.x=.9;root.add(brow);}
+    const brow=new THREE.Mesh(new THREE.ConeGeometry(1.4,5,6),std({color:L.brow}));brow.position.set(sx*7.4,7.6+Math.sin(phase)*.8,18.6);brow.rotation.z=sx*1.25;brow.rotation.x=.9;root.add(brow);}
   for(let k=0;k<9;k++){const a=Math.PI*(.15+.7*k/8),tooth=new THREE.Mesh(new THREE.ConeGeometry(.55,2.2,5),std({color:'#e9e0c4',roughness:.35}));tooth.position.set(Math.cos(a)*4.6,.6-Math.sin(a)*1.6+Math.sin(phase)*.8,22.4);tooth.rotation.x=Math.PI;root.add(tooth);}
   const mouth=new THREE.Mesh(new THREE.TorusGeometry(4.2,.9,8,24,Math.PI),std({color:'#0d1a18'}));mouth.position.set(0,1.2+Math.sin(phase)*.8,22.6);mouth.rotation.z=Math.PI;root.add(mouth);
   // Dokunaçlar
@@ -234,7 +238,7 @@ export function buildLeviathan(phase){
     const pts=[0,.25,.5,.72,.88,1].map((k,n)=>{const p=dir.clone().multiplyScalar(14+k*reach);p.y=-3+Math.sin(k*Math.PI)*arc-k*6;p.addScaledVector(side,Math.sin(w+k*3.2)*7*k);if(n===5){p.y+=Math.sin(w*1.3)*5;}return p;});
     root.add(taperedTube(new THREE.CatmullRomCurve3(pts),4.6,.45,tmat));}
   // Köpük halkası
-  const foam=new THREE.Mesh(new THREE.PlaneGeometry(64,64),new THREE.MeshBasicMaterial({map:T.foamTexture({seed:seed+5,color:'214,240,232',strength:.55,inner:.36}),transparent:true,depthWrite:false}));foam.rotation.x=-Math.PI/2;foam.position.y=.05;root.add(foam);
+  const foam=new THREE.Mesh(new THREE.PlaneGeometry(64,64),new THREE.MeshBasicMaterial({map:T.foamTexture({seed:seed+5,color:L.foam,strength:.55,inner:.36}),transparent:true,depthWrite:false}));foam.rotation.x=-Math.PI/2;foam.position.y=.05;root.add(foam);
   root.userData.waterline=0;return root;
 }
 
@@ -260,4 +264,77 @@ export function buildChest(kind){
   const foam=new THREE.Mesh(new THREE.PlaneGeometry(25,25),new THREE.MeshBasicMaterial({map:T.foamTexture({seed:gilded?33:31,color:gilded?'255,236,180':'225,245,240',strength:.6,inner:.34}),transparent:true,depthWrite:false}));foam.rotation.x=-Math.PI/2;foam.position.y=.02;foam.userData.float=true;root.add(foam);
   root.children.forEach(ch=>{if(!ch.userData.float)ch.position.y-=1.5;});root.userData.waterline=0;
   return root;
+}
+
+// ---------------------------------------------------------------- Adalar
+// Ada yarıçapı ~100 birim; kıyı ~78. Oyunda çizim boyu = 2.36 × ada yarıçapı.
+export const ISLAND_LOOKS={
+  verdant:{sand:'#d9c48a',grass:'#3f6a35',grass2:'#5e8a40',rock:'#6f6655',peak:'#8b8270',shallow:['#74dccb','#1f6f77'],height:22,trees:'palm',treeCount:38,rocks:8},
+  misty:{sand:'#a9a58f',grass:'#3f5d4a',grass2:'#56705a',rock:'#5b605c',peak:'#9aa19c',shallow:['#6fb8b8','#1d5a63'],height:30,trees:'pine',treeCount:44,rocks:16,rugged:1.4},
+  coral:{sand:'#ecd9a6',grass:'#4d7a3a',grass2:'#72964a',rock:'#8a7a60',peak:'#a09070',shallow:['#8ff0dc','#2a8a8c'],height:14,trees:'palm',treeCount:26,rocks:4,coral:30},
+  haven:{sand:'#e6d39c',grass:'#4a7a3c',grass2:'#6e9a4a',rock:'#7c7263',peak:'#958a78',shallow:['#86ecd8','#237d80'],height:20,trees:'palm',treeCount:30,rocks:6,lighthouse:true},
+  crimson:{sand:'#caa27a',grass:'#7a5a36',grass2:'#94703f',rock:'#8a3b2c',peak:'#b0553d',shallow:['#d69a7e','#5b2a2a'],height:26,trees:'dead',treeCount:16,rocks:18,rugged:1.3,ruins:true},
+  storm:{sand:'#6e6a66',grass:'#2e3530',grass2:'#3d4640',rock:'#26262b',peak:'#3a3940',shallow:['#6f86a8','#1c2740'],height:34,trees:'pine',treeCount:14,rocks:20,rugged:1.6,volcano:true},
+};
+function palm(mat,leaf,r,h){
+  const g=new THREE.Group(),bend=(r()*2-1)*.35,pts=[];for(let i=0;i<=6;i++){const t=i/6;pts.push(new THREE.Vector3(Math.sin(bend)*t*t*h*.4,t*h,Math.cos(bend)*t*t*h*.1));}
+  const trunk=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),8,.45,6),mat);g.add(trunk);
+  const top=pts[6];for(let k=0;k<7;k++){const a=k/7*Math.PI*2+r(),fr=new THREE.Mesh(new THREE.ConeGeometry(1.1,6.5,4),leaf);fr.scale.set(1,1,.25);fr.position.set(top.x+Math.cos(a)*2.6,top.y-.6,top.z+Math.sin(a)*2.6);fr.rotation.set(Math.sin(a)*1.25,0,-Math.cos(a)*1.25);g.add(fr);}
+  return g;
+}
+function pine(mat,leaf,r,h){const g=new THREE.Group(),t=cyl(.35,.5,h*.4,mat,6);t.position.y=h*.2;g.add(t);for(let k=0;k<3;k++){const c=new THREE.Mesh(new THREE.ConeGeometry(2.8-k*.7,h*.45,7),leaf);c.position.y=h*(.42+k*.2);g.add(c);}return g;}
+function deadTree(mat,r,h){const g=new THREE.Group(),t=cyl(.3,.55,h,mat,5);t.position.y=h/2;t.rotation.z=(r()-.5)*.3;g.add(t);for(let k=0;k<3;k++){const b=cyl(.12,.25,h*.45,mat,4);b.position.set((r()-.5)*1.5,h*(.55+k*.13),(r()-.5)*1.5);b.rotation.set((r()-.5)*1.8,0,(r()-.5)*1.8);g.add(b);}return g;}
+export function buildIsland(lookName,seed){
+  const L=ISLAND_LOOKS[lookName],root=new THREE.Group(),n=T.noise2(seed),r=T.rng(seed+1),rug=L.rugged||1;
+  const coast=a=>78*(1+.13*n(Math.cos(a)*1.3+5,Math.sin(a)*1.3+5,3)*2.2);
+  const S=160,geo=new THREE.PlaneGeometry(240,240,S,S);geo.rotateX(-Math.PI/2);
+  const pa=geo.attributes.position,colors=[],c=new THREE.Color(),col=k=>new THREE.Color(L[k]);
+  const hAt=(x,z)=>{const d=Math.hypot(x,z),a=Math.atan2(z,x),R=coast(a),k=d/R;
+    if(k>=1)return -6*Math.min(1,(k-1)*6)-.5;
+    const dome=Math.pow(1-k*k,1.3),ridge=Math.abs(n(x*.035+11,z*.035+3,4))*rug,bump=n(x*.06,z*.06,3);
+    let h=L.height*dome*(.55+ridge*.9)+bump*3*dome+1.2*(1-k);
+    if(L.volcano){const cd=Math.hypot(x+8,z-6);h+=Math.max(0,24*(1-cd/40))-Math.max(0,16*(1-cd/9));}
+    return h;};
+  for(let i=0;i<pa.count;i++){const x=pa.getX(i),z=pa.getZ(i),h=hAt(x,z);pa.setY(i,h);
+    const slope=Math.abs(hAt(x+1.5,z)-h)+Math.abs(hAt(x,z+1.5)-h),t=h/L.height,mix=(n(x*.08+40,z*.08,2)+1)/2;
+    if(h<1.6)c.copy(col('sand'));else if(slope>2.6||t>.78)c.copy(col('rock')).lerp(col('peak'),Math.min(1,Math.max(0,t-.6)*2));else c.copy(col('grass')).lerp(col('grass2'),mix);
+    if(h>=1.6&&h<2.6)c.lerp(col('sand'),1-(h-1.6));
+    const shade=.9+n(x*.2,z*.2,2)*.18;c.multiplyScalar(shade);colors.push(c.r,c.g,c.b);}
+  geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));geo.computeVertexNormals();
+  root.add(new THREE.Mesh(geo,std({vertexColors:true,roughness:.92})));
+  // Sığlık halkası
+  const sh=new THREE.Mesh(new THREE.CircleGeometry(104,64),new THREE.MeshBasicMaterial({map:T.shallowTexture({seed,inner:L.shallow[0],outer:L.shallow[1],alpha:.5}),transparent:true,depthWrite:false}));sh.rotation.x=-Math.PI/2;sh.position.y=.02;sh.userData.float=true;root.add(sh);
+  // Ağaçlar
+  const trunkMat=std({color:lookName==='crimson'?'#3a2a20':'#5a4230'}),leafMat=std({color:lookName==='misty'||lookName==='storm'?'#2f4a36':'#3f7a34',roughness:.8,side:THREE.DoubleSide});
+  let placed=0;for(let tries=0;tries<600&&placed<L.treeCount;tries++){const a=r()*Math.PI*2,d=r()*coast(a)*.86,x=Math.cos(a)*d,z=Math.sin(a)*d,h=hAt(x,z);
+    if(h<2.2||h>L.height*.75)continue;const slope=Math.abs(hAt(x+1.5,z)-h)+Math.abs(hAt(x,z+1.5)-h);if(slope>2.4)continue;
+    const size=.8+r()*.5,tree=L.trees==='palm'?palm(trunkMat,leafMat,r,9*size):L.trees==='pine'?pine(trunkMat,leafMat,r,10*size):deadTree(trunkMat,r,6*size);tree.position.set(x,h-.3,z);tree.rotation.y=r()*6;root.add(tree);placed++;}
+  // Kayalar
+  const rockMat=std({color:L.rock,roughness:.95});
+  for(let i=0;i<L.rocks;i++){const a=r()*Math.PI*2,d=coast(a)*(.75+r()*.35),x=Math.cos(a)*d,z=Math.sin(a)*d,m=new THREE.Mesh(new THREE.DodecahedronGeometry(2+r()*3.5,0),rockMat);m.scale.set(1,.6+r()*.5,1);m.position.set(x,Math.max(hAt(x,z),-.5)+.5,z);m.rotation.set(r()*3,r()*3,r()*3);root.add(m);}
+  if(L.coral){const cm=[std({color:'#ff8a7a',roughness:.6}),std({color:'#ffb86a',roughness:.6}),std({color:'#d97ad8',roughness:.6})];for(let i=0;i<L.coral;i++){const a=r()*Math.PI*2,d=coast(a)*(1.02+r()*.2),m=new THREE.Mesh(new THREE.IcosahedronGeometry(1.2+r()*1.6,1),cm[i%3]);m.scale.y=.5;m.position.set(Math.cos(a)*d,.2,Math.sin(a)*d);m.userData.float=true;root.add(m);}}
+  if(L.lighthouse){const lh=new THREE.Group();root.add(lh);const a=-.9,d=coast(a)*.74,x0=Math.cos(a)*d,z0=Math.sin(a)*d,y0=hAt(x0,z0);lh.position.set(x0,y0,z0);lh.scale.setScalar(1.7);const x=0,z=0,y=0;
+    const tower=cyl(2.4,3.4,20,std({map:T.stoneTexture({seed:seed+9,base:'#ded6c2',dark:'#b9ae95',moss:'#8b9b7a'})}),16);tower.position.set(x,y+10,z);lh.add(tower);
+    for(const k of [5,11,17]){const band=cyl(3.1-k*.04,3.2-k*.04,1.2,std({color:'#a8342b'}),16);band.position.set(x,y+k,z);lh.add(band);}
+    const lamp=cyl(2,2,3,std({color:'#fff0b0',emissive:'#ffcf5a',emissiveIntensity:2.4}),12);lamp.position.set(x,y+21.5,z);lh.add(lamp);
+    const roof=new THREE.Mesh(new THREE.ConeGeometry(2.8,3,12),std({color:'#7a2a24'}));roof.position.set(x,y+24.5,z);lh.add(roof);
+    const house=new THREE.Mesh(new THREE.BoxGeometry(7,4,5),std({color:'#d8ccb0'}));house.position.set(x+6,y+2,z+3);lh.add(house);const hr=new THREE.Mesh(new THREE.ConeGeometry(5.2,3,4),std({color:'#8a3a2c'}));hr.rotation.y=Math.PI/4;hr.position.set(x+6,y+5.4,z+3);hr.scale.z=.75;lh.add(hr);}
+  if(L.ruins){const sm=std({map:T.stoneTexture({seed:seed+4,base:'#8b6f5f',dark:'#5a4035',moss:'#6a5a3a'})});for(let i=0;i<7;i++){const a=.4+i*.28,d=38,x=Math.cos(a)*d,z=Math.sin(a)*d,h=hAt(x,z),ht=3+r()*7;const p=new THREE.Mesh(new THREE.BoxGeometry(2.4,ht,2.4),sm);p.position.set(x,h+ht/2-.5,z);p.rotation.y=a;root.add(p);}}
+  if(L.volcano){const lava=new THREE.Mesh(new THREE.CircleGeometry(8,24),std({color:'#ff6a1a',emissive:'#ff4a0a',emissiveIntensity:2.6}));lava.rotation.x=-Math.PI/2;lava.position.set(-8,hAt(-8,6)+.3,6);root.add(lava);}
+  root.scale.z=1/Math.sin(65*Math.PI/180);root.userData.waterline=0;
+  return root;
+}
+
+// ---------------------------------------------------------------- Geçit
+export function buildPortal(frame,count){
+  const root=new THREE.Group(),stone=std({map:T.stoneTexture({seed:515})}),spin=frame/count*Math.PI*2/3;
+  const base=new THREE.Mesh(new THREE.TorusGeometry(40,5,10,48),stone);base.rotation.x=Math.PI/2;base.scale.z=.5;root.add(base);
+  const flame=std({color:'#bffff4',emissive:'#3fe6d2',emissiveIntensity:2.6});
+  for(let i=0;i<6;i++){const a=i/6*Math.PI*2+.26,x=Math.cos(a)*40,z=Math.sin(a)*40;
+    const p=new THREE.Mesh(new THREE.BoxGeometry(6,22,6),stone);p.position.set(x,11,z);p.rotation.y=-a;root.add(p);
+    const cap=new THREE.Mesh(new THREE.BoxGeometry(8,2,8),stone);cap.position.set(x,22.5,z);cap.rotation.y=-a;root.add(cap);
+    const f=new THREE.Mesh(new THREE.OctahedronGeometry(2.2+.5*Math.sin(frame/count*Math.PI*2+i),0),flame);f.position.set(x,26.5,z);f.rotation.y=spin*2+i;root.add(f);}
+  const vortex=new THREE.Mesh(new THREE.CircleGeometry(38,64),new THREE.MeshBasicMaterial({map:T.vortexTexture({seed:77}),transparent:true,depthWrite:false}));vortex.rotation.x=-Math.PI/2;vortex.rotation.z=spin;vortex.position.y=.3;vortex.userData.float=true;root.add(vortex);
+  const foam=new THREE.Mesh(new THREE.PlaneGeometry(120,120),new THREE.MeshBasicMaterial({map:T.foamTexture({seed:88,color:'190,255,240',strength:.5,inner:.34}),transparent:true,depthWrite:false}));foam.rotation.x=-Math.PI/2;foam.position.y=.1;foam.userData.float=true;root.add(foam);
+  root.userData.waterline=0;return root;
 }

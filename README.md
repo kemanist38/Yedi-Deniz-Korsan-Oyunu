@@ -17,7 +17,20 @@ StackBlitz'te **Import from GitHub** ile depo adresini açın.
 - `A / D`: dümen
 - `Q / E`: sol / sağ borda ateşi
 - `Space`: iki bordadan ateş
-- `F`: Kül Limanı yakınındayken limanı aç
+- `F`: tamir
+- `J`: geçidin içindeyken diğer denize geç
+
+## Dünya haritaları
+
+| Deniz | Seviye | Özellik |
+|---|---|---|
+| Sığınak Koyu | 1+ | Güvenli sular: düşman yok, top ateşlenmez, gövde kendiliğinden onarılır. Batan kaptanlar burada doğar. |
+| Gölgeler Denizi | 1+ | İlk açık deniz; Kaçakçılar, Yağmacılar, Derinlik Leviathanı. |
+| Kızıl Resifler | 4+ | Daha güçlü Yağmacı ve savaş gemisi filoları. |
+| Fırtına Kuşağı | 8+ | Şimşekli kara sular, ağır savaş gemileri ve Fırtına Leviathanı. |
+
+Denizler geçitlerle birbirine bağlıdır. Geçide tıklayınca rota çizilir; geçidin içindeyken `J` ya da ekrandaki butonla geçilir.
+Sol üstteki **DÜNYA** butonu parşömen haritayı açar; oradan bağlı bir denizin geçidine rota çizilebilir.
 
 ## Ganimet sandıkları
 
@@ -27,7 +40,7 @@ StackBlitz'te **Import from GitHub** ile depo adresini açın.
 
 ## Raster assetler
 
-Düşman gemileri (16 yön), Derinlik Leviathanı (8 karelik animasyon), ganimet sandıkları ve hedef portreleri
+Düşman gemileri (16 yön), Leviathan varyantları (8 karelik animasyon), adalar, geçit, deniz dokusu, dünya haritası, ganimet sandıkları ve hedef portreleri
 `tools/asset-studio` içindeki özgün 3B modellerden üretilir ve `public/assets` altına WebP olarak yazılır:
 
 ```bash
