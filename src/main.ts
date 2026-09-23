@@ -43,11 +43,13 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <div class="panel actionbar"><button class="action" id="cannonType"><b>♜</b><span id="cannonName">Döküm</span><small>TOP</small></button><button class="action active" data-ammo="iron"><b>●</b><span>Demir</span><small id="ironAmmo">∞</small></button><button class="action" data-ammo="chain"><b>⛓</b><span>Zincir</span><small id="chainAmmo">40</small></button><button class="action fire" id="attack"><b>⚔</b><span>SALDIR</span><small id="reloadText">HAZIR</small></button><button class="action" id="repair"><b>✚</b><span>TAMİR</span><small>F</small></button></div>
       <div class="panel zoom-controls"><button id="zoomOut" aria-label="Uzaklaştır">−</button><span id="zoomValue">70%</span><button id="zoomIn" aria-label="Yakınlaştır">+</button></div>
       <button class="ship-menu-button" id="openShip">⚓ GEMİ</button>
+      <button class="market-menu-button" id="openMarket">▣ MARKET</button>
       <canvas id="minimap" width="170" height="125"></canvas>
       <div class="reward-toast" id="rewardToast"></div>
       <div class="toast" id="toast"></div>
       <div class="quest-overlay" id="questOverlay"><section class="quest-log"><header><div><span class="eyebrow">Kaptanın görev defteri</span><h2>DENİZ GÖREVLERİ</h2></div><button id="closeQuests" aria-label="Görevleri kapat">×</button></header><p class="quest-intro">Aynı anda yalnızca bir görev yürütülebilir. İptal edilen veya tamamlanan görev 8 saat sonra yeniden açılır.</p><div class="quest-list" id="questList"></div></section></div>
       <div class="ship-overlay" id="shipOverlay"><section class="ship-menu"><header><div><span class="eyebrow">Kaptanın amiral gemisi</span><h2>KARA YELKEN</h2></div><button id="closeShip" aria-label="Gemi menüsünü kapat">×</button></header><div class="ship-summary" id="shipSummary"></div><div class="upgrade-list" id="upgradeList"></div><div class="upgrade-confirm" id="upgradeConfirm"></div></section></div>
+      <div class="market-overlay" id="marketOverlay"><section class="market-menu"><header><div><span class="eyebrow">Tüccar loncası</span><h2>DENİZ MARKETİ</h2></div><button id="closeMarket" aria-label="Marketi kapat">×</button></header><div class="inventory-strip" id="inventoryStrip"></div><h3 class="market-heading">MÜHİMMAT</h3><div class="market-list" id="marketList"></div><h3 class="market-heading">İNCİ PAKETLERİ</h3><div class="pearl-shop"><div><b>◈ İnci Sandıkları</b><span>Gerçek ödeme sistemi kullanıcı hesaplarıyla birlikte açılacak.</span></div><button disabled>YAKINDA</button></div><div class="market-confirm" id="marketConfirm"></div></section></div>
     </section>
   </main>`;
 
@@ -97,7 +99,7 @@ const islands = [
 
 function resize(){ const d=Math.min(devicePixelRatio,2); canvas.width=innerWidth*d; canvas.height=innerHeight*d; ctx.setTransform(d,0,0,d,0,0); }
 addEventListener('resize',resize); resize();
-addEventListener('keydown',e=>{ keys.add(e.key.toLowerCase()); if(['q','e',' '].includes(e.key.toLowerCase())) fire(e.key.toLowerCase()); if(e.key.toLowerCase()==='r') toggleAttack(); if(e.key.toLowerCase()==='f')toggleRepair();if(e.key==='Escape'){closeQuestLog();closeShipMenu();} });
+addEventListener('keydown',e=>{ keys.add(e.key.toLowerCase()); if(['q','e',' '].includes(e.key.toLowerCase())) fire(e.key.toLowerCase()); if(e.key.toLowerCase()==='r') toggleAttack(); if(e.key.toLowerCase()==='f')toggleRepair();if(e.key==='Escape'){closeQuestLog();closeShipMenu();closeMarket();} });
 addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
 addEventListener('beforeunload',saveAccount);
 canvas.addEventListener('pointerdown',e=>{
@@ -117,6 +119,9 @@ ui('questOverlay').addEventListener('pointerdown',e=>{if(e.target===ui('questOve
 ui('openShip').onclick=openShipMenu;
 ui('closeShip').onclick=closeShipMenu;
 ui('shipOverlay').addEventListener('pointerdown',e=>{if(e.target===ui('shipOverlay'))closeShipMenu();});
+ui('openMarket').onclick=openMarket;
+ui('closeMarket').onclick=closeMarket;
+ui('marketOverlay').addEventListener('pointerdown',e=>{if(e.target===ui('marketOverlay'))closeMarket();});
 canvas.addEventListener('wheel',e=>{e.preventDefault();setZoom(camera.targetZoom+(e.deltaY<0?.1:-.1));},{passive:false});
 document.querySelectorAll<HTMLButtonElement>('[data-ammo]').forEach(b=>b.onclick=()=>{state.ammo=b.dataset.ammo as AmmoKind;document.querySelectorAll('[data-ammo]').forEach(x=>x.classList.toggle('active',x===b));});
 
@@ -167,7 +172,7 @@ function fireAtTarget(){
   const fx=Math.sin(player.angle),fy=-Math.cos(player.angle),tx=selected.x-player.x,ty=selected.y-player.y;
   const side=fx*ty-fy*tx>0?-1:1,damage=state.cannon*5*(1+upgrades.damage*.11)*cannon.damage*(state.ammo==='chain'?1.45:1);
   salvoQueue.push({delay:0,target:selected,side,slot:0,damage,ammo:state.ammo});
-  if(state.ammo==='chain'){state.chainAmmo-=5;saveAccount();}
+  if(state.ammo==='chain'){state.chainAmmo-=1;saveAccount();}
   player.cooldown=cannon.reload*Math.max(.6,1-upgrades.reload*.04)*(state.ammo==='chain'?1.18:1);
 }
 function releaseSalvo(round:SalvoRound){
@@ -230,6 +235,27 @@ function buyUpgrade(){
   state.pearls-=cost;upgrades[kind]++;
   if(kind==='hull'){state.maxHp+=20;state.hp+=20;}
   pendingUpgrade=null;saveAccount();renderShipMenu();updateUI();rewardNotice(`${UPGRADES[kind].name}   SEVİYE ${upgrades[kind]}`);
+}
+const MARKET_ITEMS=[
+  {name:'Zincir Güllesi Kesesi',amount:20,price:70,description:'Düşman gemisini 3 saniye boyunca yavaşlatan 20 atış.'},
+  {name:'Zincir Güllesi Sandığı',amount:50,price:155,description:'Uzun seferler için indirimli 50 zincir güllesi.'},
+  {name:'Filo Mühimmat Kasası',amount:120,price:330,description:'Yoğun çatışmalar için büyük mühimmat stoğu.'}
+];
+let pendingMarket:number|null=null;
+function openMarket(){pendingMarket=null;renderMarket();ui('marketOverlay').classList.add('open');}
+function closeMarket(){pendingMarket=null;ui('marketOverlay').classList.remove('open');}
+function renderMarket(){
+  ui('inventoryStrip').innerHTML=`<div><span>DEMİR GÜLLE</span><b>∞</b><small>Sınırsız standart mühimmat</small></div><div><span>ZİNCİR GÜLLESİ</span><b>${state.chainAmmo}</b><small>Her atış 1 gülle tüketir</small></div><div><span>ALTIN BAKİYESİ</span><b>${state.gold}</b><small>Market alışverişlerinde kullanılır</small></div>`;
+  ui('marketList').innerHTML=MARKET_ITEMS.map((item,index)=>`<article class="market-item"><div class="ammo-icon"><span>⛓</span><b>${item.amount}</b></div><div><h4>${item.name}</h4><p>${item.description}</p></div><button data-market="${index}">${item.price} ALTIN</button></article>`).join('');
+  document.querySelectorAll<HTMLButtonElement>('[data-market]').forEach(button=>button.onclick=()=>{pendingMarket=Number(button.dataset.market);renderMarket();});
+  if(pendingMarket===null){ui('marketConfirm').classList.remove('visible');ui('marketConfirm').innerHTML='';return;}
+  const item=MARKET_ITEMS[pendingMarket];ui('marketConfirm').classList.add('visible');ui('marketConfirm').innerHTML=`<div><strong>${item.amount} zincir güllesi alınsın mı?</strong><span>${item.price} Altın hesabından düşülecek.</span></div><button id="confirmMarket">SATIN AL</button><button id="cancelMarket">VAZGEÇ</button>`;
+  ui('confirmMarket').onclick=buyMarketItem;ui('cancelMarket').onclick=()=>{pendingMarket=null;renderMarket();};
+}
+function buyMarketItem(){
+  if(pendingMarket===null)return;const item=MARKET_ITEMS[pendingMarket];
+  if(state.gold<item.price){toast('Bu mühimmat için yeterli altının yok');return;}
+  state.gold-=item.price;state.chainAmmo+=item.amount;pendingMarket=null;saveAccount();renderMarket();updateUI();rewardNotice(`+${item.amount} Zincir Güllesi`);
 }
 let pendingCancel:number|null=null;
 function openQuestLog(){renderQuestLog();ui('questOverlay').classList.add('open');}
