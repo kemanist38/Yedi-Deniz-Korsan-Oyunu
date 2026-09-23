@@ -18,6 +18,8 @@ const jobs={
   'leviathan-v1':()=>page.evaluate(()=>renderLeviathan()),
   'loot-chests-v1':()=>page.evaluate(()=>renderChests()),
   'npc-portraits-v1':()=>page.evaluate(()=>renderPortraits()),
+  'enemy-ghost-v1':()=>page.evaluate(()=>renderShipSheet('ghost')),
+  'fort-v1':()=>page.evaluate(()=>renderFort()),
   'leviathan-storm-v1':()=>page.evaluate(()=>renderLeviathan({look:'storm'})),
   'portal-v1':()=>page.evaluate(()=>renderPortal()),
   'sea-tile-v1':()=>page.evaluate(()=>renderSeaTile()),

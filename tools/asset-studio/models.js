@@ -95,7 +95,7 @@ export function buildShip(def,{heading=Math.PI*1.25}={}){
     const side=std({map:tex}),top=std({map:mats.deck.map});
     const box=new THREE.Mesh(new THREE.BoxGeometry(wd,c.h,len),[side,side,top,side,side,side]);box.position.set(0,y0+c.h/2,zc);root.add(box);
     for(const [bw,bl,bx,bz] of [[wd+.4,.4,0,-len/2],[wd+.4,.4,0,len/2],[.4,len,-wd/2,0],[.4,len,wd/2,0]]){const rail=new THREE.Mesh(new THREE.BoxGeometry(bw,.7,bl),mats.trim);rail.position.set(bx,y0+c.h+.35,zc+bz);root.add(rail);}
-    if(c.lanterns){for(const sx of [-1,1]){const l=new THREE.Mesh(new THREE.SphereGeometry(.7,10,8),std({color:'#ffd27a',emissive:'#ffb54a',emissiveIntensity:1.6}));l.position.set(sx*wd*.42,y0+c.h+1.2,S.z(t0)+.4);root.add(l);const post=cyl(.12,.12,1,mats.trim);post.position.set(sx*wd*.42,y0+c.h+.55,S.z(t0)+.4);root.add(post);}}
+    if(c.lanterns){for(const sx of [-1,1]){const l=new THREE.Mesh(new THREE.SphereGeometry(.7,10,8),std({color:def.glow||'#ffd27a',emissive:def.glow||'#ffb54a',emissiveIntensity:1.6}));l.position.set(sx*wd*.42,y0+c.h+1.2,S.z(t0)+.4);root.add(l);const post=cyl(.12,.12,1,mats.trim);post.position.set(sx*wd*.42,y0+c.h+.55,S.z(t0)+.4);root.add(post);}}
   }
   // Toplar
   if(def.guns){const n=def.guns.count;for(let i=0;i<n;i++){const t=.14+.72*(i+.5)/n;for(const sx of [-1,1]){const th=.39*Math.PI,w=S.w(t)*Math.pow(Math.sin(th),.55),y=S.top(t)-(S.top(t)-S.bot(t))*Math.pow(Math.cos(th),.75);const gun=cyl(.38,.46,2.4,mats.iron,8);gun.rotation.z=Math.PI/2;gun.position.set(sx*(w+.5),y,S.z(t));root.add(gun);}}}
@@ -109,7 +109,7 @@ export function buildShip(def,{heading=Math.PI*1.25}={}){
   if(def.figurehead){const fh=new THREE.Mesh(new THREE.SphereGeometry(.9,10,8),mats.trim);fh.scale.set(.7,1,1.4);fh.position.set(0,bowY-1.2,bowZ+.6);root.add(fh);}
   // Direkler, sereneler, yelkenler
   const ropes=[];
-  const sailMats=def.sails.map((s,i)=>std({map:T.sailTexture({seed:seed+20+i,...s}),side:THREE.DoubleSide,transparent:!!s.ragged,alphaTest:.4,roughness:.95}));
+  const sailMats=def.sails.map((s,i)=>{const map=T.sailTexture({seed:seed+20+i,...s});return std({map,side:THREE.DoubleSide,transparent:!!s.ragged,alphaTest:.4,roughness:.95,...(def.glow?{emissive:def.glow,emissiveMap:map,emissiveIntensity:.55}:{})});});
   let foreTop=null,mainTop=null;
   def.masts.forEach((m,mi)=>{
     const z=S.z(m.t),y0=deckY(m.t),top=y0+m.h;
@@ -200,6 +200,20 @@ export const FLEET={
     jib:{sail:2,bulge:1.2,drop:3},bowsprit:14,cargo:2,guns:{count:7},figurehead:true,
     flag:{base:'#a01f1c',mark:flagMarks.sun,markColor:'#f0c766'},
     castles:[{from:0,to:.2,h:3.2,windows:4,glass:'#ffc86a',lanterns:true},{from:.83,to:.93,h:1.6,windows:2}],
+  },
+  // Hayalet Amiral — batıktan dönen dev kalyon. Soluk yeşil, ışıldayan yırtık yelkenler.
+  ghost:{seed:404,
+    hull:{L:74,B:21,D:12,bowRise:4,sternRise:6,sternW:.7,bulwark:1.5,waterline:.72},
+    hullPaint:{plank:'#1d2422',plankDark:'#0e1312',trim:'#7fe0b8',tar:'#050807',band:'#1f3a33',ports:8,portLid:'#2f5a4a',portColor:'#6dffc4'},
+    deckPaint:{wood:'#3a3f38',dark:'#22271f'},spar:'#1a1e1b',
+    sails:[{base:'#9fd8c0',ragged:40,patches:3,patchColors:['#6aa892','#bfe8d6'],emblem:(x,W,H,c)=>{x.fillStyle=c;x.beginPath();x.arc(W/2,H*.42,40,0,7);x.fill();x.fillStyle='#9fd8c0';for(const sx of [-16,16]){x.beginPath();x.arc(W/2+sx,H*.4,10,0,7);x.fill();}x.fillRect(W/2-22,H*.58,44,12);x.fillStyle=c;for(let i=0;i<4;i++)x.fillRect(W/2-18+i*11,H*.58,4,12);},emblemColor:'#16302a',dirt:.3},
+           {base:'#a8dcc6',ragged:34,patches:2,patchColors:['#6aa892'],dirt:.3},{base:'#b4e2cf',ragged:26,dirt:.25}],
+    masts:[{t:.74,h:44,r:.9,flag:6,yards:[{y:41,w:16,drop:9,sail:1},{y:30.5,w:21,drop:11,sail:1},{y:18.5,w:25,drop:12.5,sail:1,bulge:2.1}]},
+           {t:.47,h:52,r:1,flag:9,yards:[{y:49,w:18,drop:10,sail:1},{y:37,w:23,drop:12.5,sail:1},{y:23,w:28,drop:14.5,sail:0,bulge:2.4}]},
+           {t:.2,h:40,r:.85,flag:5,yards:[{y:37,w:14,drop:9,sail:2},{y:26.5,w:18,drop:10,sail:2}],gaff:{foot:3,throat:16,peak:20,len:13,sail:2,bulge:1}}],
+    jib:{sail:2,bulge:1.2,drop:3},bowsprit:16,cargo:2,guns:{count:8},figurehead:true,glow:'#6dffc4',
+    flag:{base:'#0e1a17',mark:flagMarks.eye,markColor:'#8dffd0'},
+    castles:[{from:0,to:.22,h:4,windows:4,glass:'#8dffd0',lanterns:true},{from:.82,to:.93,h:2,windows:2,glass:'#8dffd0'}],
   },
 };
 
@@ -336,5 +350,36 @@ export function buildPortal(frame,count){
     const f=new THREE.Mesh(new THREE.OctahedronGeometry(2.2+.5*Math.sin(frame/count*Math.PI*2+i),0),flame);f.position.set(x,26.5,z);f.rotation.y=spin*2+i;root.add(f);}
   const vortex=new THREE.Mesh(new THREE.CircleGeometry(38,64),new THREE.MeshBasicMaterial({map:T.vortexTexture({seed:77}),transparent:true,depthWrite:false}));vortex.rotation.x=-Math.PI/2;vortex.rotation.z=spin;vortex.position.y=.3;vortex.userData.float=true;root.add(vortex);
   const foam=new THREE.Mesh(new THREE.PlaneGeometry(120,120),new THREE.MeshBasicMaterial({map:T.foamTexture({seed:88,color:'190,255,240',strength:.5,inner:.34}),transparent:true,depthWrite:false}));foam.rotation.x=-Math.PI/2;foam.position.y=.1;foam.userData.float=true;root.add(foam);
+  root.userData.waterline=0;return root;
+}
+
+// ---------------------------------------------------------------- Kale
+// Kayalık adacık üzerinde altıgen sur, 4 kule, merkez burç. owner: npc (kızıl sancak) / player (turkuaz sancak).
+export function buildFort(owner){
+  const root=new THREE.Group(),stone=std({map:T.stoneTexture({seed:606,base:'#7d776a',dark:'#4f4a42',moss:'#56613f'}),roughness:.95}),dark=std({map:T.stoneTexture({seed:607,base:'#5d584f',dark:'#3a3630',moss:'#46502f'}),roughness:.95});
+  const roof=std({color:owner==='player'?'#1f5f5a':'#6e2a22',roughness:.7}),flagColor=owner==='player'?'#2fb8a8':'#a01f1c';
+  // Kaya taban
+  const n=T.noise2(66),rock=new THREE.CylinderGeometry(48,58,14,40,4),rp=rock.attributes.position;
+  for(let i=0;i<rp.count;i++){const x=rp.getX(i),z=rp.getZ(i),a=Math.atan2(z,x),k=1+.1*n(Math.cos(a)*2,Math.sin(a)*2,3);rp.setX(i,x*k);rp.setZ(i,z*k);rp.setY(i,rp.getY(i)+n(x*.08,z*.08,2)*2);}
+  rock.computeVertexNormals();const base=new THREE.Mesh(rock,std({color:'#5a5448',roughness:1}));base.position.y=0;root.add(base);
+  const top=7;
+  // Altıgen sur
+  const R=34;for(let k=0;k<6;k++){const a0=k/6*Math.PI*2,a1=(k+1)/6*Math.PI*2,x0=Math.cos(a0)*R,z0=Math.sin(a0)*R,x1=Math.cos(a1)*R,z1=Math.sin(a1)*R,len=Math.hypot(x1-x0,z1-z0);
+    const wall=new THREE.Mesh(new THREE.BoxGeometry(len,9,4),stone);wall.position.set((x0+x1)/2,top+4.5,(z0+z1)/2);wall.rotation.y=-Math.atan2(z1-z0,x1-x0);root.add(wall);
+    for(let m=0;m<5;m++){const t=(m+.5)/5,mer=new THREE.Mesh(new THREE.BoxGeometry(2.4,2,4.4),stone);mer.position.set(x0+(x1-x0)*t,top+10,z0+(z1-z0)*t);mer.rotation.y=wall.rotation.y;root.add(mer);}}
+  // Kuleler
+  for(let k=0;k<4;k++){const a=k/4*Math.PI*2+Math.PI/4,x=Math.cos(a)*R,z=Math.sin(a)*R;
+    const tw=new THREE.Mesh(new THREE.CylinderGeometry(6.5,7.5,18,20),dark);tw.position.set(x,top+9,z);root.add(tw);
+    const rf=new THREE.Mesh(new THREE.ConeGeometry(8,9,20),roof);rf.position.set(x,top+22.5,z);root.add(rf);
+    const gun=new THREE.Mesh(new THREE.CylinderGeometry(.9,1.1,6,10),std({color:'#1b1c1e',metalness:.7,roughness:.4}));gun.rotation.z=Math.PI/2;gun.rotation.y=-a;gun.position.set(x+Math.cos(a)*7,top+14,z+Math.sin(a)*7);root.add(gun);}
+  // Burç
+  const keep=new THREE.Mesh(new THREE.BoxGeometry(20,24,20),stone);keep.position.y=top+12;root.add(keep);
+  for(let m=0;m<4;m++)for(let q=0;q<4;q++){const mer=new THREE.Mesh(new THREE.BoxGeometry(3,2.6,3),stone);const s2=[[-1,0],[1,0],[0,-1],[0,1]][m];mer.position.set(s2[0]*9+(s2[1]?(q-1.5)*5:0),top+25.3,s2[1]*9+(s2[0]?(q-1.5)*5:0));root.add(mer);}
+  for(const [x,z] of [[0,10.1],[10.1,0]]){const win=new THREE.Mesh(new THREE.PlaneGeometry(3,5),std({color:'#ffcf6a',emissive:'#ffb040',emissiveIntensity:1.4}));win.position.set(x,top+16,z);win.rotation.y=x?Math.PI/2:0;root.add(win);}
+  const pole=new THREE.Mesh(new THREE.CylinderGeometry(.35,.35,16,8),std({color:'#3a2a1a'}));pole.position.y=top+32;root.add(pole);
+  const fm=std({map:T.flagTexture({seed:owner==='player'?9:8,base:flagColor,mark:null,tail:true}),side:THREE.DoubleSide});
+  const fgeo=new THREE.PlaneGeometry(12,6,10,2),fp=fgeo.attributes.position;for(let i=0;i<fp.count;i++){const x=fp.getX(i)+6;fp.setX(i,x);fp.setZ(i,Math.sin(x/12*Math.PI*2)*1.2*x/12);}fgeo.computeVertexNormals();
+  const flagM=new THREE.Mesh(fgeo,fm);flagM.position.set(0,top+37,0);flagM.rotation.y=.6;root.add(flagM);
+  const foam=new THREE.Mesh(new THREE.PlaneGeometry(150,150),new THREE.MeshBasicMaterial({map:T.foamTexture({seed:44,color:'225,245,240',strength:.55,inner:.36}),transparent:true,depthWrite:false}));foam.rotation.x=-Math.PI/2;foam.position.y=.05;foam.userData.float=true;root.add(foam);
   root.userData.waterline=0;return root;
 }
