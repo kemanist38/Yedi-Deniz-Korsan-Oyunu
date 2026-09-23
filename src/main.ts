@@ -86,6 +86,8 @@ Promise.all(directionalChunks.map(part=>fetch(`/assets/player-flagship-direction
   .catch(()=>{directionalShipImage.src='/assets/player-flagship-directions-v1.webp';});
 Promise.all(['00','01','02','03'].map(part=>fetch(`/assets/pirate-ui-icons-v1.b64.${part}`).then(r=>r.text())))
   .then(parts=>document.documentElement.style.setProperty('--pirate-icons',`url("data:image/webp;base64,${parts.join('')}")`));
+const cannonAssetSources:Record<CannonKind,string>={cast:'',long:'',rapid:'',heavy:''};
+(Object.keys(cannonAssetSources) as CannonKind[]).forEach(kind=>fetch(`/assets/cannon-${kind}-v1.b64`).then(r=>r.text()).then(data=>{cannonAssetSources[kind]=`data:image/webp;base64,${data}`;if(document.getElementById('shipOverlay')?.classList.contains('open'))renderShipMenu();}));
 const ui = (id:string) => document.getElementById(id)!;
 const WORLD = 2800;
 const keys = new Set<string>();
@@ -249,15 +251,7 @@ function effectiveSpeed(){return 104+upgrades.speed*5;}
 function cannonCapacity(){return 30+upgrades.hull*2;}
 function mountedCannonCount(){return (Object.keys(mountedCannons) as CannonKind[]).reduce((sum,kind)=>sum+mountedCannons[kind],0);}
 function cannonAsset(kind:CannonKind){
-  const common=`<defs><linearGradient id="iron-${kind}" x1="0" x2="1"><stop stop-color="#18252a"/><stop offset=".42" stop-color="#aebbb9"/><stop offset=".7" stop-color="#43555b"/><stop offset="1" stop-color="#10181b"/></linearGradient><linearGradient id="gold-${kind}" y2="1"><stop stop-color="#f3c55b"/><stop offset="1" stop-color="#7a4518"/></linearGradient></defs>`;
-  const wheels=`<g fill="#291a12" stroke="#d39b3d" stroke-width="3"><circle cx="25" cy="54" r="9"/><circle cx="73" cy="54" r="9"/><path d="M17 45h63l-9-13H29z" fill="#6b321b"/></g>`;
-  const art:Record<CannonKind,string>={
-    cast:`${wheels}<path d="M25 30L76 20l8 12-55 9z" fill="url(#iron-cast)" stroke="#d09e50" stroke-width="2"/><ellipse cx="80" cy="26" rx="7" ry="8" fill="#111b1e" stroke="#e1b261" stroke-width="2"/><path d="M34 36l-5-13" stroke="#c98035" stroke-width="4"/>`,
-    long:`${wheels}<path d="M20 30L88 14l5 9-69 17z" fill="url(#iron-long)" stroke="#79aeb5" stroke-width="2"/><ellipse cx="89" cy="18" rx="5" ry="6" fill="#071518" stroke="#a6d6d7" stroke-width="2"/><path d="M34 35l40-10" stroke="#e2bd69" stroke-width="2"/><path d="M45 30v-7h10" fill="none" stroke="#78d0d1" stroke-width="2"/>`,
-    rapid:`${wheels}<g fill="url(#iron-rapid)" stroke="#cfaa55" stroke-width="1.5"><path d="M25 25L78 14l5 7-56 12z"/><path d="M27 32L82 24l4 7-58 9z"/><path d="M29 39L80 34l3 7-52 6z"/></g><circle cx="25" cy="34" r="11" fill="#254f57" stroke="#8fe1df" stroke-width="2"/><circle cx="25" cy="34" r="4" fill="#d5a64d"/>`,
-    heavy:`${wheels}<path d="M23 25L72 17l15 14-9 12-53-5z" fill="url(#iron-heavy)" stroke="#e16c45" stroke-width="3"/><ellipse cx="79" cy="30" rx="11" ry="13" fill="#090f11" stroke="#f08a56" stroke-width="3"/><path d="M30 30h38M38 24l-6 16" stroke="#ca743f" stroke-width="3"/><circle cx="51" cy="31" r="5" fill="url(#gold-heavy)"/>`
-  };
-  return `<svg viewBox="0 0 100 70" aria-hidden="true">${common}${art[kind]}</svg>`;
+  return cannonAssetSources[kind]?`<img src="${cannonAssetSources[kind]}" alt="${CANNONS[kind].name} Top" draggable="false"/>`:'<span class="asset-loading"></span>';
 }
 function cooldownText(until:number){const minutes=Math.max(1,Math.ceil((until-Date.now())/60000)),hours=Math.floor(minutes/60),mins=minutes%60;return hours>0?`${hours} sa ${mins} dk`:`${mins} dk`;}
 let pendingUpgrade:UpgradeKind|null=null;
