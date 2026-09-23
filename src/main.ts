@@ -937,9 +937,12 @@ function drawShip(p:Vec,angle:number,color:string,scale=1){
   ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(1,-29);ctx.lineTo(14,-24);ctx.lineTo(1,-19);ctx.closePath();ctx.fill();
   ctx.fillStyle='#171817';for(const x of [-15,15])for(const y of [-8,3,14]){ctx.beginPath();ctx.arc(x,y,2.2,0,7);ctx.fill();}ctx.restore();
 }
+const ELITE_DIRECTION_FRAMES=[4,3,2,1,0,7,6,5] as const;
 function eliteDirectionFrame(angle:number){
-  // Oyun açısı: 0=Kuzey, π/2=Doğu. Atlas sütunları: K, KD, D, GD, G, GB, B, KB.
-  return(Math.round(angle/(Math.PI/4))+8)%8;
+  // Oyun açısı 0=Kuzey, π/2=Doğu. Üretilen atlas bir turntable dizisidir:
+  // ilk karede pruva kameraya (Güney), beşinci karede uzağa (Kuzey) bakar.
+  const compass=(Math.round(angle/(Math.PI/4))+8)%8;
+  return ELITE_DIRECTION_FRAMES[compass];
 }
 function drawEliteDirectionalShip(s:Vec){
   const level=eliteShip().level,index=level-1,group=Math.floor(index/5),row=index%5;
