@@ -11,6 +11,7 @@ type Monster = Vec & { kind:'monster'; phase:number; radius:number; name:string;
 type Target = Enemy|Monster;
 type Quest = { title:string; description:string; target:'ship'|'monster'; required:number; gold:number; wood:number; fame:number; pearls:number };
 type UpgradeKind = 'hull'|'damage'|'range'|'reload'|'speed'|'repair';
+type QuickItemId = 'iron'|'chain'|'repairkit'|'speed'|'hull'|'damage'|'range'|'reload'|'gold'|'wood'|'pearl'|'quest';
 const CANNONS:Record<CannonKind,{name:string;damage:number;range:number;reload:number}>={
   cast:{name:'Döküm',damage:1,range:390,reload:1.65},
   long:{name:'Uzun',damage:.82,range:470,reload:2.05},
@@ -30,6 +31,14 @@ const UPGRADES:Record<UpgradeKind,{name:string;description:string;effect:string;
   speed:{name:'Yeni Yelken Takımı',description:'Geminin ulaşabileceği azami hızı artırır.',effect:'+5 hız',pearls:9},
   repair:{name:'Usta Marangozlar',description:'Açık denizde yapılan tamirin hızını artırır.',effect:'+%0,8/sn',pearls:7}
 };
+const QUICK_ITEMS:Record<QuickItemId,{name:string;icon:string;category:'ammo'|'consumable'|'material';description:string}>={
+  iron:{name:'Demir Gülle',icon:'iron',category:'ammo',description:'Standart ve sınırsız top güllesi.'},chain:{name:'Zincir Güllesi',icon:'chain',category:'ammo',description:'Hedefi 3 saniye yavaşlatır.'},
+  repairkit:{name:'Tamir Sandığı',icon:'repairkit',category:'consumable',description:'Açık deniz tamirini başlatır.'},speed:{name:'Rüzgâr İksiri',icon:'speed',category:'consumable',description:'Ekstra hız özelliği yakında.'},
+  hull:{name:'Gövde Plakası',icon:'hull',category:'material',description:'Gövde geliştirmelerinde kullanılır.'},damage:{name:'Top Parçası',icon:'damage',category:'material',description:'Top güvertesi geliştirme malzemesi.'},
+  range:{name:'Uzun Namlu',icon:'range',category:'material',description:'Menzil geliştirme malzemesi.'},reload:{name:'Mekanik Dişli',icon:'reload',category:'material',description:'Dolum geliştirme malzemesi.'},
+  gold:{name:'Altın',icon:'gold',category:'material',description:'Genel oyun para birimi.'},wood:{name:'Kereste',icon:'wood',category:'material',description:'Gemi yapım malzemesi.'},
+  pearl:{name:'İnci',icon:'pearl',category:'material',description:'Premium geliştirme para birimi.'},quest:{name:'Görev Mührü',icon:'hull',category:'material',description:'Özel görev malzemesi; yakında.'}
+};
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <main class="game-shell">
@@ -37,12 +46,12 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     <section class="hud">
       <div class="brand">KARA YELKEN<small>GÖLGELER DENİZİ</small></div>
       <nav class="top-shortcuts"><button id="openQuestTop"><i class="shortcut-mark">✦</i><span>GÖREVLER</span></button><button id="openShip"><i class="sprite icon-hull"></i><span>GEMİ</span></button><button class="market-main" id="openMarket"><i class="sprite icon-gold"></i><span>MARKET</span></button><button disabled><i class="shortcut-mark">♜</i><span>FİLO</span></button><button disabled><i class="shortcut-mark">⚙</i><span>AYARLAR</span></button></nav>
-      <div class="resources"><div class="resource pearl">İNCİ<b id="pearls">000</b></div><div class="resource">ALTIN<b id="gold">000</b></div><div class="resource">KERESTE<b id="wood">000</b></div><div class="resource">ŞÖHRET<b id="fame">000</b></div></div>
+      <div class="resources"><div class="resource compact"><i class="sprite icon-gold"></i><span>ALTIN</span><b id="gold">000</b></div><div class="resource compact pearl"><i class="sprite icon-pearl"></i><span>İNCİ</span><b id="pearls">000</b></div></div>
       <div class="panel quest"><span class="eyebrow">Aktif görev</span><h3 id="questTitle">Görev seçilmedi</h3><p id="questDescription">Kaptan, yapmak istediğin görevi görev defterinden seçebilirsin.</p><div class="progress" id="quest">Hazır olduğunda bir görev başlat</div><button class="quest-open" id="openQuests">GÖREVLERİ AÇ</button></div>
       <div class="panel captain"><div class="name-row"><strong>Kaptan Yasin</strong><span class="level" id="level">SEVİYE 1</span></div><div class="bar-label"><span>GÖVDE</span><span id="hpText">100 / 100</span></div><div class="bar hp"><i id="hpBar" style="width:100%"></i></div><div class="bar-label"><span>ŞÖHRET</span><span id="xpText">0 / 100</span></div><div class="bar xp"><i id="xpBar" style="width:0%"></i></div></div>
       <div class="panel target-card" id="targetCard"><span class="eyebrow">HEDEF YOK</span><h3 id="targetName">Denizde bir gemi seç</h3><div class="bar hp"><i id="targetHp" style="width:0%"></i></div><div class="target-meta"><span id="targetRange">— menzil</span><span id="targetTier">—</span></div></div>
-      <div class="quick-inventory"><button class="quick-slot active" data-ammo="iron"><i class="sprite icon-iron"></i><span>Demir</span><b id="ironAmmo">∞</b></button><button class="quick-slot" data-ammo="chain"><i class="sprite icon-chain"></i><span>Zincir</span><b id="chainAmmo">40</b></button><div class="quick-slot"><i class="sprite icon-gold"></i><span>Altın</span><b id="quickGold">0</b></div><div class="quick-slot"><i class="sprite icon-wood"></i><span>Kereste</span><b id="quickWood">0</b></div><div class="quick-slot"><i class="sprite icon-pearl"></i><span>İnci</span><b id="quickPearls">0</b></div><button class="quick-slot" id="quickRepair"><i class="sprite icon-repairkit"></i><span>Tamir</span><b>F</b></button></div>
-      <div class="panel actionbar"><button class="action" id="cannonType"><b>♜</b><span id="cannonName">Döküm</span><small>TOP</small></button><button class="action fire" id="attack"><b>⚔</b><span>SALDIR</span><small id="reloadText">HAZIR</small></button><button class="action" id="repair"><b>✚</b><span>TAMİR</span><small>F</small></button></div>
+      <div class="bottom-command"><div class="status-bars"><div class="status-pair"><div class="status-line xp-line"><span>TP</span><i><em id="xpHudBar"></em></i><b id="xpHudText">0 / 100</b></div><div class="status-line elite-line"><span>EP</span><i><em id="eliteBar"></em></i><b id="eliteText">0 / 100</b></div></div><button class="recenter" id="recenterShip" aria-label="Gemiyi haritada ortala">✥</button><div class="status-pair"><div class="status-line hp-line"><span>CP</span><i><em id="hpHudBar"></em></i><b id="hpHudText">100 / 100</b></div><div class="status-line battle-line"><span>SP</span><i><em id="battleBar"></em></i><b id="battleText">0 / 100</b></div></div></div><div class="quick-inventory" id="quickInventory"></div></div>
+      <div class="combat-controls"><button class="combat-action attack" id="attack"><b>⚔</b><span id="attackLabel">SALDIR</span><small id="reloadText">HAZIR</small></button><button class="combat-action repair" id="repair"><b>✚</b><span>TAMİR ET</span><small>F</small></button><button class="combat-action speed" id="speedBoost"><b>➤</b><span>HIZLANDIR</span><small>YAKINDA</small></button></div>
       <div class="panel zoom-controls"><button id="zoomOut" aria-label="Uzaklaştır">−</button><span id="zoomValue">70%</span><button id="zoomIn" aria-label="Yakınlaştır">+</button></div>
       <canvas id="minimap" width="170" height="125"></canvas>
       <div class="reward-toast" id="rewardToast"></div>
@@ -50,6 +59,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <div class="quest-overlay" id="questOverlay"><section class="quest-log"><header><div><span class="eyebrow">Kaptanın görev defteri</span><h2>DENİZ GÖREVLERİ</h2></div><button id="closeQuests" aria-label="Görevleri kapat">×</button></header><p class="quest-intro">Aynı anda yalnızca bir görev yürütülebilir. İptal edilen veya tamamlanan görev 8 saat sonra yeniden açılır.</p><div class="quest-list" id="questList"></div></section></div>
       <div class="ship-overlay" id="shipOverlay"><section class="ship-menu"><header><div><span class="eyebrow">Kaptanın amiral gemisi</span><h2>KARA YELKEN</h2></div><button id="closeShip" aria-label="Gemi menüsünü kapat">×</button></header><div class="ship-summary" id="shipSummary"></div><div class="upgrade-list" id="upgradeList"></div><div class="upgrade-confirm" id="upgradeConfirm"></div></section></div>
       <div class="market-overlay" id="marketOverlay"><section class="market-menu"><header><div><span class="eyebrow">Tüccar loncası</span><h2>DENİZ MARKETİ</h2></div><button id="closeMarket" aria-label="Marketi kapat">×</button></header><div class="inventory-strip" id="inventoryStrip"></div><h3 class="market-heading">MÜHİMMAT</h3><div class="market-list" id="marketList"></div><h3 class="market-heading">İNCİ PAKETLERİ</h3><div class="pearl-shop"><div><b>◈ İnci Sandıkları</b><span>Gerçek ödeme sistemi kullanıcı hesaplarıyla birlikte açılacak.</span></div><button disabled>YAKINDA</button></div><div class="market-confirm" id="marketConfirm"></div></section></div>
+      <div class="loadout-overlay" id="loadoutOverlay"><section class="loadout-menu"><header><div><span class="eyebrow">Hızlı kullanım düzeni</span><h2>MALZEMELER</h2></div><button id="closeLoadout">×</button></header><div class="loadout-tabs"><button data-tab="ammo" class="active">GÜLLELER</button><button data-tab="consumable">SARF</button><button data-tab="material">MALZEMELER</button></div><p>Malzemeyi sürükleyip alt kısımdaki 12 yuvadan birine bırak. Telefonda önce malzemeye, sonra hedef yuvaya dokun.</p><div class="loadout-items" id="loadoutItems"></div><div class="loadout-slots" id="loadoutSlots"></div></section></div>
     </section>
   </main>`;
 
@@ -75,12 +85,13 @@ const keys = new Set<string>();
 const QUEST_STORAGE='kara-yelken-quests-v1';
 const ACCOUNT_STORAGE='kara-yelken-account-v1';
 let storedQuests:{activeQuest:number|null;progress:number[];cooldowns:number[]}|null=null;
-let storedAccount:{pearls?:number;gold:number;wood:number;fame:number;level:number;maxHp:number;hp:number;chainAmmo:number;upgrades:Record<UpgradeKind,number>}|null=null;
+let storedAccount:{pearls?:number;gold:number;wood:number;fame:number;level:number;maxHp:number;hp:number;chainAmmo:number;elitePoints?:number;battlePoints?:number;quickSlots?:Array<QuickItemId|null>;upgrades:Record<UpgradeKind,number>}|null=null;
 try{storedQuests=JSON.parse(localStorage.getItem(QUEST_STORAGE)||'null');}catch{storedQuests=null;}
 try{storedAccount=JSON.parse(localStorage.getItem(ACCOUNT_STORAGE)||'null');}catch{storedAccount=null;}
 const storedActive=storedQuests?.activeQuest;
 const upgrades:Record<UpgradeKind,number>={hull:storedAccount?.upgrades?.hull||0,damage:storedAccount?.upgrades?.damage||0,range:storedAccount?.upgrades?.range||0,reload:storedAccount?.upgrades?.reload||0,speed:storedAccount?.upgrades?.speed||0,repair:storedAccount?.upgrades?.repair||0};
-const state = { pearls:storedAccount?.pearls??30, gold:storedAccount?.gold??40, wood:storedAccount?.wood??10, fame:storedAccount?.fame??0, level:storedAccount?.level??1, hp:storedAccount?.hp??100, maxHp:storedAccount?.maxHp??100, cannon:18, cannonType:'cast' as CannonKind, activeQuest:Number.isInteger(storedActive)&&storedActive!>=0&&storedActive!<QUESTS.length?storedActive!:null as number|null, ammo:'iron' as AmmoKind, chainAmmo:storedAccount?.chainAmmo??40, attacking:false, repairing:false, invulnerable:0 };
+const state = { pearls:storedAccount?.pearls??30, gold:storedAccount?.gold??40, wood:storedAccount?.wood??10, fame:storedAccount?.fame??0, level:storedAccount?.level??1, hp:storedAccount?.hp??100, maxHp:storedAccount?.maxHp??100, elitePoints:storedAccount?.elitePoints??0,battlePoints:storedAccount?.battlePoints??0,cannon:18, cannonType:'cast' as CannonKind, activeQuest:Number.isInteger(storedActive)&&storedActive!>=0&&storedActive!<QUESTS.length?storedActive!:null as number|null, ammo:'iron' as AmmoKind, chainAmmo:storedAccount?.chainAmmo??40, attacking:false, repairing:false, invulnerable:0 };
+const quickSlots:Array<QuickItemId|null>=Array.from({length:12},(_,index)=>storedAccount?.quickSlots?.[index]??(['iron','chain','repairkit','speed'][index] as QuickItemId|undefined)??null);
 const questProgress=QUESTS.map((_,index)=>Math.max(0,Number(storedQuests?.progress?.[index])||0));
 const questCooldownUntil=QUESTS.map((_,index)=>Math.max(0,Number(storedQuests?.cooldowns?.[index])||0));
 if(state.activeQuest!==null&&questCooldownUntil[state.activeQuest]>Date.now())state.activeQuest=null;
@@ -112,7 +123,8 @@ canvas.addEventListener('pointerdown',e=>{
 });
 ui('attack').onclick=toggleAttack;
 ui('repair').onclick=toggleRepair;
-ui('cannonType').onclick=()=>{const types=Object.keys(CANNONS) as CannonKind[];state.cannonType=types[(types.indexOf(state.cannonType)+1)%types.length];toast(`${CANNONS[state.cannonType].name} topları hazır`);};
+ui('speedBoost').onclick=()=>toast('Ekstra hız özelliği sonraki aşamada açılacak');
+ui('recenterShip').onclick=()=>{camera.x=player.x;camera.y=player.y;destination=null;toast('Kamera gemiye ortalandı');};
 ui('zoomOut').onclick=()=>setZoom(camera.targetZoom-.1);
 ui('zoomIn').onclick=()=>setZoom(camera.targetZoom+.1);
 ui('openQuests').onclick=openQuestLog;
@@ -125,9 +137,10 @@ ui('shipOverlay').addEventListener('pointerdown',e=>{if(e.target===ui('shipOverl
 ui('openMarket').onclick=openMarket;
 ui('closeMarket').onclick=closeMarket;
 ui('marketOverlay').addEventListener('pointerdown',e=>{if(e.target===ui('marketOverlay'))closeMarket();});
-ui('quickRepair').onclick=toggleRepair;
 canvas.addEventListener('wheel',e=>{e.preventDefault();setZoom(camera.targetZoom+(e.deltaY<0?.1:-.1));},{passive:false});
-document.querySelectorAll<HTMLButtonElement>('[data-ammo]').forEach(b=>b.onclick=()=>{state.ammo=b.dataset.ammo as AmmoKind;document.querySelectorAll('[data-ammo]').forEach(x=>x.classList.toggle('active',x===b));});
+ui('closeLoadout').onclick=closeLoadout;
+ui('loadoutOverlay').addEventListener('pointerdown',e=>{if(e.target===ui('loadoutOverlay'))closeLoadout();});
+document.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach(button=>button.onclick=()=>{loadoutTab=button.dataset.tab as typeof loadoutTab;renderLoadout();});
 
 function spawnEnemy(){
   const a=Math.random()*Math.PI*2,d=500+Math.random()*650,tier=1+Math.floor(state.level/3);
@@ -209,7 +222,7 @@ const rewardQueue:string[]=[];
 function showReward(msg:string){ui('rewardToast').textContent=msg;ui('rewardToast').classList.remove('show');void ui('rewardToast').offsetWidth;ui('rewardToast').classList.add('show');rewardTimer=2.6;}
 function rewardNotice(msg:string){if(rewardTimer>0){rewardQueue.push(msg);return;}showReward(msg);}
 function saveQuestState(){localStorage.setItem(QUEST_STORAGE,JSON.stringify({activeQuest:state.activeQuest,progress:questProgress,cooldowns:questCooldownUntil}));}
-function saveAccount(){localStorage.setItem(ACCOUNT_STORAGE,JSON.stringify({pearls:state.pearls,gold:state.gold,wood:state.wood,fame:state.fame,level:state.level,maxHp:state.maxHp,hp:state.hp,chainAmmo:state.chainAmmo,upgrades}));}
+function saveAccount(){localStorage.setItem(ACCOUNT_STORAGE,JSON.stringify({pearls:state.pearls,gold:state.gold,wood:state.wood,fame:state.fame,level:state.level,maxHp:state.maxHp,hp:state.hp,chainAmmo:state.chainAmmo,elitePoints:state.elitePoints,battlePoints:state.battlePoints,quickSlots,upgrades}));}
 function effectiveRange(){return CANNONS[state.cannonType].range+upgrades.range*18;}
 function effectiveSpeed(){return 104+upgrades.speed*5;}
 function cooldownText(until:number){const minutes=Math.max(1,Math.ceil((until-Date.now())/60000)),hours=Math.floor(minutes/60),mins=minutes%60;return hours>0?`${hours} sa ${mins} dk`:`${mins} dk`;}
@@ -255,6 +268,31 @@ function buyMarketItem(){
   if(state.gold<item.price){toast('Bu mühimmat için yeterli altının yok');return;}
   state.gold-=item.price;state.chainAmmo+=item.amount;pendingMarket=null;saveAccount();renderMarket();updateUI();rewardNotice(`+${item.amount} Zincir Güllesi`);
 }
+let loadoutTab:'ammo'|'consumable'|'material'='ammo';
+let pendingQuickItem:QuickItemId|null=null;
+function quickCount(item:QuickItemId){if(item==='iron')return'∞';if(item==='chain')return String(state.chainAmmo);if(item==='gold')return String(state.gold);if(item==='wood')return String(state.wood);if(item==='pearl')return String(state.pearls);if(item==='repairkit')return'F';if(item==='speed')return'—';if(item in upgrades)return String(upgrades[item as UpgradeKind]);return'0';}
+function renderQuickSlots(){
+  ui('quickInventory').innerHTML=quickSlots.map((item,index)=>item?`<button class="quick-slot ${item===state.ammo?'active':''}" data-quick-slot="${index}" data-quick-item="${item}"><i class="sprite icon-${QUICK_ITEMS[item].icon}"></i><span>${QUICK_ITEMS[item].name}</span><b>${quickCount(item)}</b></button>`:`<button class="quick-slot empty" data-quick-slot="${index}"><span>+</span><small>${index+1}</small></button>`).join('');
+  document.querySelectorAll<HTMLButtonElement>('#quickInventory [data-quick-slot]').forEach(slot=>{const index=Number(slot.dataset.quickSlot);slot.onclick=()=>useQuickSlot(index);slot.ondragover=e=>e.preventDefault();slot.ondrop=e=>{e.preventDefault();const item=e.dataTransfer?.getData('text/quick-item') as QuickItemId;if(item&&QUICK_ITEMS[item])assignQuickSlot(index,item);};});
+}
+function useQuickSlot(index:number){
+  if(pendingQuickItem){assignQuickSlot(index,pendingQuickItem);return;}
+  const item=quickSlots[index];if(!item){openLoadout('ammo');return;}
+  if(item==='iron'||item==='chain'){state.ammo=item;openLoadout('ammo');toast(`${QUICK_ITEMS[item].name} seçildi`);}
+  else if(item==='repairkit')toggleRepair();else if(item==='speed')toast('Ekstra hız özelliği yakında açılacak');else openLoadout(QUICK_ITEMS[item].category);
+  renderQuickSlots();
+}
+function assignQuickSlot(index:number,item:QuickItemId){quickSlots[index]=item;pendingQuickItem=null;saveAccount();renderQuickSlots();if(ui('loadoutOverlay').classList.contains('open'))renderLoadout();toast(`${QUICK_ITEMS[item].name} ${index+1}. yuvaya yerleştirildi`);}
+function openLoadout(tab:typeof loadoutTab='ammo'){loadoutTab=tab;pendingQuickItem=null;renderLoadout();ui('loadoutOverlay').classList.add('open');}
+function closeLoadout(){pendingQuickItem=null;ui('loadoutOverlay').classList.remove('open');}
+function renderLoadout(){
+  document.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach(button=>button.classList.toggle('active',button.dataset.tab===loadoutTab));
+  const items=(Object.keys(QUICK_ITEMS) as QuickItemId[]).filter(id=>QUICK_ITEMS[id].category===loadoutTab);
+  ui('loadoutItems').innerHTML=items.map(id=>`<button draggable="true" data-loadout-item="${id}" class="${pendingQuickItem===id?'selected':''}"><i class="sprite icon-${QUICK_ITEMS[id].icon}"></i><span>${QUICK_ITEMS[id].name}</span><small>${QUICK_ITEMS[id].description}</small><b>${quickCount(id)}</b></button>`).join('');
+  ui('loadoutSlots').innerHTML=quickSlots.map((item,index)=>`<button data-editor-slot="${index}" class="${pendingQuickItem?'ready':''}">${item?`<i class="sprite icon-${QUICK_ITEMS[item].icon}"></i><span>${index+1}</span>`:`<b>+</b><span>${index+1}</span>`}</button>`).join('');
+  document.querySelectorAll<HTMLButtonElement>('[data-loadout-item]').forEach(button=>{const item=button.dataset.loadoutItem as QuickItemId;button.onclick=()=>{pendingQuickItem=item;renderLoadout();};button.ondragstart=e=>e.dataTransfer?.setData('text/quick-item',item);});
+  document.querySelectorAll<HTMLButtonElement>('[data-editor-slot]').forEach(button=>{const index=Number(button.dataset.editorSlot);button.onclick=()=>{if(pendingQuickItem)assignQuickSlot(index,pendingQuickItem);};button.ondragover=e=>e.preventDefault();button.ondrop=e=>{e.preventDefault();const item=e.dataTransfer?.getData('text/quick-item') as QuickItemId;if(item&&QUICK_ITEMS[item])assignQuickSlot(index,item);};});
+}
 let pendingCancel:number|null=null;
 function openQuestLog(){renderQuestLog();ui('questOverlay').classList.add('open');}
 function closeQuestLog(){pendingCancel=null;ui('questOverlay').classList.remove('open');}
@@ -290,14 +328,15 @@ function recordQuestProgress(target:'ship'|'monster'){
   toast(`${quest.title} tamamlandı`);questProgress[index]=0;questCooldownUntil[index]=Date.now()+8*60*60*1000;state.activeQuest=null;saveQuestState();saveAccount();
 }
 function updateUI(){
-  ui('pearls').textContent=String(state.pearls).padStart(3,'0');ui('gold').textContent=String(state.gold).padStart(3,'0');ui('wood').textContent=String(state.wood).padStart(3,'0');ui('fame').textContent=String(state.fame).padStart(3,'0');
-  ui('quickGold').textContent=String(state.gold);ui('quickWood').textContent=String(state.wood);ui('quickPearls').textContent=String(state.pearls);
+  ui('pearls').textContent=String(state.pearls).padStart(3,'0');ui('gold').textContent=String(state.gold).padStart(3,'0');
+  document.querySelectorAll<HTMLElement>('#quickInventory [data-quick-item]').forEach(slot=>{const item=slot.dataset.quickItem as QuickItemId;const count=slot.querySelector('b');if(count)count.textContent=quickCount(item);slot.classList.toggle('active',item===state.ammo);});
   ui('hpText').textContent=`${Math.ceil(state.hp)} / ${state.maxHp}`; (ui('hpBar') as HTMLElement).style.width=`${state.hp/state.maxHp*100}%`;
-  const need=state.level*100;ui('xpText').textContent=`${state.fame} / ${need}`;(ui('xpBar') as HTMLElement).style.width=`${Math.min(100,state.fame/need*100)}%`;ui('level').textContent=`SEVİYE ${state.level}`;ui('chainAmmo').textContent=String(state.chainAmmo);
+  const need=state.level*100;ui('xpText').textContent=`${state.fame} / ${need}`;(ui('xpBar') as HTMLElement).style.width=`${Math.min(100,state.fame/need*100)}%`;ui('level').textContent=`SEVİYE ${state.level}`;
+  (ui('xpHudBar') as HTMLElement).style.width=`${Math.min(100,state.fame/need*100)}%`;ui('xpHudText').textContent=`${state.fame} / ${need}`;(ui('hpHudBar') as HTMLElement).style.width=`${Math.max(0,state.hp/state.maxHp*100)}%`;ui('hpHudText').textContent=`${Math.ceil(state.hp)} / ${state.maxHp}`;(ui('eliteBar') as HTMLElement).style.width=`${Math.min(100,state.elitePoints)}%`;ui('eliteText').textContent=`${state.elitePoints} / 100`;(ui('battleBar') as HTMLElement).style.width=`${Math.min(100,state.battlePoints/5)}%`;ui('battleText').textContent=`${state.battlePoints} / 500`;
   const quest=state.activeQuest===null?null:QUESTS[state.activeQuest];ui('questTitle').textContent=quest?.title||'Görev seçilmedi';ui('questDescription').textContent=quest?.description||'Kaptan, yapmak istediğin görevi görev defterinden seçebilirsin.';ui('quest').textContent=quest?`${questProgress[state.activeQuest!]} / ${quest.required} ${quest.target==='ship'?'Düşman':'Canavar'}`:'Hazır olduğunda bir görev başlat';
   ui('reloadText').textContent=player.cooldown>0?`${player.cooldown.toFixed(1)} sn`:'HAZIR';ui('attack').classList.toggle('reloading',player.cooldown>0);
+  ui('attackLabel').textContent=state.attacking?'SALDIRIYI İPTAL ET':'SALDIR';ui('attack').classList.toggle('active',state.attacking);
   ui('repair').classList.toggle('active',state.repairing);
-  ui('cannonName').textContent=CANNONS[state.cannonType].name;
   const valid=selected&&targetExists(selected);ui('targetCard').classList.toggle('visible',!!valid);
   if(valid&&selected){const range=Math.round(dist(player,selected)),firing=state.attacking&&range<=effectiveRange();ui('targetName').textContent=selected.name;ui('targetRange').textContent=firing?'Ateş ediliyor…':`${range} menzil`;ui('targetTier').textContent=selected.kind==='ship'?`Sınıf ${selected.tier}`:'Deniz Canavarı';(ui('targetHp') as HTMLElement).style.width=`${selected.hp/selected.maxHp*100}%`;}
 }
@@ -353,13 +392,13 @@ function update(dt:number){
       for(let j=enemies.length-1;j>=0&&s.life>0;j--){
         const e=enemies[j];
         if(dist(s,e)<25){const hit=s.damage;s.hit=true;e.aggro=true;e.combatTimer=12;if(s.ammo==='chain')e.slowTimer=3;e.hp-=hit;damageText(e.x,e.y,hit);burst(e.x,e.y);s.life=0;
-          if(e.hp<=0){const gold=12+e.tier*5,wood=4+e.tier;burst(e.x,e.y,true);enemies.splice(j,1);if(selected===e){selected=null;state.attacking=false;ui('attack').classList.remove('active');}state.gold+=gold;state.wood+=wood;state.fame+=20;saveAccount();rewardNotice(`+${gold} Altın   +${wood} Kereste   +20 Şöhret`);toast(`${e.name} batırıldı`);recordQuestProgress('ship');setTimeout(spawnEnemy,1400);}
+          if(e.hp<=0){const gold=12+e.tier*5,wood=4+e.tier;burst(e.x,e.y,true);enemies.splice(j,1);if(selected===e){selected=null;state.attacking=false;ui('attack').classList.remove('active');}state.gold+=gold;state.wood+=wood;state.fame+=20;state.battlePoints=Math.min(500,state.battlePoints+5);saveAccount();rewardNotice(`+${gold} Altın   +${wood} Kereste   +20 Şöhret   +5 Savaş Puanı`);toast(`${e.name} batırıldı`);recordQuestProgress('ship');setTimeout(spawnEnemy,1400);}
         }
       }
       for(let j=monsters.length-1;j>=0&&s.life>0;j--){
         const m=monsters[j];
         if(dist(s,m)<m.radius){const hit=s.damage;s.hit=true;m.aggro=true;m.combatTimer=12;if(s.ammo==='chain')m.slowTimer=3;m.hp-=hit;damageText(m.x,m.y,hit);burst(m.x,m.y);s.life=0;
-          if(m.hp<=0){state.gold+=100;state.wood+=15;state.fame+=80;state.pearls+=2;saveAccount();rewardNotice('+100 Altın   +2 İnci   +80 Şöhret');recordQuestProgress('monster');m.hp=m.maxHp;m.aggro=false;m.x=160+Math.random()*(WORLD-320);m.y=160+Math.random()*(WORLD-320);m.homeX=m.x;m.homeY=m.y;m.combatTimer=0;selected=null;state.attacking=false;toast(`${m.name} yenildi`);}
+          if(m.hp<=0){state.gold+=100;state.wood+=15;state.fame+=80;state.pearls+=2;state.elitePoints=Math.min(100,state.elitePoints+10);state.battlePoints=Math.min(500,state.battlePoints+20);saveAccount();rewardNotice('+100 Altın   +2 İnci   +80 Şöhret   +10 Elit Puan');recordQuestProgress('monster');m.hp=m.maxHp;m.aggro=false;m.x=160+Math.random()*(WORLD-320);m.y=160+Math.random()*(WORLD-320);m.homeX=m.x;m.homeY=m.y;m.combatTimer=0;selected=null;state.attacking=false;toast(`${m.name} yenildi`);}
         }
       }
     }else if(state.invulnerable<=0&&dist(s,player)<22){s.hit=true;state.repairing=false;state.hp-=s.damage;damageText(player.x,player.y,s.damage);burst(player.x,player.y);s.life=0;if(state.hp<=0)respawn();}
@@ -420,4 +459,4 @@ function draw(){
   ctx.restore();drawMinimap();
 }
 function drawMinimap(){mini.fillStyle='#061820';mini.fillRect(0,0,170,125);mini.strokeStyle='#9fc2bd22';mini.strokeRect(.5,.5,169,124);for(const i of islands){mini.fillStyle='#536d4b';mini.beginPath();mini.arc(i.x/WORLD*170,i.y/WORLD*125,Math.max(3,i.r/WORLD*170),0,7);mini.fill();}for(const e of enemies){mini.fillStyle='#c34e3d';mini.fillRect(e.x/WORLD*170-1,e.y/WORLD*125-1,3,3);}mini.fillStyle='#f4dd9d';mini.beginPath();mini.arc(player.x/WORLD*170,player.y/WORLD*125,3,0,7);mini.fill();}
-let last=performance.now();function loop(now:number){const dt=Math.min(.033,(now-last)/1000);last=now;update(dt);draw();requestAnimationFrame(loop);}updateUI();requestAnimationFrame(loop);
+let last=performance.now();function loop(now:number){const dt=Math.min(.033,(now-last)/1000);last=now;update(dt);draw();requestAnimationFrame(loop);}renderQuickSlots();updateUI();requestAnimationFrame(loop);
