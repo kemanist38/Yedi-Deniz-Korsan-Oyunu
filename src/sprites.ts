@@ -68,6 +68,11 @@ export function drawBastion(ctx:CanvasRenderingContext2D,slot:number,x:number,y:
   const B=FLEET_BASTIONS,sheet=load(B.url),o=B.offsets[slot];if(!o||!ready(sheet))return false;
   ctx.save();ctx.globalAlpha=alpha;ctx.drawImage(sheet,(slot%4)*B.cellW,Math.floor(slot/4)*B.cellH,B.cellW,B.cellH,x+o.ox,y+o.oy,B.cellW*B.scale,B.cellH*B.scale);ctx.restore();return true;
 }
+// Kule üst yapısı (top, havan, zincir, fener): burcun disk merkezine oturur. 256 px çizim 112 birim (model 96 birimde render edilir, oyunda %17 büyütülür), çapa (128,148.6).
+export function drawTowerTop(ctx:CanvasRenderingContext2D,frame:number,slot:number,x:number,y:number,alpha=1){
+  const sheet=load('/assets/fleet-tower-tops-v1.webp'),o=FLEET_BASTIONS.offsets[slot];if(!o||!ready(sheet))return false;const size=112;
+  ctx.save();ctx.globalAlpha=alpha;ctx.drawImage(sheet,frame*256,0,256,256,x+o.dx-128*size/256,y+o.dy-148.6*size/256,size,size);ctx.restore();return true;
+}
 // Kuleler adanın görselinden bağımsızdır: surdaki yuvarlak kaidelerin üstüne dikilir (200 px çizim).
 export const TOWER_LABEL_OFFSET=-72;
 export function drawFleetTower(ctx:CanvasRenderingContext2D,theme:string,owner:'npc'|'player',x:number,y:number,alpha=1){

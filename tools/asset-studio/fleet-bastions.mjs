@@ -28,7 +28,8 @@ const out=await p.evaluate(async([src,TOWERS])=>{
     for(let y=0;y<CELL_H;y++)for(let x=0;x<CELL_W;x++){const sx=x0+x,sy=y0+y;if(sx<0||sy<0||sx>=W||sy>=W)continue;const m=maskAt(t,sx+.5,sy+.5);if(!m)continue;const i=(sy*W+sx)*4,o=(y*CELL_W+x)*4;if(edgeAt(t,sx+.5,sy+.5)&&background(orig[i],orig[i+1],orig[i+2]))continue;cell.data[o]=orig[i];cell.data[o+1]=orig[i+1];cell.data[o+2]=orig[i+2];cell.data[o+3]=Math.round(orig[i+3]*m);}
     ax.putImageData(cell,(k%4)*CELL_W,Math.floor(k/4)*CELL_H);
     // Kuleye göre çizim ofseti (dünya birimi): karenin sol-üst köşesi − kule konumu
-    meta.push({ox:+(x0/K-500-wx).toFixed(2),oy:+(y0/K-500-wy).toFixed(2)});});
+    // disk: burcun düz taş tepesinin merkezi (kule üst yapısı buraya oturur), kuleye göre dünya birimi
+    meta.push({ox:+(x0/K-500-wx).toFixed(2),oy:+(y0/K-500-wy).toFixed(2),dx:+(dx/K).toFixed(2),dy:+(dy/K).toFixed(2)});});
   // 2) Delik (tüm kulelerin maskesi, 3 px genişletilmiş)
   const hole=new Uint8Array(W*W);TOWERS.forEach(t=>{const [wx,wy,dx,dy,base]=t,cx=(wx+500)*K+dx,cy=(wy+500)*K+dy;for(let y=Math.floor(cy-RY-8);y<cy+base+HW;y++)for(let x=Math.floor(cx-RX-8);x<cx+RX+8;x++){if(x<0||y<0||x>=W||y>=W)continue;if(y>cutY(t)+2)continue;let m=0;for(const [ox,oy] of [[0,0],[3,0],[-3,0],[0,3],[0,-3]])m=Math.max(m,maskAt(t,x+ox+.5,y+oy+.5));if(m>0)hole[y*W+x]=1;}});
   const forbidden=new Uint8Array(W*W);for(let y=0;y<W;y++)for(let x=0;x<W;x++){if(!hole[y*W+x])continue;for(let dy=-10;dy<=10;dy+=2)for(let dx=-10;dx<=10;dx+=2){const nx=x+dx,ny=y+dy;if(nx>=0&&ny>=0&&nx<W&&ny<W)forbidden[ny*W+nx]=1;}}
@@ -56,7 +57,7 @@ const out=await p.evaluate(async([src,TOWERS])=>{
     x.fillStyle='rgba(0,0,0,.35)';x.beginPath();x.ellipse(cx+3,gy+6,RX+4,RX*.52,0,0,7);x.fill();
     const side=x.createLinearGradient(0,gy,0,gy+6);side.addColorStop(0,'#5e574e');side.addColorStop(1,'#34302b');x.fillStyle=side;x.beginPath();x.ellipse(cx,gy+5,RX,RX*.48,0,0,Math.PI);x.lineTo(cx-RX,gy);x.ellipse(cx,gy,RX,RX*.48,0,Math.PI,0,true);x.fill();
     const top=x.createRadialGradient(cx-8,gy-6,4,cx,gy,RX);top.addColorStop(0,'#a39a8c');top.addColorStop(.7,'#857c70');top.addColorStop(1,'#625a50');x.fillStyle=top;x.beginPath();x.ellipse(cx,gy,RX,RX*.48,0,0,7);x.fill();
-    for(let n=0;n<160;n++){const a=Math.random()*Math.PI*2,r=Math.sqrt(Math.random());x.fillStyle=`rgba(${Math.random()<.5?'40,36,30':'200,190,170'},${.12+Math.random()*.15})`;x.fillRect(cx+Math.cos(a)*RX*r,gy+Math.sin(a)*RX*.48*r,1.6,1.2);}
+    let seed=k*977+13;const rnd=()=>((seed=(seed*16807)%2147483647)/2147483647);for(let n=0;n<160;n++){const a=rnd()*Math.PI*2,r=Math.sqrt(rnd());x.fillStyle=`rgba(${rnd()<.5?'40,36,30':'200,190,170'},${.12+rnd()*.15})`;x.fillRect(cx+Math.cos(a)*RX*r,gy+Math.sin(a)*RX*.48*r,1.6,1.2);}
     x.strokeStyle='rgba(40,34,28,.5)';x.lineWidth=1;for(let r=.35;r<1;r+=.3){x.beginPath();x.ellipse(cx,gy,RX*r,RX*.48*r,0,0,7);x.stroke();}
     for(let a=0;a<12;a++){const an=a/12*Math.PI*2;x.beginPath();x.moveTo(cx+Math.cos(an)*RX*.35,gy+Math.sin(an)*RX*.48*.35);x.lineTo(cx+Math.cos(an)*RX,gy+Math.sin(an)*RX*.48);x.stroke();}
     x.strokeStyle='rgba(216,178,104,.8)';x.setLineDash([4,3]);x.lineWidth=1.6;x.beginPath();x.ellipse(cx,gy,RX*.62,RX*.48*.62,0,0,7);x.stroke();x.setLineDash([]);

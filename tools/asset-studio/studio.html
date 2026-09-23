@@ -9,6 +9,7 @@ import {paintSeaTile,paintWorldChart,paintSeaSparkle} from './paint.js';
 import {buildIcon} from './icons.js';
 import {buildFleetBase,buildFleetTower,FLEET_TOWERS,FLEET_ELEVATION} from './fleet.js';
 import {SHIPS,MONSTERS} from './catalog.js';
+import {buildTowerTop,TOWER_TOP_TYPES} from './tower-tops.js';
 import {buildCrab,buildSerpent,buildJelly,buildTurtle,buildHydra} from './monsters.js';
 import * as T from './textures.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
@@ -109,5 +110,9 @@ window.renderPortraitsV2=(order,{cell=96,cols=10}={})=>{const legacy={'n1-2-ligh
     else{const def=legacy[id]?FLEET[legacy[id]]:SHIPS.find(x=>x.id===id).def,ship=buildShip(def,{heading:Math.PI*1.25});prepare(ship);ship.rotation.y=Math.PI-Math.PI*1.25;scene.add(ship);const L=def.hull.L;cam=camera(L*1.12,L*.19);}
     return shot(scene,cam,cell);});
   return{...exportCanvas(sheet(frames,cols)),cell,cols};};
+// Dikilebilir kule üst yapıları: burç tepesine oturur; 4 kare (cannon, mortar, chain, beacon), 256 px = 96 birim.
+window.renderTowerTops=({frame=256,span=96}={})=>{const cam=cameraAt(span,FLEET_ELEVATION);cam.position.y+=12;cam.lookAt(0,12,0);cam.updateMatrixWorld();
+  const frames=TOWER_TOP_TYPES.map(t=>{const scene=stage(),m=buildTowerTop(t);prepare(m);scene.add(m);return shot(scene,cam,frame);});
+  return{...exportCanvas(sheet(frames,frames.length)),frame,span,types:TOWER_TOP_TYPES,anchor:anchorOf(cam,frame,new THREE.Vector3(0,0,0))};};
 window.studioReady=true;
 </script></body></html>
