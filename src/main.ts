@@ -260,9 +260,9 @@ function useJump(){
   enterMap(target.key,at);
 }
 function updateJumpPrompt(){
-  const dir=edgeDir(),to=dir?neighbor(currentMap,dir):null,next=dir&&to?{dir,to}:null;
-  if(next?.to===jumpPrompt?.to&&next?.dir===jumpPrompt?.dir)return;jumpPrompt=next;const el=ui('portalPrompt');
-  if(!next){el.classList.remove('visible');return;}
+  const dir=edgeDir(),to=dir?neighbor(currentMap,dir):null,next=dir&&to?{dir,to}:null,el=ui('portalPrompt');
+  if(!next){jumpPrompt=null;el.classList.remove('visible');el.innerHTML='';return;}
+  if(next.to===jumpPrompt?.to&&next.dir===jumpPrompt?.dir)return;jumpPrompt=next;
   const target=MAPS[next.to],locked=state.level<target.tier,arrow={north:'↑',south:'↓',east:'→',west:'←'}[next.dir];
   el.innerHTML=`<span>HARİTA ATLA ${arrow}</span><strong>${target.key} · ${target.name}</strong><small>${locked?`Seviye ${target.tier} gerekli`:target.safe?'Savaşa kapalı deniz':`${THEMES[target.tier].name} · Seviye ${target.tier}`}</small><button ${locked?'disabled':''}>HARİTA ATLA <kbd>${keyLabel(settings.binds.jump)}</kbd></button>`;
   el.classList.add('visible');el.querySelector('button')!.onclick=()=>useJump();
