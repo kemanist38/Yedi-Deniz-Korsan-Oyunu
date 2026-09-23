@@ -140,6 +140,7 @@ const eliteAbility={active:0,cooldown:0};
 let soulStacks=0,soulTimer=0,shadowReady=true,valhallaTimer=0;
 const eliteShip=()=>eliteById(activeEliteShip);
 const eliteMaxHpFactor=()=>activeEliteShip==='glacial'?1.2:activeEliteShip==='void'?1.15:1;
+const effectiveMaxHp=()=>Math.round(state.maxHp*eliteMaxHpFactor());
 const eliteIncomingFactor=()=>activeEliteShip==='ironclad'?.75:activeEliteShip==='void'?.87:1;
 function eliteSpeedFactor(){
   if(activeEliteShip==='tempest')return 1.22;
@@ -153,14 +154,14 @@ function eliteDamageFactor(target:Target){
   if(activeEliteShip==='magma')n*=1.1;
   if(activeEliteShip==='void')n*=1.15;
   if(activeEliteShip==='ironclad'&&target.kind==='ship'&&target.tower)n*=1.4;
-  if(activeEliteShip==='ragnarok')n*=1+Math.floor((1-state.hp/state.maxHp)*10)*.04;
+  if(activeEliteShip==='ragnarok')n*=1+Math.floor((1-state.hp/effectiveMaxHp())*10)*.04;
   if(activeEliteShip==='bone')n*=1+soulStacks*.05;
   if(activeEliteShip==='sovereign'&&eliteAbility.active>0)n*=1.15;
   return n;
 }
 function eliteReloadFactor(){return activeEliteShip==='jade'?.85:activeEliteShip==='ironclad'?1.1:1;}
 function eliteCritFactor(){
-  let chance=activeEliteShip==='kraken'?.1:activeEliteShip==='void'?.1:0;
+  let chance=activeEliteShip==='kraken'?.1:activeEliteShip==='void'?.1:activeEliteShip==='bone'?.15:0;
   if(activeEliteShip==='shadow'&&shadowReady){shadowReady=false;return 2;}
   if(Math.random()<chance)return activeEliteShip==='bone'?2.25:2;
   return 1;
@@ -349,7 +350,7 @@ function broadsideCourse(target:Target){
 
 function toggleAttack(){if(!selected||!targetExists(selected)){toast('Önce bir hedef seç');return;}state.attacking=!state.attacking;if(state.attacking){state.repairing=false;fireAtTarget();}ui('attack').classList.toggle('active',state.attacking);toast(state.attacking?'Otomatik saldırı başladı':'Saldırı durduruldu');}
 function toggleRepair(){
-  if(state.hp>=state.maxHp){toast('Gövde zaten tamamen sağlam');return;}
+  if(state.hp>=effectiveMaxHp()){toast('Gövde zaten tamamen sağlam');return;}
   const danger=enemies.some(e=>e.aggro&&dist(e,player)<520)||monsters.some(m=>m.aggro&&dist(m,player)<520);
   if(danger||state.attacking){toast('Savaş durumundayken tamir yapılamaz');return;}
   state.repairing=!state.repairing;toast(state.repairing?'Açık deniz tamiri başladı':'Tamir durduruldu');
@@ -392,7 +393,7 @@ function respawn(){
   let spot=randomSeaPoint(0);
   for(let tries=0;tries<40;tries++){const p=randomSeaPoint(0);if(!enemies.some(e=>!e.tower&&dist(e,p)<650)&&!monsters.some(m=>dist(m,p)<650)){spot=p;break;}}
   player.x=spot.x;player.y=spot.y;player.speed=0;destination=null;routeTarget=null;camera.x=player.x;camera.y=player.y;
-  state.hp=Math.max(1,Math.round(state.maxHp*.1));state.repairing=true;state.invulnerable=4;state.attacking=false;selected=null;shots.length=0;salvoQueue.length=0;
+  state.hp=Math.max(1,Math.round(effectiveMaxHp()*.1));state.repairing=true;state.invulnerable=4;state.attacking=false;selected=null;shots.length=0;salvoQueue.length=0;
   enemies.forEach(e=>{e.aggro=false;e.combatTimer=0;});monsters.forEach(m=>{m.aggro=false;m.combatTimer=0;});ui('attack').classList.remove('active');
   mapFade=1;playSplash();saveAccount();toast(`Gemin battı — ${mapDef().key} ${coordLabel(player)} konumunda %10 gövdeyle yeniden doğdun`);
 }
@@ -444,7 +445,7 @@ function renderEliteShips(){
   ui('eliteShipGrid').querySelectorAll<HTMLElement>('[data-elite]').forEach(el=>el.onclick=()=>{previewEliteShip=el.dataset.elite as EliteShipId;renderEliteShips();});
   const ship=eliteById(previewEliteShip),locked=ship.level>unlocked;
   ui('eliteShipDetail').innerHTML=`<span class="eyebrow">Elit ${ship.level}</span><span class="elite-art elite-preview" role="img" aria-label="${ship.name}" style="--elite-x:${((ship.level-1)%5)*25}%;--elite-y:${Math.floor((ship.level-1)/5)*50}%"></span><h3>${ship.name}</h3><em>${ship.english}</em><b>${ship.role}</b><dl><dt>Pasif</dt><dd>${ship.passive}</dd><dt>${ship.ability}</dt><dd>${ship.abilityDescription}</dd></dl><button id="equipEliteShip" ${locked||ship.id===activeEliteShip?'disabled':''}>${ship.id===activeEliteShip?'AKTİF GEMİ':locked?'KİLİTLİ':'GEMİYİ SEÇ'}</button>`;
-  const equip=document.getElementById('equipEliteShip') as HTMLButtonElement|null;if(equip&&!equip.disabled)equip.onclick=()=>{const oldFactor=eliteMaxHpFactor();activeEliteShip=ship.id;const newFactor=eliteMaxHpFactor();state.hp=Math.min(state.maxHp,Math.max(1,state.hp*newFactor/oldFactor));eliteAbility.active=0;eliteAbility.cooldown=0;shadowReady=true;saveAccount();renderEliteShips();updateUI();toast(`${ship.name} amiral gemisi seçildi`);};
+  const equip=document.getElementById('equipEliteShip') as HTMLButtonElement|null;if(equip&&!equip.disabled)equip.onclick=()=>{const oldFactor=eliteMaxHpFactor();activeEliteShip=ship.id;const newFactor=eliteMaxHpFactor();state.hp=Math.min(effectiveMaxHp(),Math.max(1,state.hp*newFactor/oldFactor));eliteAbility.active=0;eliteAbility.cooldown=0;shadowReady=true;saveAccount();renderEliteShips();updateUI();toast(`${ship.name} amiral gemisi seçildi`);};
 }
 function openDevelopment(){pendingUpgrade=null;renderUpgrades();ui('developmentOverlay').classList.add('open');}
 function closeDevelopment(){pendingUpgrade=null;ui('developmentOverlay').classList.remove('open');}
@@ -608,9 +609,9 @@ function recordQuestProgress(kind:QuestDef['kind'],id:string){
 function updateUI(){
   ui('pearls').textContent=String(state.pearls).padStart(3,'0');ui('gold').textContent=String(state.gold).padStart(3,'0');
   document.querySelectorAll<HTMLElement>('#quickInventory [data-quick-item]').forEach(slot=>{const item=slot.dataset.quickItem as QuickItemId;const count=slot.querySelector('b');if(count)count.textContent=quickCount(item);slot.classList.toggle('active',item===state.ammo);});
-  ui('hpText').textContent=`${Math.ceil(state.hp)} / ${state.maxHp}`; (ui('hpBar') as HTMLElement).style.width=`${state.hp/state.maxHp*100}%`;
+  ui('hpText').textContent=`${Math.ceil(state.hp)} / ${effectiveMaxHp()}`; (ui('hpBar') as HTMLElement).style.width=`${state.hp/effectiveMaxHp()*100}%`;
   const need=xpNeed(state.level),needText=Number.isFinite(need)?String(need):'AZAMİ';ui('xpText').textContent=`${state.fame} / ${needText}`;(ui('xpBar') as HTMLElement).style.width=`${Number.isFinite(need)?Math.min(100,state.fame/need*100):100}%`;ui('level').textContent=String(state.level);ui('captainLevel').textContent=String(state.level);ui('profileElite').textContent=`${state.elitePoints} / 1500`;ui('profileBattle').textContent=`${state.battlePoints} / 500`;(ui('profileEliteBar') as HTMLElement).style.width=`${Math.min(100,state.elitePoints/15)}%`;(ui('profileBattleBar') as HTMLElement).style.width=`${Math.min(100,state.battlePoints/5)}%`;
-  (ui('xpHudBar') as HTMLElement).style.width=`${Number.isFinite(need)?Math.min(100,state.fame/need*100):100}%`;ui('xpHudText').textContent=`${state.fame} / ${needText}`;(ui('hpHudBar') as HTMLElement).style.width=`${Math.max(0,state.hp/state.maxHp*100)}%`;ui('hpHudText').textContent=`${Math.ceil(state.hp)} / ${state.maxHp}`;(ui('eliteBar') as HTMLElement).style.width=`${Math.min(100,state.elitePoints/15)}%`;ui('eliteText').textContent=`${state.elitePoints} / 1500`;(ui('battleBar') as HTMLElement).style.width=`${Math.min(100,state.battlePoints/5)}%`;ui('battleText').textContent=`${state.battlePoints} / 500`;
+  (ui('xpHudBar') as HTMLElement).style.width=`${Number.isFinite(need)?Math.min(100,state.fame/need*100):100}%`;ui('xpHudText').textContent=`${state.fame} / ${needText}`;(ui('hpHudBar') as HTMLElement).style.width=`${Math.max(0,state.hp/effectiveMaxHp()*100)}%`;ui('hpHudText').textContent=`${Math.ceil(state.hp)} / ${effectiveMaxHp()}`;(ui('eliteBar') as HTMLElement).style.width=`${Math.min(100,state.elitePoints/15)}%`;ui('eliteText').textContent=`${state.elitePoints} / 1500`;(ui('battleBar') as HTMLElement).style.width=`${Math.min(100,state.battlePoints/5)}%`;ui('battleText').textContent=`${state.battlePoints} / 500`;
   const quest=state.activeQuest===null?null:questById(state.activeQuest);ui('questTitle').textContent=quest?.title||'Görev seçilmedi';ui('questDescription').textContent=quest?.description||'Kaptan, yapmak istediğin görevi görev defterinden seçebilirsin.';ui('quest').textContent=quest?`${questProgress[quest.id]??0} / ${quest.required} ${questUnit(quest)}`:'Hazır olduğunda bir görev başlat';
   ui('reloadText').textContent=player.cooldown>0?`${player.cooldown.toFixed(1)} sn`:'HAZIR';ui('attack').classList.toggle('reloading',player.cooldown>0);
   ui('attackLabel').textContent=state.attacking?'SALDIRIYI İPTAL ET':'SALDIR';ui('attack').classList.toggle('active',state.attacking);
@@ -653,7 +654,7 @@ function update(dt:number){
     player.x=clamp(player.x+Math.sin(player.angle)*player.speed*dt,25,WORLD-25);player.y=clamp(player.y-Math.cos(player.angle)*player.speed*dt,25,WORLD-25);resolveIslandCollision();
   player.cooldown=Math.max(0,player.cooldown-dt);eliteAbility.active=Math.max(0,eliteAbility.active-dt);eliteAbility.cooldown=Math.max(0,eliteAbility.cooldown-dt);valhallaTimer=Math.max(0,valhallaTimer-dt);soulTimer=Math.max(0,soulTimer-dt);if(soulTimer<=0)soulStacks=0;if(activeEliteShip==='ironclad'&&eliteAbility.active>0)player.cooldown=0;state.invulnerable=Math.max(0,state.invulnerable-dt);collisionNotice=Math.max(0,collisionNotice-dt);camera.x+=(player.x-camera.x)*Math.min(1,dt*3);camera.y+=(player.y-camera.y)*Math.min(1,dt*3);camera.zoom+=(camera.targetZoom-camera.zoom)*Math.min(1,dt*7);
   for(let i=salvoQueue.length-1;i>=0;i--){salvoQueue[i].delay-=dt;if(salvoQueue[i].delay<=0){releaseSalvo(salvoQueue[i]);salvoQueue.splice(i,1);}}
-  if(state.repairing){state.hp=Math.min(state.maxHp,state.hp+state.maxHp*(.035+upgrades.repair*.008)*bonus.repair*dt);if(state.hp>=state.maxHp){state.repairing=false;saveAccount();ui('repair').classList.remove('active');toast('Gövde tamamen onarıldı');}}
+  if(state.repairing){state.hp=Math.min(effectiveMaxHp(),state.hp+effectiveMaxHp()*(.035+upgrades.repair*.008)*bonus.repair*dt);if(state.hp>=effectiveMaxHp()){state.repairing=false;saveAccount();ui('repair').classList.remove('active');toast('Gövde tamamen onarıldı');}}
   wakeClock-=dt;if(Math.abs(player.speed)>8&&wakeClock<=0){wakeClock=.1;particles.push({x:player.x-Math.sin(player.angle)*22,y:player.y+Math.cos(player.angle)*22,vx:-Math.sin(player.angle)*8,vy:Math.cos(player.angle)*8,life:.75,maxLife:.75,kind:'foam'});}
   monsters.forEach(m=>{m.phase+=dt;m.cooldown-=dt;m.slowTimer=Math.max(0,m.slowTimer-dt);if(m.aggro){m.combatTimer-=dt;if(m.combatTimer<=0||Math.hypot(m.x-m.homeX,m.y-m.homeY)>720)m.aggro=false;}if(m.aggro&&dist(m,player)<430&&m.cooldown<=0)monsterFire(m);});
   if(state.attacking&&selected){
@@ -683,13 +684,13 @@ function update(dt:number){
     if(s.owner==='player'){
       for(let j=enemies.length-1;j>=0&&s.life>0;j--){
         const e=enemies[j];
-        if(dist(s,e)<(e.hitRadius??25)){const hit=s.damage;s.hit=true;if(activeEliteShip==='crimson')state.hp=Math.min(state.maxHp,state.hp+hit*.07);if(activeEliteShip==='magma'&&Math.random()<.2)e.burnTimer=3;e.aggro=true;e.combatTimer=12;if(s.ammo==='chain')e.slowTimer=3;if(s.ammo==='fire')e.burnTimer=SPECIAL_AMMO.fire.burnSeconds;e.hp-=hit;damageText(e.x,e.y,hit);burst(e.x,e.y);playHit();s.life=0;
+        if(dist(s,e)<(e.hitRadius??25)){const hit=s.damage;s.hit=true;if(activeEliteShip==='crimson')state.hp=Math.min(effectiveMaxHp(),state.hp+hit*.07);if(activeEliteShip==='magma'&&Math.random()<.2)e.burnTimer=3;e.aggro=true;e.combatTimer=12;if(s.ammo==='chain')e.slowTimer=3;if(s.ammo==='fire')e.burnTimer=SPECIAL_AMMO.fire.burnSeconds;e.hp-=hit;damageText(e.x,e.y,hit);burst(e.x,e.y);playHit();s.life=0;
           if(e.hp<=0)sinkEnemy(e);
         }
       }
       for(let j=monsters.length-1;j>=0&&s.life>0;j--){
         const m=monsters[j];
-        if(dist(s,m)<m.radius){const hit=s.damage;s.hit=true;if(activeEliteShip==='crimson')state.hp=Math.min(state.maxHp,state.hp+hit*.07);if(activeEliteShip==='magma'&&Math.random()<.2)m.burnTimer=3;m.aggro=true;m.combatTimer=12;if(s.ammo==='chain')m.slowTimer=3;if(s.ammo==='fire')m.burnTimer=SPECIAL_AMMO.fire.burnSeconds;m.hp-=hit;damageText(m.x,m.y,hit);burst(m.x,m.y);playHit();s.life=0;
+        if(dist(s,m)<m.radius){const hit=s.damage;s.hit=true;if(activeEliteShip==='crimson')state.hp=Math.min(effectiveMaxHp(),state.hp+hit*.07);if(activeEliteShip==='magma'&&Math.random()<.2)m.burnTimer=3;m.aggro=true;m.combatTimer=12;if(s.ammo==='chain')m.slowTimer=3;if(s.ammo==='fire')m.burnTimer=SPECIAL_AMMO.fire.burnSeconds;m.hp-=hit;damageText(m.x,m.y,hit);burst(m.x,m.y);playHit();s.life=0;
           if(m.hp<=0)defeatMonster(m);
         }
       }
@@ -697,7 +698,7 @@ function update(dt:number){
     if(s.life<=0)shots.splice(i,1);
   }
   updateLootChests(dt);updateArsenal(dt);updateEvents(dt);
-  if(insideOwnLagoon(player)&&state.hp<state.maxHp){state.hp=Math.min(state.maxHp,state.hp+state.maxHp*.06*dt);if(state.hp>=state.maxHp)saveAccount();}
+  if(insideOwnLagoon(player)&&state.hp<effectiveMaxHp()){state.hp=Math.min(effectiveMaxHp(),state.hp+effectiveMaxHp()*.06*dt);if(state.hp>=effectiveMaxHp())saveAccount();}
   updateJumpPrompt();updateCoordBadge();mapFade=Math.max(0,mapFade-dt*1.6);updateWeather(dt);
   for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.97;p.vy*=.97;p.life-=dt;if(p.life<=0)particles.splice(i,1);}
   let need=xpNeed(state.level);while(state.fame>=need){state.fame-=need;state.level++;state.maxHp+=20;state.hp=state.maxHp;state.pearls+=10;saveAccount();playLevelUp();rewardNotice(`SEVİYE ${state.level}   +20 Azami Gövde   +10 İnci   +1 Yetenek Puanı   ${state.level}/1 AÇILDI`);toast(`Seviye ${state.level}! Yeni denizler açıldı`);need=xpNeed(state.level);}
@@ -724,7 +725,7 @@ function defeatMonster(m:Monster){
 function updateTower(e:Enemy,dt:number){
   const d=dist(e,player);e.cooldown-=dt;e.combatTimer=Math.max(0,e.combatTimer-dt);e.slowTimer=0;e.burnTimer=Math.max(0,(e.burnTimer??0));
   e.aggro=!mapDef().safe&&(d<(e.fireRange??460)+30||e.combatTimer>0);
-  if(e.hp<e.maxHp)e.hp=Math.min(e.maxHp,e.hp+e.maxHp*(e.aggro?.004:.02)*dt);
+  if(e.hp<e.maxHp)e.hp=Math.min(e.maxHp,e.hp+e.maxHp*(e.aggro?.004:.02)*(activeEliteShip==='plague'&&e.burnTimer&&e.burnTimer>0?.5:1)*dt);
   if(e.aggro&&d<(e.fireRange??460)&&e.cooldown<=0&&state.invulnerable<=0){const tx=e.x,ty=e.y-30,a=Math.atan2(player.y-ty,player.x-tx);
     for(const off of [-.05,.05])shots.push({x:tx,y:ty,vx:Math.cos(a+off)*320,vy:Math.sin(a+off)*320,life:2.2,owner:'enemy',damage:e.damage,hit:false,ammo:theme().fleet==='lava'?'fire':'iron'});
     playEnemyCannon(d,(e.x-player.x)/600);e.cooldown=e.reload+Math.random()*.4;}
@@ -829,7 +830,7 @@ function activateEliteAbility(){
 function activateAbility(id:'speed'|'shield'){
   const t=abilityTimers[id],a=ABILITIES[id];
   if(t.cooldown>0){toast(`${a.name} ${Math.ceil(t.cooldown)} sn sonra hazır`);return;}
-  t.active=a.duration;t.cooldown=a.cooldown*bonus.cooldown;toast(`${a.name} etkin`);if(id==='speed')playWind();else playShield();
+  t.active=a.duration;t.cooldown=a.cooldown*bonus.cooldown*(activeEliteShip==='atlantean'&&id==='shield'?.666:1);toast(`${a.name} etkin`);if(id==='speed')playWind();else playShield();
   if(id==='speed')for(let n=0;n<10;n++)particles.push({x:player.x+(Math.random()-.5)*30,y:player.y+(Math.random()-.5)*30,vx:-Math.sin(player.angle)*60,vy:Math.cos(player.angle)*60,life:.6,maxLife:.6,kind:'foam'});
 }
 function dropMine(){
