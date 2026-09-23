@@ -208,7 +208,7 @@ button.event-row{cursor:pointer}
 /* ===== Arayüz revizyonu ===== */
 .top-shortcuts .nav-img{display:block;width:30px;height:30px;margin:0 auto;object-fit:contain;filter:drop-shadow(0 2px 3px #000a);pointer-events:none}
 /* Alt dok: can/tecrübe barları ile gülle ve sarf sıraları aynı genişlikte */
-:root{--dock-w:408px}
+:root{--dock-w:352px}
 .bottom-command{gap:4px}
 .bottom-command .status-bars{box-sizing:border-box;width:var(--dock-w);grid-template-columns:1fr 34px 1fr}
 .bottom-command .recenter{width:34px;height:34px;font-size:17px}
@@ -223,7 +223,7 @@ button.event-row{cursor:pointer}
 .bottom-command .quick-slot.active{box-shadow:0 0 0 2px #f1c662,0 0 12px #f1c66277}
 .bottom-command .quick-slot:not(.empty):hover{transform:translateY(-1px)}
 .quick-inventory .quick-slot.ammo-row:nth-child(6)::after{content:'';position:absolute;left:-400%;right:0;bottom:-3px;height:1px}
-@media (max-width:900px),(max-height:520px){:root{--dock-w:296px}.bottom-command .status-bars{grid-template-columns:1fr 28px 1fr}.bottom-command .recenter{width:28px;height:28px;font-size:14px}.bottom-command .quick-slot>b{font-size:9px}.bottom-command .quick-slot>kbd{display:none}}
+@media (max-width:900px),(max-height:520px){:root{--dock-w:270px}.bottom-command .status-bars{grid-template-columns:1fr 28px 1fr}.bottom-command .recenter{width:28px;height:28px;font-size:14px}.bottom-command .quick-slot>b{font-size:9px}.bottom-command .quick-slot>kbd{display:none}}
 /* Savaş butonları: sağ altta başparmakla ulaşılabilen yay */
 .combat-controls{pointer-events:none;position:absolute;right:14px;bottom:14px;z-index:10;width:206px;height:206px;display:block}
 .combat-controls .combat-action{pointer-events:auto;position:absolute;width:58px;height:58px;padding:0;border:0;border-radius:50%;background:url(/assets/ui-ring-v1.webp) center/100% 100% no-repeat;box-shadow:0 6px 14px #000a;color:#f3e2b8;display:grid;place-items:center;overflow:visible}
@@ -350,3 +350,35 @@ button.event-row{cursor:pointer}
 .starter-ship-art .sprite{width:76px;height:76px}.starter-preview{display:block;width:100%;height:220px;border-radius:8px;background-image:var(--starter-ship),radial-gradient(circle,#31515b88,#07171b 70%);background-repeat:no-repeat;background-position:center;background-size:contain;box-shadow:inset 0 0 28px #0008}
 .starter-preview .sprite{width:130px;height:130px}.elite-card.starter-card{border-color:#648d9266}.elite-card.starter-card.active{border-color:#8ed6d2;box-shadow:inset 0 0 22px #55bdb530}
 .combat-action.elite.ship-hidden{display:none}
+
+
+/* Raster navigasyon düğmeleri */
+.world-map-button{display:grid;place-items:center;overflow:visible;padding:4px}
+.world-map-button img{display:block;width:34px;height:34px;object-fit:contain;filter:drop-shadow(0 3px 4px #000c);pointer-events:none}
+.world-map-button span{position:absolute;top:40px;left:50%;transform:translateX(-50%);white-space:nowrap}
+.top-shortcuts #shipNavIcon{width:36px;height:32px;object-fit:contain;filter:drop-shadow(0 3px 4px #000c)}
+
+/* Depo solda, gemiye takılan toplar sağda */
+.cannon-window{width:min(930px,95vw)}
+.cannon-rows{gap:8px}
+.cannon-board-head,.cannon-transfer-row{display:grid;grid-template-columns:minmax(250px,1fr) 118px minmax(250px,1fr);gap:10px;align-items:stretch}
+.cannon-board-head{padding:7px 10px;border:1px solid #a8793d55;border-radius:6px;background:#07171c;color:#e7c77f;text-align:center;font:700 12px Cinzel;letter-spacing:.12em}
+.cannon-transfer-row{padding:7px;border:1px solid #6f532f77;border-radius:7px;background:linear-gradient(90deg,#22130ef2,#08191df5 48%,#0b2025f5)}
+.cannon-transfer-row.active{border-color:#d4a64c;box-shadow:inset 0 0 20px #d4a64c18}
+.cannon-transfer-row.locked{opacity:.58}
+.cannon-side{display:grid;grid-template-columns:68px 1fr;gap:9px;align-items:center;min-width:0;padding:7px;border:1px solid #8c673d44;border-radius:6px;background:#07161bd9}
+.cannon-side.ship-side{background:#0b2024e8}
+.cannon-side h3{margin:0;color:#f3d496;font:700 13px Cinzel}
+.cannon-side small{display:block;overflow:hidden;color:#9fb4ae;font:500 9px Inter;white-space:nowrap;text-overflow:ellipsis}
+.cannon-side strong{display:block;margin-top:4px;color:#f5dfae;font:700 12px Inter}
+.cannon-side .cannon-row-equip{margin-top:5px;padding:4px 7px;border:1px solid #b78b4777;border-radius:4px;background:#17333a;color:#f2d69a;font:700 8px Cinzel;cursor:pointer}
+.cannon-transfer-actions{display:grid;align-content:center;gap:6px}
+.cannon-transfer-actions input{box-sizing:border-box;width:100%;padding:6px;border:1px solid #b58d4d66;border-radius:4px;background:#07171c;color:#f4dda9;text-align:center;font:700 12px Inter}
+.cannon-transfer-actions div{display:grid;grid-template-columns:repeat(4,1fr);gap:3px}
+.cannon-transfer-actions button{height:28px;border:1px solid #b58d4d66;border-radius:4px;background:#12313a;color:#f0d296;font-size:14px;cursor:pointer}
+.cannon-transfer-actions button:disabled,.cannon-row-equip:disabled{opacity:.35;cursor:default}
+@media(max-width:720px){
+  .cannon-board-head,.cannon-transfer-row{grid-template-columns:minmax(130px,1fr) 82px minmax(130px,1fr);gap:5px}
+  .cannon-side{grid-template-columns:42px 1fr;padding:4px}.cannon-row-art{width:42px;height:38px}
+  .cannon-side small{display:none}.cannon-transfer-actions button{font-size:11px}
+}
