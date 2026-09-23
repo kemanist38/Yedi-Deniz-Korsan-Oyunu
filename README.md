@@ -43,9 +43,10 @@ Dünya haritası (`M` veya **DÜNYA**) 6 × 3 ızgaradır:
 
 ### Filo adaları
 
-Her denizde bir filo adası vardır: düzensiz kumsallı ormanlık bir ada, koyu mazgallı taş sur halkası, surun üzerinde 8 sekizgen konik çatılı kule, ortada piramit ahşap çatılı taş burç ve güneydeki kanalla denize açılan iskeleli bir lagün.
-- **Kendi filonun adası:** Güneydeki kanaldan lagüne girilir (rota otomatik olarak kanal ağzından çizilir); lagünde gövde kendiliğinden onarılır ve kuleler düşmanlara ateş eder.
-- **Rakip ya da tarafsız ada:** İçine girilemez. Kuleleri yaklaşan gemiye ateş eder ve filo savaşı ölçeğinde dayanıklıdır; tek gemi yıkamaz.
+Filo adaları 5. seviye ve üstü denizlerde bulunur: sur halkasıyla çevrili, 8 kuleli bir lagün kalesi. Lagüne güneydeki dar kanaldan girilir.
+- **Seyir:** Adanın hangi bölümünün kara, hangisinin su olduğu görselden üretilen maskeyle belirlenir (`src/fleetMask.ts`, `tools/asset-studio/fleet-mask.mjs`). Adaya ya da lagüne tıklayınca rota adanın çevresinden dolaşıp kanaldan içeri çizilir; gemi kıyı boyunca kayar, karaya çıkmaz.
+- **Kendi filonun adası:** Lagünde gövde kendiliğinden onarılır ve kuleler düşmanlara ateş eder.
+- **Rakip ada:** Kuleleri yaklaşan gemiye ateş eder ve filo savaşı ölçeğinde dayanıklıdır; tek gemi yıkamaz. **Test modu (`FLEET_TEST_ENTRY`) açıkken rakip adaların lagününe de girilebilir.**
 
 ### Seviye ve görevler
 
