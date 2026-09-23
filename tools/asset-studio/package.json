@@ -1,0 +1,13 @@
+{
+  "name": "kara-yelken-asset-studio",
+  "private": true,
+  "type": "module",
+  "description": "Kara Yelken raster assetlerini 3B modellerden üreten atölye",
+  "scripts": {
+    "render": "node render.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.55.0",
+    "three": "^0.180.0"
+  }
+}
