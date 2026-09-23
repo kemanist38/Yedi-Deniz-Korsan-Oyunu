@@ -93,6 +93,19 @@ const rasterItemAssets:Partial<Record<QuickItemId,string>>={};
 rasterItemAssets.fire=SPECIAL_AMMO.fire.icon;rasterItemAssets.grape=SPECIAL_AMMO.grape.icon;rasterItemAssets.mine=ABILITIES.mine.icon;rasterItemAssets.shield=ABILITIES.shield.icon;rasterItemAssets.speed=ABILITIES.speed.icon;rasterItemAssets.repairkit='/assets/icon-repair-v1.webp';
 (['iron','chain'] as QuickItemId[]).forEach(id=>fetch(`/assets/ammo-${id}-v1.b64`).then(r=>r.text()).then(data=>{rasterItemAssets[id]=`data:image/webp;base64,${data}`;renderQuickSlots();}));
 let eliteAtlasUrl='';const eliteAtlasImage=new Image();eliteAtlasImage.decoding='async';fetch('/assets/elite-ships-atlas-v1.b64').then(r=>r.text()).then(data=>{eliteAtlasUrl=`data:image/webp;base64,${data.trim()}`;eliteAtlasImage.src=eliteAtlasUrl;ui('eliteShipOverlay')?.style.setProperty('--elite-atlas',`url("${eliteAtlasUrl}")`);}).catch(()=>{});
+const eliteDirectionalImages=[new Image(),new Image(),new Image()];
+const eliteDirectionalParts=[
+  ['aa','ab','ac','ad'],
+  ['aa','ab','ac','ad','ae'],
+  ['aa','ab','ac','ad']
+] as const;
+eliteDirectionalImages.forEach((image,index)=>{
+  image.decoding='async';
+  const range=index===0?'01-05':index===1?'06-10':'11-15';
+  Promise.all(eliteDirectionalParts[index].map(part=>fetch(`/assets/elite-directions-${range}-v1.b64.${part}`).then(response=>response.text())))
+    .then(parts=>{image.src=`data:image/webp;base64,${parts.join('')}`;})
+    .catch(()=>{});
+});
 const ui = (id:string) => document.getElementById(id)!;
 const keys = new Set<string>();
 const QUEST_STORAGE='kara-yelken-quests-v2';
@@ -924,28 +937,32 @@ function drawShip(p:Vec,angle:number,color:string,scale=1){
   ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(1,-29);ctx.lineTo(14,-24);ctx.lineTo(1,-19);ctx.closePath();ctx.fill();
   ctx.fillStyle='#171817';for(const x of [-15,15])for(const y of [-8,3,14]){ctx.beginPath();ctx.arc(x,y,2.2,0,7);ctx.fill();}ctx.restore();
 }
-type SingleViewShipFrame={image:CanvasImageSource;sx:number;sy:number;sw:number;sh:number;width?:number;height?:number;baseFacing?:'left'|'right'};
-function drawSingleViewShip(frame:SingleViewShipFrame,s:Vec){
-  // Tek perspektifli gemiyi deniz düzlemine kilitler. Hareket yönü yalnızca
-  // sağ/sol ayna ve küçük bir dümen yatışı üretir; sprite hiçbir zaman dikleşmez veya ters dönmez.
-  const forwardX=Math.sin(player.angle),forwardY=-Math.cos(player.angle);
-  const facesRight=forwardX>.08||(Math.abs(forwardX)<=.08&&Math.cos(player.angle)>=0);
-  const mirror=frame.baseFacing==='right'?!facesRight:facesRight;
-  const helmLean=clamp(forwardX*.055+forwardY*.018,-.065,.065);
+function eliteDirectionFrame(angle:number){
+  // Oyun açısı: 0=Kuzey, π/2=Doğu. Atlas sütunları: K, KD, D, GD, G, GB, B, KB.
+  return(Math.round(angle/(Math.PI/4))+8)%8;
+}
+function drawEliteDirectionalShip(s:Vec){
+  const level=eliteShip().level,index=level-1,group=Math.floor(index/5),row=index%5;
+  const image=eliteDirectionalImages[group];
+  if(!image?.complete||!image.naturalWidth)return false;
+  const column=eliteDirectionFrame(player.angle),cellW=image.naturalWidth/8,cellH=image.naturalHeight/5;
   const bob=Math.sin(performance.now()/420)*1.8;
-  const width=frame.width??116,height=frame.height??116;
-  ctx.save();ctx.translate(s.x,s.y+bob);ctx.rotate(helmLean);if(mirror)ctx.scale(-1,1);
+  ctx.save();ctx.translate(s.x,s.y+bob);
   ctx.globalAlpha=state.invulnerable&&Math.floor(performance.now()/120)%2?.55:1;
   ctx.shadowColor='#000b';ctx.shadowBlur=13;
-  ctx.drawImage(frame.image,frame.sx,frame.sy,frame.sw,frame.sh,-width/2,-height/2,width,height);
-  ctx.restore();
+  ctx.drawImage(image,column*cellW,row*cellH,cellW,cellH,-58,-58,116,116);
+  ctx.restore();return true;
 }
 function drawPlayerShip(){
   const s=worldToScreen(player);
-  if(eliteEnabled()&&eliteAtlasImage.complete&&eliteAtlasImage.naturalWidth){
-    const index=eliteShip().level-1,col=index%5,row=Math.floor(index/5);
-    drawSingleViewShip({image:eliteAtlasImage,sx:col*300,sy:row*300,sw:300,sh:300,baseFacing:'left'},s);
-    return;
+  if(eliteEnabled()){
+    if(drawEliteDirectionalShip(s))return;
+    // Ağ bağlantısında yön atlası henüz yüklenmediyse gemiyi görünür tutan geçici önizleme.
+    if(eliteAtlasImage.complete&&eliteAtlasImage.naturalWidth){
+      const index=eliteShip().level-1,col=index%5,row=Math.floor(index/5),bob=Math.sin(performance.now()/420)*1.8;
+      ctx.save();ctx.translate(s.x,s.y+bob);ctx.globalAlpha=state.invulnerable&&Math.floor(performance.now()/120)%2?.55:1;ctx.shadowColor='#000b';ctx.shadowBlur=13;
+      ctx.drawImage(eliteAtlasImage,col*300,row*300,300,300,-58,-58,116,116);ctx.restore();return;
+    }
   }
 
   if(!directionalShipImage.complete||!directionalShipImage.naturalWidth){
