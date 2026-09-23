@@ -33,11 +33,15 @@ function sample(G,x,z){const fx=clamp((x+500)/U-.5,0,N-1.001),fz=clamp((z+500)/U
   return G[k]*(1-u)*(1-v)+G[k+1]*u*(1-v)+G[k+N]*(1-u)*v+G[k+N+1]*u*v;}
 
 // ---------------------------------------------------------------- görselden bölge haritası
+// Giriş kanalı: lagünden güney denizine açılan geniş su koridoru (birden çok gemi yan yana girebilsin)
+export const CHANNEL={x:0,y0:70,y1:520,hw:80};
+const inChannel=(x,z,n=0)=>z>CHANNEL.y0-40&&Math.abs(x-CHANNEL.x)<CHANNEL.hw*smooth(CHANNEL.y0-40,CHANNEL.y0+30,z)+n;
 export async function readMap(src,mask){
   const im=new Image();im.src=src;await im.decode();const [c,x]=T.canvas(N,N);x.imageSmoothingQuality='high';x.drawImage(im,0,0,N,N);const px=x.getImageData(0,0,N,N).data;
   const grid=new Uint8Array(mask.n*mask.n);{let k=0;for(const part of mask.rle.split(',')){const v=+part[0],n=parseInt(part.slice(1),36);grid.fill(v,k,k+n);k+=n;}}
   const cellOf=(k)=>{const i=k%N,j=(k-i)/N;return grid[clamp(Math.floor((j+.5)*U/mask.cell),0,mask.n-1)*mask.n+clamp(Math.floor((i+.5)*U/mask.cell),0,mask.n-1)];};
-  const water=new Uint8Array(N*N);for(let k=0;k<N*N;k++)water[k]=cellOf(k)?1:0;
+  const chan=new Uint8Array(N*N),cn=T.noise2(515);for(let k=0;k<N*N;k++){const i=k%N,j=(k-i)/N,x=(i+.5)*U-500,z=(j+.5)*U-500;chan[k]=inChannel(x,z,cn(z*.03,1,2)*8)?1:0;}
+  const water=new Uint8Array(N*N);for(let k=0;k<N*N;k++)water[k]=cellOf(k)||chan[k]?1:0;
   const land=new Float32Array(N*N),sand=new Float32Array(N*N),veg=new Float32Array(N*N),rock=new Float32Array(N*N);
   for(let k=0;k<N*N;k++){const R=px[k*4],G=px[k*4+1],B=px[k*4+2],A=px[k*4+3];
     if(A<70||(B-R>12&&G-R>8)||water[k])continue;land[k]=1;const l=(R+G+B)/3,sat=Math.max(R,G,B)-Math.min(R,G,B);
@@ -46,13 +50,13 @@ export async function readMap(src,mask){
   const isLand=new Uint8Array(N*N);for(let k=0;k<N*N;k++)isLand[k]=landS[k]>.5?1:0;
   const dL=distance(isLand),dW=distance(isLand.map(v=>1-v));
   // Lagün/kanal: seyir maskesindeki 2 değerli hücreler, yumuşatılmış
-  const lag=new Float32Array(N*N);for(let k=0;k<N*N;k++)lag[k]=cellOf(k)===2?1:0;
+  const lag=new Float32Array(N*N);for(let k=0;k<N*N;k++)lag[k]=cellOf(k)===2||chan[k]?1:0;
   const lagS=blur(lag,6,3).map(v=>clamp(v*2.4));
   const notOuter=new Uint8Array(N*N),notLag=new Uint8Array(N*N);for(let k=0;k<N*N;k++){notOuter[k]=isLand[k]||lagS[k]>.5?1:0;notLag[k]=isLand[k]||lagS[k]<=.5?1:0;}
   const dO=distance(notOuter),dLg=distance(notLag),sandB=blur(sand,5,2),rockB=blur(rock,5,2);
   // Seyre kapalı ama görselde su olan yerler: kıyı önü kayalıkları buraya dikilir
   const reef=new Uint8Array(N*N);for(let k=0;k<N*N;k++)reef[k]=!isLand[k]&&!water[k]&&land[k]===0?1:0;
-  return{isLand,landS,sandS,vegS,rockS,dL,dW,lagS,dO,dLg,sandB,rockB,reef};
+  return{isLand,landS,sandS,vegS,rockS,dL,dW,lagS,dO,dLg,sandB,rockB,reef,chan};
 }
 
 // ---------------------------------------------------------------- yapı yerleşimi
@@ -120,7 +124,7 @@ function waterTexture(M,n,reefs=[]){
     // kıyı köpüğü: kıyıya yapışık şerit + kırık ikinci dalga çizgisi
     const f1=smooth(5,0,w)*(.75+n(x0*.2,z0*.2,2)*.4),f2=smooth(2.2,0,Math.abs(w-8-n(x0*.05,z0*.05,2)*3))*clamp(n(x0*.08+9,z0*.08,2)*1.6+.3)*.55;
     const f=clamp(Math.max(f1,f2)*(1-lg*.35));col=mixHex(col,[236,250,244],f);
-    const outer=clamp(1-(w-2)/24)*.8,a=Math.max(outer*outer*outer,lg);
+    const a=Math.pow(clamp(1-(w-2)/26)*.85,3);
     d[o]=col[0];d[o+1]=col[1];d[o+2]=col[2];d[o+3]=255*Math.max(a,f);}
   x.putImageData(img,0,0);
   // kaya adacıklarının çevresinde köpük

@@ -15,6 +15,8 @@ const only=process.argv.slice(2);
 function islandArgs(){const root=path.resolve(here,'../..'),src='data:image/webp;base64,'+fs.readFileSync(path.join(root,'public/assets/fleet-base-v3.b64'),'utf8').trim();
   const rle=fs.readFileSync(path.join(root,'src/fleetMask.ts'),'utf8').match(/rle:'([^']+)'/)[1],fleet=fs.readFileSync(path.join(root,'src/campaign.ts'),'utf8'),towers=JSON.parse(fleet.match(/towers:(\[\[.*?\]\])/)[1]);
   const offs=JSON.parse(fs.readFileSync(path.join(root,'src/fleetBastions.ts'),'utf8').match(/offsets:(\[.*\])\}/)[1]);
+  // kapı kuleleri geniş kanal için dışa alınır (src/campaign.ts FLEET.towers ile aynı tutulmalı)
+  const GATE_X=128;towers[3][0]=-GATE_X;towers[4][0]=GATE_X;
   return{src,mask:{n:125,cell:8,rle},pads:towers.map(([x,y],i)=>[x,y,offs[i].px,offs[i].py])};}
 const jobs={
   'enemy-scout-v1':()=>page.evaluate(()=>renderShipSheet('scout')),
