@@ -20,6 +20,8 @@ const out=await p.evaluate(async([src,TOWERS])=>{
   // Kenar bölgesinde (disk halkası ve gövde yanları) su, kum ve yaprak renklerini ayıkla
   const edgeAt=(t,x,y)=>{const [wx,wy,dx,dy]=t,cx=(wx+500)*K+dx,cy=(wy+500)*K+dy,e=((x-cx)/RX)**2+((y-cy)/RY)**2;return y<cy?e>.62:Math.abs(x-cx)>HW*.8;};
   const background=(r,g,bl)=>(g>r+12&&g>bl+4)||(bl-r>25&&g-r>15)||(r>165&&g>145&&bl>105);
+  // Kesim seviyesi: kulenin üstü silinir, alt gövde taş kütük (kaide) olarak kalır; kaide bu seviyeye oturur.
+  const cutY=t=>{const [wx,wy,dx,dy,base]=t;return(wy+500)*K+dy+Math.min(base,48)*.62;};
   // 1) Burç sprite'ları
   const atlas=document.createElement('canvas');atlas.width=CELL_W*4;atlas.height=CELL_H*2;const ax=atlas.getContext('2d'),meta=[];
   TOWERS.forEach((t,k)=>{const [wx,wy,dx,dy]=t,cx=(wx+500)*K+dx,cy=(wy+500)*K+dy,x0=Math.round(cx-CELL_W/2),y0=Math.round(cy-RY-6),cell=ax.createImageData(CELL_W,CELL_H);
@@ -28,12 +30,12 @@ const out=await p.evaluate(async([src,TOWERS])=>{
     // Kuleye göre çizim ofseti (dünya birimi): karenin sol-üst köşesi − kule konumu
     meta.push({ox:+(x0/K-500-wx).toFixed(2),oy:+(y0/K-500-wy).toFixed(2)});});
   // 2) Delik (tüm kulelerin maskesi, 3 px genişletilmiş)
-  const hole=new Uint8Array(W*W);TOWERS.forEach(t=>{const [wx,wy,dx,dy,base]=t,cx=(wx+500)*K+dx,cy=(wy+500)*K+dy;for(let y=Math.floor(cy-RY-8);y<cy+base+HW;y++)for(let x=Math.floor(cx-RX-8);x<cx+RX+8;x++){if(x<0||y<0||x>=W||y>=W)continue;let m=0;for(const [ox,oy] of [[0,0],[3,0],[-3,0],[0,3],[0,-3]])m=Math.max(m,maskAt(t,x+ox+.5,y+oy+.5));if(m>0)hole[y*W+x]=1;}});
+  const hole=new Uint8Array(W*W);TOWERS.forEach(t=>{const [wx,wy,dx,dy,base]=t,cx=(wx+500)*K+dx,cy=(wy+500)*K+dy;for(let y=Math.floor(cy-RY-8);y<cy+base+HW;y++)for(let x=Math.floor(cx-RX-8);x<cx+RX+8;x++){if(x<0||y<0||x>=W||y>=W)continue;if(y>cutY(t)+2)continue;let m=0;for(const [ox,oy] of [[0,0],[3,0],[-3,0],[0,3],[0,-3]])m=Math.max(m,maskAt(t,x+ox+.5,y+oy+.5));if(m>0)hole[y*W+x]=1;}});
   const forbidden=new Uint8Array(W*W);for(let y=0;y<W;y++)for(let x=0;x<W;x++){if(!hole[y*W+x])continue;for(let dy=-10;dy<=10;dy+=2)for(let dx=-10;dx<=10;dx+=2){const nx=x+dx,ny=y+dy;if(nx>=0&&ny>=0&&nx<W&&ny<W)forbidden[ny*W+nx]=1;}}
   // 3) Doku yamama: kenardan içe doğru 8 px bloklar, 4 px örtüşme; kaynak blok komşu bölgeden en iyi eşleşme
   const B=8,O=4,S=B+2*O;
   TOWERS.forEach((t,k)=>{const [wx,wy,dx,dy,base]=t,cx=Math.round((wx+500)*K+dx),cy=Math.round((wy+500)*K+dy);
-    const bx0=cx-RX-12,by0=cy-RY-12,bx1=cx+RX+12,by1=cy+base+HW*.5+6;let guard=0;
+    const bx0=cx-RX-12,by0=cy-RY-12,bx1=cx+RX+12,by1=cutY(t)+8;let guard=0;
     for(;;){if(++guard>4000)break;let best=null,bestKnown=-1;
       for(let by=by0;by<by1;by+=B)for(let bx=bx0;bx<bx1;bx+=B){let unk=0,known=0;for(let y=by-O;y<by+B+O;y++)for(let x=bx-O;x<bx+B+O;x++){if(x<0||y<0||x>=W||y>=W)continue;const h=hole[y*W+x];if(h&&x>=bx&&x<bx+B&&y>=by&&y<by+B)unk++;else if(!h)known++;}
         if(unk>0&&known>bestKnown){bestKnown=known;best=[bx,by];}}
@@ -41,14 +43,15 @@ const out=await p.evaluate(async([src,TOWERS])=>{
       for(let sy=by-150;sy<=by+150;sy+=3)for(let sx=bx-170;sx<=bx+170;sx+=3){if(sx-O<0||sy-O<0||sx+B+O>=W||sy+B+O>=W)continue;
         if(forbidden[(sy+B/2)*W+sx+B/2]||forbidden[(sy-O)*W+sx-O]||forbidden[(sy+B+O-1)*W+sx+B+O-1]||forbidden[(sy-O)*W+sx+B+O-1]||forbidden[(sy+B+O-1)*W+sx-O])continue;
         if(D[((sy+B/2)*W+sx+B/2)*4+3]<200)continue;
-        let cost=0,n=0;for(let y=-O;y<B+O&&cost<bestCost*1.02*Math.max(n,1)/Math.max(n,1)+1e12;y+=1)for(let x=-O;x<B+O;x+=1){const tx=bx+x,ty=by+y;if(tx<0||ty<0||tx>=W||ty>=W||hole[ty*W+tx])continue;const i=(ty*W+tx)*4,j=((sy+y)*W+sx+x)*4;const r=D[i]-D[j],g=D[i+1]-D[j+1],bb=D[i+2]-D[j+2];cost+=r*r+g*g+bb*bb;n++;}
-        cost=n?cost/n:Infinity;cost+=Math.abs(sy-by)*.6;if(cost<bestCost){bestCost=cost;bs=[sx,sy];}}
+        // Örtüşen bilinen piksellerle fark + blok ortalama renk farkı (suya kum, duvara yaprak yamanmasını önler)
+        let cost=0,n=0,kr=0,kg=0,kb=0,sr=0,sg=0,sb=0;for(let y=-O;y<B+O;y+=1)for(let x=-O;x<B+O;x+=1){const tx=bx+x,ty=by+y,j=((sy+y)*W+sx+x)*4;sr+=D[j];sg+=D[j+1];sb+=D[j+2];if(tx<0||ty<0||tx>=W||ty>=W||hole[ty*W+tx])continue;const i=(ty*W+tx)*4;const r=D[i]-D[j],g=D[i+1]-D[j+1],bb=D[i+2]-D[j+2];cost+=r*r+g*g+bb*bb;kr+=D[i];kg+=D[i+1];kb+=D[i+2];n++;}
+        if(!n)continue;const T=S*S,sandy=(r,g,b)=>r>150&&g>130&&b>95&&r>b+30;if(sandy(sr/T,sg/T,sb/T)&&!sandy(kr/n,kg/n,kb/n))continue;cost=cost/n+((kr/n-sr/T)**2+(kg/n-sg/T)**2+(kb/n-sb/T)**2)*.4;cost+=Math.abs(sy-by)*.6;if(cost<bestCost){bestCost=cost;bs=[sx,sy];}}
       if(!bs){for(let y=by;y<by+B;y++)for(let x=bx;x<bx+B;x++)if(x>=0&&y>=0&&x<W&&y<W)hole[y*W+x]=0;continue;}
       for(let y=0;y<B;y++)for(let x=0;x<B;x++){const tx=bx+x,ty=by+y;if(tx<0||ty<0||tx>=W||ty>=W||!hole[ty*W+tx])continue;const i=(ty*W+tx)*4,j=((bs[1]+y)*W+bs[0]+x)*4;D[i]=D[j];D[i+1]=D[j+1];D[i+2]=D[j+2];D[i+3]=D[j+3];hole[ty*W+tx]=0;}}
   });
   cx0.putImageData(img,0,0);
   // 4) Taş dikme kaidesi: burcun tabanında yuvarlak temel, taş halka ve harç izleri
-  TOWERS.forEach((t,k)=>{const [wx,wy,dx,dy,base]=t,cx=(wx+500)*K+dx,cy=(wy+500)*K+dy,gy=cy+Math.min(base,48)*.62;
+  TOWERS.forEach((t,k)=>{const [wx,wy,dx,dy]=t,cx=(wx+500)*K+dx,gy=cutY(t);
     const x=cx0;x.save();
     x.fillStyle='rgba(0,0,0,.35)';x.beginPath();x.ellipse(cx+3,gy+6,RX+4,RX*.52,0,0,7);x.fill();
     const side=x.createLinearGradient(0,gy,0,gy+6);side.addColorStop(0,'#5e574e');side.addColorStop(1,'#34302b');x.fillStyle=side;x.beginPath();x.ellipse(cx,gy+5,RX,RX*.48,0,0,Math.PI);x.lineTo(cx-RX,gy);x.ellipse(cx,gy,RX,RX*.48,0,Math.PI,0,true);x.fill();

@@ -49,11 +49,15 @@ Filo adaları 5. seviye ve üstü denizlerde bulunur: sur halkasıyla çevrili, 
 - **Rakip ada:** Kuleleri yaklaşan gemiye ateş eder ve filo savaşı ölçeğinde dayanıklıdır; tek gemi yıkamaz. **Test modu (`FLEET_TEST_ENTRY`) açıkken rakip adaların lagününe de girilebilir.**
 
 ### Filo (FİLO sekmesi)
-- **Filo kur:** Filoyu kuran oyuncu filo başkanı olur. Çok oyunculu mod gelene kadar filoda yalnızca sen varsın.
+- **Filo kur:** Filo kurarken 2–4 karakterlik bir kısaltma (tag, ör. `TC★`) ve filo adı seçilir. Filoyu kuran oyuncu filo başkanı olur. Kısaltma gemi adının önünde görünür: `[TC★]__kemanist__`. Çok oyunculu mod gelene kadar filoda yalnızca sen varsın.
 - **İnci bağışı:** Oyuncular filo hazinesine inci bağışlar (+10, +50, +100 ya da istenen miktar).
 - **Kuleler adadan bağımsızdır:** Ada görselinde kulelerin yeri boştur; surda 8 taş dikme kaidesi vardır (`fleet-base-v4`). Filo başkanı, hazinedeki inciyle kaideye kule diker; bedeli `20 + 10 × seviye` incidir. Dikilen kule, ada görselindeki burcun birebir aynısıdır (`fleet-bastions-v1`) ve adaya yaklaşan düşmanlara ateş eder. Rakip adalarda NPC filosunun burçları durur.
 - Görseller `tools/asset-studio/fleet-bastions.mjs` ile üretilir: burçlar ada görselinden kesilir, yerleri çevre dokusuyla doldurulur ve kaideler çizilir.
 - Fethedilen adanın kaideleri boş gelir. Test modunda bulunduğun denizin adası FİLO sekmesinden doğrudan filoya katılabilir.
+
+### Kaptan adı (KAPTAN sekmesi)
+- Gemi altında `[FİLO TAG]nick` ve kaptan rütbesi (Miço → Kaptan-ı Deryâ) yazar.
+- İlk kaptan adı ücretsizdir. Sonraki her değişiklik 50 inci tutar ve iki değişiklik arasında 1 gün beklemek gerekir. Nick 3–16 karakterdir; harf, rakam, `_` ve `.` içerebilir.
 
 ### Seviye ve görevler
 
