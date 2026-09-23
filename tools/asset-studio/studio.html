@@ -79,7 +79,7 @@ window.renderIcon=(name,{frame=256,margin=.8}={})=>{const scene=stage(),icon=bui
   const key=new THREE.DirectionalLight('#fff1d6',1.4);key.position.set(-8,14,12);scene.add(key);
   // Kamerayı modelin sınır küresine sığdır (userData.cam yalnızca bakış yönünü verir).
   const c=icon.userData.cam,box=new THREE.Box3().setFromObject(icon),sphere=box.getBoundingSphere(new THREE.Sphere());
-  const dir=new THREE.Vector3(...c.pos).sub(new THREE.Vector3(...c.look)).normalize(),fov=34,dist=sphere.radius*margin/Math.sin(fov/2*Math.PI/180);
+  const dir=new THREE.Vector3(...c.pos).sub(new THREE.Vector3(...c.look)).normalize(),fov=34,dist=sphere.radius*(icon.userData.flat?.74:margin)/Math.sin(fov/2*Math.PI/180);
   const cam=new THREE.PerspectiveCamera(fov,1,.1,500);cam.position.copy(sphere.center).addScaledVector(dir,dist);cam.lookAt(sphere.center);
   return{...exportCanvas(shot(scene,cam,frame)),frame};};
 window.renderMineSprite=({frame=128,span=18}={})=>{const scene=stage(),m=buildIcon('icon-mine');m.userData.waterline=2.6;prepare(m);scene.add(m);

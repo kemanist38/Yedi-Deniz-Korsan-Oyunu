@@ -25,7 +25,7 @@ const jobs={
   'sea-tile-v1':()=>page.evaluate(()=>renderSeaTile()),
   'world-chart-v1':()=>page.evaluate(()=>renderWorldChart()),
 };
-for(const name of ['ammo-fire','ammo-grape','icon-mine','icon-attack','icon-repair','icon-speed','icon-shield','icon-hat','icon-chest','officer-gunner','officer-helmsman','officer-carpenter','officer-lookout','officer-quartermaster','officer-surgeon'])jobs[`${name}-v1`]=()=>page.evaluate(n=>renderIcon(n),name);
+for(const name of ['ammo-fire','ammo-grape','icon-mine','icon-attack','icon-repair','icon-speed','icon-shield','icon-hat','icon-chest','officer-gunner','officer-helmsman','officer-carpenter','officer-lookout','officer-quartermaster','officer-surgeon','ui-ring','ui-ring-attack','ui-slot','icon-scroll','icon-gear','icon-anvil','gunner-vignette'])jobs[`${name}-v1`]=()=>page.evaluate(n=>renderIcon(n),name);
 jobs['sea-mine-v1']=()=>page.evaluate(()=>renderMineSprite());
 for(const [look,a,b] of [['verdant',11,12],['misty',21,22],['coral',31,32],['haven',41,42],['crimson',51,52],['storm',61,62]])
   jobs[`islands-${look}-v1`]=()=>page.evaluate(([look,a,b])=>renderIslands([[look,a],[look,b]]),[look,a,b]);

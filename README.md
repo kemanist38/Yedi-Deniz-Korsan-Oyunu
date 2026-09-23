@@ -13,15 +13,15 @@ StackBlitz'te **Import from GitHub** ile depo adresini açın.
 
 ## Kontroller
 
-- `W / S`: hızlan / geri git
-- `A / D`: dümen
-- `Q / E`: sol / sağ borda ateşi
-- `Space`: iki bordadan ateş
-- `F`: tamir
-- `J`: geçidin içindeyken diğer denize geç
-- `Z`: Rüzgâr Hamlesi (7 sn %55 hız, 28 sn bekleme)
-- `X`: Demir Kalkan (6 sn %65 hasar azaltma, 40 sn bekleme)
-- `C`: Deniz Mayını bırak (yaklaşan düşmanlara alan hasarı)
+Varsayılan tuşlar (hepsi **AYARLAR → Klavye kısayolları** bölümünden değiştirilebilir):
+
+- `W / S / A / D` veya ok tuşları: ileri, yavaşla, dümen
+- `R`: seçili hedefe saldır / saldırıyı bırak · `F`: tamir
+- `Z / X / C`: Rüzgâr Hamlesi, Demir Kalkan, Deniz Mayını
+- `1–6`: gülle yuvaları · `7–0`: sarf yuvaları
+- `V`: gemiyi ortala · `M`: dünya haritası · `J`: harita atla · `+ / -`: yakınlaştır / uzaklaştır
+
+Ses efektleri WebAudio ile anlık üretilir; AYARLAR'dan açılıp kapatılabilir ve düzeyi ayarlanabilir.
 
 ## Dünya haritaları
 
