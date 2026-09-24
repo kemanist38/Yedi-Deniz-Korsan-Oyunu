@@ -1,6 +1,6 @@
 import './style.css';
 import {ACTIONS,loadSettings,saveSettings,keyLabel,normalizeKey,DEFAULT_BINDS,type ActionId} from './settings';
-import {setAudio,unlockAudio,playCannon,playEnemyCannon,playHit,playExplosion,playCoins,playWind,playShield,playSplash,playLevelUp,playMapJump,playClick} from './audio';
+import {setAudio,unlockAudio,playCannon,playEnemyCannon,playHit,playExplosion,playCoins,playWind,playShield,playSplash,playLevelUp,playMapJump,playSink,playHeal,playClick} from './audio';
 import {drawSeaSparkle,drawNpcShip,drawMonsterSheet,drawBossSprite,drawChestSprite,drawIslandSprite,drawFleetBase,drawBastion,drawBuiltTower,drawMineSprite,seaTilePattern,islandSheetUrl,shipLabelOffset,portraitStyle,preload,fleetBaseUrl,fleetTowerUrl,BOSS_LABEL_OFFSET,TOWER_LABEL_OFFSET,WORLD_CHART} from './sprites';
 import {MAPS,GRID,THEMES,NPCS,MONSTERS,QUESTS,QUEST_COOLDOWN_MS,FLEET,WORLD,MAX_LEVEL,xpNeed,neighbor,tierOf,fleetTower,fleetReward,BOSS_PORTRAIT,PORTRAIT_COUNT,PORTRAIT_COLS,PORTRAIT_ATLAS,GRID_COLS,GRID_ROWS,CELL_W,CELL_H,colName,rowName,gridCell,coordLabel,type MapKey,type WorldIsland,type NpcDef,type MonsterDef,type Dir,type QuestDef} from './campaign';
 import {ABILITIES,SPECIAL_AMMO,MINE,SPEED_BOOST,SHIELD_FACTOR,ARSENAL_MARKET,loadArsenal,saveArsenal,type AbilityId,type SpecialAmmo} from './arsenal';
@@ -478,7 +478,7 @@ function releaseSalvo(round:SalvoRound){
   const muzzle=forwardDot>.55?{x:fx*24,y:fy*24}:forwardDot<-.55?{x:-fx*20,y:-fy*20}:{x:rx*round.side*18,y:ry*round.side*18};
   const x=player.x+muzzle.x,y=player.y+muzzle.y;
   shots.push({x,y,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,life:Math.max(1.1,d/speed+.5),owner:'player',damage:round.damage,hit:false,ammo:round.ammo,target:round.target});
-  playCannon(state.cannonType,round.ammo==='explosive'?'fire':round.ammo==='breaker'||round.ammo==='leech'?'iron':round.ammo);
+  playCannon(state.cannonType,round.ammo);
   muzzleFlash(x,y,Math.atan2(muzzle.y,muzzle.x));
 }
 function enemyFire(e:Enemy){
@@ -508,14 +508,16 @@ function burst(x:number,y:number,large=false){
   if(large)for(let n=0;n<4;n++){const a=R()*TAU,sp=20+R()*40;particles.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp*.6,life:3+R()*2,maxLife:5,kind:'plank',rot:R()*6,vr:(R()-.5)*1.2,size:52+R()*16});}
 }
 // Iska: suya düşen güllenin su sütunu ve köpük halkası
-function splashAt(x:number,y:number,size=110){particles.push({x,y,vx:0,vy:0,life:.75,maxLife:.75,kind:'splash',size});for(let n=0;n<3;n++)particles.push({x:x+(Math.random()-.5)*18,y:y+(Math.random()-.5)*10,vx:(Math.random()-.5)*16,vy:(Math.random()-.5)*10,life:.9,maxLife:.9,kind:'foam',size:34,variant:n%2});}
+// Oyuncuya uzaklığa göre ses seviyesi (0..1)
+function earGain(p:Vec){return Math.max(0,Math.min(1,1.15-dist(p,player)/900));}
+function splashAt(x:number,y:number,size=110){const eg=earGain({x,y});if(eg>.05)playSplash(eg*.8);particles.push({x,y,vx:0,vy:0,life:.75,maxLife:.75,kind:'splash',size});for(let n=0;n<3;n++)particles.push({x:x+(Math.random()-.5)*18,y:y+(Math.random()-.5)*10,vx:(Math.random()-.5)*16,vy:(Math.random()-.5)*10,life:.9,maxLife:.9,kind:'foam',size:34,variant:n%2});}
 // Özel güllelerin isabet etkisi: patlayıcı çevreye alan hasarı, can emici oyuncuyu onarır
 function ammoImpact(s:Shot,target:Target,hit:number){
   if(s.owner!=='player')return;
-  if(s.ammo==='explosive'){const def=SPECIAL_AMMO.explosive,R=def.blastRadius;particles.push({x:target.x,y:target.y,vx:0,vy:0,life:.5,maxLife:.5,kind:'shock',size:R*2});burst(target.x,target.y,true);
+  if(s.ammo==='explosive'){const def=SPECIAL_AMMO.explosive,R=def.blastRadius;particles.push({x:target.x,y:target.y,vx:0,vy:0,life:.5,maxLife:.5,kind:'shock',size:R*2});burst(target.x,target.y,true);playExplosion(false);
     const victims=([...enemies,...monsters] as Target[]).filter(o=>o!==target&&dist(o,target)<R);
     for(const o of victims){const dmg=Math.round(hit*def.blastFactor);o.hp-=dmg;o.aggro=true;damageText(o.x,o.y,dmg);if(o.hp<=0){if(o.kind==='ship')sinkEnemy(o);else defeatMonster(o);}}}
-  if(s.ammo==='leech'){const heal=hit*SPECIAL_AMMO.leech.leech;state.hp=Math.min(effectiveMaxHp(),state.hp+heal);
+  if(s.ammo==='leech'){const heal=hit*SPECIAL_AMMO.leech.leech;playHeal();state.hp=Math.min(effectiveMaxHp(),state.hp+heal);
     for(let n=0;n<4;n++){const a=Math.atan2(player.y-target.y,player.x-target.x)+(Math.random()-.5)*.8,sp=dist(player,target)/.7;particles.push({x:target.x,y:target.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:.7,maxLife:.7,kind:'soul',z:18,size:26});}}
 }
 // Namlu alevi ve top dumanı
@@ -934,7 +936,7 @@ function update(dt:number){
 function sinkEnemy(e:Enemy){
   const j=enemies.indexOf(e);if(j<0)return;
   enemies.splice(j,1);if(selected===e){selected=null;state.attacking=false;ui('attack').classList.remove('active');}
-  burst(e.x,e.y,true);playExplosion();splashAt(e.x,e.y,190);
+  burst(e.x,e.y,true);playExplosion();playSink(earGain(e));splashAt(e.x,e.y,190);
   if(e.def&&!e.tower&&!e.boss)wrecks.push({x:e.x,y:e.y,angle:e.angle,sprite:e.def.sprite,span:e.def.span,t:0,bubble:0});
   if(e.tower){destroyTower();return;}
   if(e.boss){burst(e.x,e.y,true);defeatBoss(e);return;}
