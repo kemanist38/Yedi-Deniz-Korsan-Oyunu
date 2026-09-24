@@ -29,7 +29,6 @@ const jobs={
   'sea-sparkle-v1':()=>page.evaluate(()=>renderSeaSparkle()),
 };
 for(const name of ['ammo-fire','ammo-grape','ammo-explosive','ammo-breaker','ammo-leech','icon-mine','icon-attack','icon-repair','icon-speed','icon-shield','icon-hat','icon-chest','officer-gunner','officer-helmsman','officer-carpenter','officer-lookout','officer-quartermaster','officer-surgeon','ui-ring','ui-ring-attack','ui-slot','icon-scroll','icon-gear','icon-anvil','gunner-vignette','icon-market','icon-menu','captain-bust','icon-flag'])jobs[`${name}-v1`]=()=>page.evaluate(n=>renderIcon(n),name);
-jobs['preview-light-ships']=()=>page.evaluate(()=>renderShipPreview(['n1-1-light','n2-1-light','n5-1-light','n7-2-light','n1-1-light-v2','n2-1-light-v2','n5-1-light-v2','n7-2-light-v2']));
 jobs['equip-atlas-v2']=()=>page.evaluate(()=>renderEquipAtlas());
 jobs['icon-powder-v2']=()=>page.evaluate(()=>renderItem('powder'));
 jobs['icon-treasure-map-v2']=()=>page.evaluate(()=>renderItem('treasure'));
