@@ -330,7 +330,7 @@ button.event-row{cursor:pointer}
 .elite-ship-grid{display:grid;grid-template-columns:repeat(3,minmax(155px,1fr));gap:10px;overflow:auto;padding:16px}
 .elite-card{position:relative;min-height:188px;padding:8px;border:1px solid #876a3d66;border-radius:7px;background:linear-gradient(#153338,#091a1e);color:#d8c496;text-align:left;cursor:pointer;overflow:hidden}
 .elite-card:hover,.elite-card.active{border-color:#e0b459;box-shadow:inset 0 0 22px #dba64820,0 0 0 1px #dba64844}.elite-card.locked{filter:saturate(.35);opacity:.65}
-.elite-art{display:block;background-image:var(--elite-img);background-repeat:no-repeat;background-size:contain;background-position:center;filter:drop-shadow(0 8px 8px #000b)}.elite-card .elite-art{width:100%;height:140px}.elite-card strong,.elite-card small,.elite-card>b{display:block}.elite-card strong{margin-top:5px;color:#f1d28d;font:700 12px Cinzel}.elite-card small{margin-top:3px;color:#91aaa7;font:600 9px Inter}.elite-card>b{margin-top:5px;color:#d87c68;font:700 8px Inter}.elite-level{position:absolute;z-index:1;top:7px;left:7px;padding:4px 6px;border:1px solid #d4aa5666;border-radius:3px;background:#071419dd;color:#ffdb82;font:800 8px Inter}
+.elite-art{display:block;object-fit:contain;object-position:center;filter:drop-shadow(0 8px 8px #000b);user-select:none}.elite-card .elite-art{width:100%;height:140px}.elite-card strong,.elite-card small,.elite-card>b{display:block}.elite-card strong{margin-top:5px;color:#f1d28d;font:700 12px Cinzel}.elite-card small{margin-top:3px;color:#91aaa7;font:600 9px Inter}.elite-card>b{margin-top:5px;color:#d87c68;font:700 8px Inter}.elite-level{position:absolute;z-index:1;top:7px;left:7px;padding:4px 6px;border:1px solid #d4aa5666;border-radius:3px;background:#071419dd;color:#ffdb82;font:800 8px Inter}
 .elite-ship-detail{overflow:auto;padding:20px;border-left:1px solid #bd914b55;background:#071419cc;text-align:center}.elite-preview{width:100%;height:220px;border-radius:8px;background-color:#0a2024;filter:drop-shadow(0 12px 12px #000c)}.elite-ship-detail h3{margin:8px 0 2px;color:#f4d38d;font:700 20px Cinzel}.elite-ship-detail em{display:block;color:#7faaa8;font:600 10px Inter}.elite-ship-detail>b{display:block;margin:12px 0;color:#d6b56f;font:700 11px Inter}.elite-ship-detail dl{text-align:left}.elite-ship-detail dt{margin-top:14px;color:#dfb45d;font:800 9px Cinzel;text-transform:uppercase}.elite-ship-detail dd{margin:4px 0;color:#c7d2cd;font:500 11px/1.45 Inter}.elite-ship-detail button{width:100%;margin-top:14px;padding:12px;border:1px solid #cf9e48;background:linear-gradient(#9a5825,#563015);color:#ffe1a2;font:800 10px Cinzel;cursor:pointer}.elite-ship-detail button:disabled{filter:grayscale(.7);opacity:.55;cursor:default}
 @media(max-width:800px){.elite-ship-layout{grid-template-columns:1fr}.elite-ship-grid{grid-template-columns:repeat(2,minmax(130px,1fr))}.elite-ship-detail{display:none}}
 
@@ -513,3 +513,17 @@ body.shop-open .market-overlay,body.shop-open .ship-overlay,body.shop-open .load
 .bottom-command .quick-inventory{background:linear-gradient(#0a1c2173,#050f1373);backdrop-filter:blur(2px)}
 .bottom-command .quick-slot{isolation:isolate;background:radial-gradient(circle at 50% 45%,#d8f1f033,#9fc7c814 62%,transparent 75%)}
 .bottom-command .quick-slot::before{content:'';position:absolute;inset:0;z-index:-1;background:url(/assets/ui-slot-v1.webp) center/100% 100% no-repeat;opacity:.5;pointer-events:none}
+/* Top dükkânı */
+.cannon-shop-note{margin:0 0 10px;color:#9fb4ae;font:500 11px Inter}
+.cannon-shop-item{grid-template-columns:78px 1fr auto}
+.cannon-shop-item .cannon-shop-art{width:78px;height:62px}.cannon-shop-art img{width:100%;height:100%;object-fit:contain}
+.cannon-shop-item small{display:block;margin-top:4px;color:#e7c77f;font:600 10px Inter}
+.cannon-shop-item.locked{opacity:.6}
+.cannon-buy{display:flex;flex-direction:column;gap:4px}.cannon-buy button{padding:7px 10px;border:1px solid #b8904e77;border-radius:5px;background:#3a3020;color:#f1d091;font:700 9px Cinzel;white-space:nowrap;cursor:pointer}.cannon-buy button:hover:not(:disabled){background:#4d3f28}.cannon-buy button:disabled{opacity:.5;cursor:not-allowed}
+@media(max-width:800px){.cannon-shop-item{grid-template-columns:56px 1fr}.cannon-buy{grid-column:1/-1;flex-direction:row}.cannon-buy button{flex:1;font-size:9px}}
+/* Envanter: sürükle-bırak */
+.cannon-transfer-row .cannon-side{cursor:grab;touch-action:none;transition:border-color .12s,box-shadow .12s}
+.cannon-transfer-row .cannon-side.dragging{opacity:.55;cursor:grabbing}
+.cannon-transfer-row .cannon-side.drop-target{border-color:#f1c662;box-shadow:inset 0 0 18px #f1c66255,0 0 12px #f1c66244}
+.cannon-drag-ghost{position:fixed;left:0;top:0;z-index:100;width:72px;height:60px;pointer-events:none;filter:drop-shadow(0 8px 10px #000c)}
+.cannon-drag-ghost img{width:100%;height:100%;object-fit:contain}
