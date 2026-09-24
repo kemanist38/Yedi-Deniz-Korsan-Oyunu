@@ -10,7 +10,7 @@ export const SPEED_BOOST=1.55;
 // Sarf malzemeleri (açık/kapalı): Kara Barut her salvoda 1 adet harcar ve hasarı %10 artırır;
 // Kalkan her alınan isabette 1 adet harcar ve gelen hasarı %10 düşürür.
 export const CONSUMABLES={
-  powder:{name:'Kara Barut',factor:1.1,icon:'/assets/icon-powder-v1.webp',description:'Açıkken her salvoda 1 adet harcar; top hasarı %10 artar.'},
+  powder:{name:'Kara Barut',factor:1.1,icon:'/assets/icon-powder-v2.webp',description:'Açıkken her salvoda 1 adet harcar; top hasarı %10 artar.'},
   shield:{name:'Kalkan',factor:.9,icon:'/assets/icon-shield-v1.webp',description:'Açıkken her isabette 1 adet harcar; gelen hasar %10 azalır.'}
 } as const;
 export type ConsumableId=keyof typeof CONSUMABLES;

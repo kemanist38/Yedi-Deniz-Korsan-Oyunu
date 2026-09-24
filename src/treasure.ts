@@ -4,7 +4,7 @@
 import type {MapKey} from './campaign';
 import {EQUIPMENT} from './equipment';
 export const TREASURE_PARTS=4,PART_CHANCE=.15,DIG_RADIUS=70,DIG_SECONDS=3;
-export const TREASURE_ICON='/assets/icon-treasure-map-v1.webp';
+export const TREASURE_ICON='/assets/icon-treasure-map-v2.webp';
 export type TreasureSpot={map:MapKey;x:number;y:number;label:string};
 export type TreasureState={parts:number;active:TreasureSpot|null;found:number};
 const STORAGE='yedi-deniz-treasure-v1';
