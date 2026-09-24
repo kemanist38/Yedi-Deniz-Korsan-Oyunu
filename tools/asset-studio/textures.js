@@ -1,4 +1,4 @@
-// Kara Yelken — prosedürel el boyaması dokular.
+// Yedi Deniz Korsan Oyunu — prosedürel el boyaması dokular.
 // Her doku tohumlu rastgelelikle üretilir; aynı tohum her seferinde aynı görseli verir.
 import * as THREE from 'three';
 

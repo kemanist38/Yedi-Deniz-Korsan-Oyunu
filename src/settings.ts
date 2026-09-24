@@ -16,7 +16,7 @@ export const DEFAULT_BINDS:Record<ActionId,string>={
   ammo1:'1',ammo2:'2',ammo3:'3',ammo4:'4',ammo5:'5',ammo6:'6',item1:'7',item2:'8',item3:'9',item4:'0',item5:'',item6:'',
 };
 export type Settings={sound:boolean;volume:number;binds:Record<ActionId,string>};
-const STORAGE='kara-yelken-settings-v1';
+const STORAGE='yedi-deniz-settings-v1';
 export function loadSettings():Settings{
   try{const raw=JSON.parse(localStorage.getItem(STORAGE)||'null');if(raw)return{sound:raw.sound!==false,volume:typeof raw.volume==='number'?Math.min(1,Math.max(0,raw.volume)):.7,binds:{...DEFAULT_BINDS,...raw.binds}};}catch{}
   return{sound:true,volume:.7,binds:{...DEFAULT_BINDS}};

@@ -1,3 +1,4 @@
+import './storageMigration';
 import './style.css';
 import {ACTIONS,loadSettings,saveSettings,keyLabel,normalizeKey,DEFAULT_BINDS,type ActionId} from './settings';
 import {setAudio,unlockAudio,playCannon,playEnemyCannon,playHit,playExplosion,playCoins,playWind,playShield,playSplash,playLevelUp,playMapJump,playSink,playHeal,playClick} from './audio';
@@ -61,7 +62,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <main class="game-shell">
     <canvas id="sea"></canvas><div class="grain"></div>
     <section class="hud">
-      <div class="brand">KARA YELKEN<small>GÖLGELER DENİZİ</small></div>
+      <div class="brand">YEDİ DENİZ KORSAN OYUNU<small>GÖLGELER DENİZİ</small></div>
       <div class="top-status"><div class="status-pair"><div class="status-line xp-line"><span>TP</span><i><em id="xpHudBar"></em></i><b id="xpHudText">0 / 100</b></div><div class="status-line elite-line"><span>EP</span><i><em id="eliteBar"></em></i><b id="eliteText">0 / 100</b></div></div><div class="level-medal" title="Kaptan seviyesi"><img src="/assets/icon-hat-v1.webp" alt="" draggable="false"/><b id="level">1</b></div><div class="status-pair"><div class="status-line hp-line"><span>CP</span><i><em id="hpHudBar"></em></i><b id="hpHudText">100 / 100</b></div><div class="status-line battle-line"><span>SP</span><i><em id="battleBar"></em></i><b id="battleText">0 / 100</b></div></div></div>
       <div class="corner-buttons"><button class="round-button" id="openShop" aria-label="Market"><img src="/assets/icon-market-v1.webp" alt="" draggable="false"/></button><button class="round-button" id="openMenu" aria-label="Menü"><img src="/assets/icon-menu-v1.webp" alt="" draggable="false"/></button></div>
       <nav class="shop-tabs" id="shopTabs"><button id="openEliteShips" data-shop="eliteShipOverlay"><img class="nav-img" id="shipNavIcon" alt="" draggable="false"/><span>TERSANE</span></button><button id="openShip" data-shop="shipOverlay"><i class="sprite icon-hull"></i><span>TOPLAR</span></button><button id="openMarket" data-shop="marketOverlay"><img class="nav-img" src="/assets/ammo-fire-v1.webp" alt="" draggable="false"/><span>GÜLLE &amp; MÜHİMMAT</span></button><button id="openLoadoutTab" data-shop="loadoutOverlay"><img class="nav-img" src="/assets/icon-chest-v1.webp" alt="" draggable="false"/><span>MALZEMELER</span></button><button class="shop-close" id="closeShopTabs" aria-label="Marketi kapat">×</button></nav>
@@ -75,7 +76,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <div class="reward-toast" id="rewardToast"></div>
       <div class="toast" id="toast"></div>
       <div class="portal-prompt" id="portalPrompt"></div><div class="event-panel" id="eventPanel"></div><div class="quest-overlay world-overlay" id="worldMapOverlay"><section class="world-scroll" aria-label="Dünya haritası"><button class="scroll-close" id="closeWorldMap" aria-label="Dünya haritasını kapat">×</button><div class="world-chart" id="worldChart"></div><div id="worldInfo" hidden></div></section></div><div class="quest-overlay" id="questOverlay"><section class="quest-log"><header><div><span class="eyebrow">Kaptanın görev defteri</span><h2>DENİZ GÖREVLERİ</h2></div><button id="closeQuests" aria-label="Görevleri kapat">×</button></header><p class="quest-intro">Aynı anda yalnızca bir görev yürütülebilir. İptal edilen veya tamamlanan görev 8 saat sonra yeniden açılır.</p><div class="quest-list" id="questList"></div></section></div>
-      <div class="captain-overlay" id="captainOverlay"><section class="captain-profile"><header><div><span class="eyebrow">Oyuncu profili</span><h2 id="captainName">KAPTAN</h2></div><button id="closeCaptain" aria-label="Kaptan profilini kapat">×</button></header><div class="captain-tab" id="captainTab-profile"><div class="captain-identity"><div class="captain-portrait"><img src="/assets/icon-hat-v1.webp" alt="" draggable="false"/><b id="captainLevel">1</b></div><div><span>AMİRAL GEMİSİ</span><strong>Kara Yelken</strong><small>Gölgeler Denizi Kaptanı</small></div></div><div class="captain-nick" id="captainNick"></div><div class="captain-stat-grid"><article><span>TECRÜBE PUANI</span><b id="xpText">0 / 100</b><i class="xp"><em id="xpBar"></em></i></article><article><span>CAN PUANI</span><b id="hpText">100 / 100</b><i class="hp"><em id="hpBar" style="width:100%"></em></i></article><article><span>ELİT PUAN</span><b id="profileElite">0 / 100</b><i class="elite"><em id="profileEliteBar"></em></i></article><article><span>SAVAŞ PUANI</span><b id="profileBattle">0 / 500</b><i class="battle"><em id="profileBattleBar"></em></i></article></div><div class="bonus-summary" id="bonusSummary"></div></div></section></div><div class="captain-overlay" id="guildOverlay"><section class="captain-profile crew-window guild-window"><header><div><span class="eyebrow">Filo hazinesi ve ada kuleleri</span><h2>FİLO</h2></div><button id="closeGuild" aria-label="Filo penceresini kapat">×</button></header><div id="guildPanel"></div></section></div><div class="captain-overlay" id="crewOverlay"><section class="captain-profile crew-window"><header><div><span class="eyebrow">Geminin subayları</span><h2>TAYFA</h2></div><button id="closeCrew" aria-label="Tayfayı kapat">×</button></header><div id="crewPanel"></div></section></div><div class="quest-overlay" id="settingsOverlay"><section class="quest-log settings-log"><header><div><span class="eyebrow">Oyun tercihleri</span><h2>AYARLAR</h2></div><button id="closeSettings" aria-label="Ayarları kapat">×</button></header><div id="settingsPanel"></div></section></div>
+      <div class="captain-overlay" id="captainOverlay"><section class="captain-profile"><header><div><span class="eyebrow">Oyuncu profili</span><h2 id="captainName">KAPTAN</h2></div><button id="closeCaptain" aria-label="Kaptan profilini kapat">×</button></header><div class="captain-tab" id="captainTab-profile"><div class="captain-identity"><div class="captain-portrait"><img src="/assets/icon-hat-v1.webp" alt="" draggable="false"/><b id="captainLevel">1</b></div><div><span>AMİRAL GEMİSİ</span><strong>Yedi Deniz</strong><small>Gölgeler Denizi Kaptanı</small></div></div><div class="captain-nick" id="captainNick"></div><div class="captain-stat-grid"><article><span>TECRÜBE PUANI</span><b id="xpText">0 / 100</b><i class="xp"><em id="xpBar"></em></i></article><article><span>CAN PUANI</span><b id="hpText">100 / 100</b><i class="hp"><em id="hpBar" style="width:100%"></em></i></article><article><span>ELİT PUAN</span><b id="profileElite">0 / 100</b><i class="elite"><em id="profileEliteBar"></em></i></article><article><span>SAVAŞ PUANI</span><b id="profileBattle">0 / 500</b><i class="battle"><em id="profileBattleBar"></em></i></article></div><div class="bonus-summary" id="bonusSummary"></div></div></section></div><div class="captain-overlay" id="guildOverlay"><section class="captain-profile crew-window guild-window"><header><div><span class="eyebrow">Filo hazinesi ve ada kuleleri</span><h2>FİLO</h2></div><button id="closeGuild" aria-label="Filo penceresini kapat">×</button></header><div id="guildPanel"></div></section></div><div class="captain-overlay" id="crewOverlay"><section class="captain-profile crew-window"><header><div><span class="eyebrow">Geminin subayları</span><h2>TAYFA</h2></div><button id="closeCrew" aria-label="Tayfayı kapat">×</button></header><div id="crewPanel"></div></section></div><div class="quest-overlay" id="settingsOverlay"><section class="quest-log settings-log"><header><div><span class="eyebrow">Oyun tercihleri</span><h2>AYARLAR</h2></div><button id="closeSettings" aria-label="Ayarları kapat">×</button></header><div id="settingsPanel"></div></section></div>
       <div class="ship-overlay" id="eliteShipOverlay"><section class="ship-menu elite-ship-window"><header><div><span class="eyebrow">Elit filo tersanesi</span><h2>ELİT GEMİLER</h2><p>Elit puanınla açılan gemiyi incele ve amiral gemin olarak seç.</p></div><button id="closeEliteShips" aria-label="Elit gemileri kapat">×</button></header><div class="elite-ship-layout"><div class="elite-ship-grid" id="eliteShipGrid"></div><aside class="elite-ship-detail" id="eliteShipDetail"></aside></div></section></div><div class="ship-overlay" id="shipOverlay"><section class="ship-menu cannon-window"><header><img class="cannon-window-art" src="/assets/gunner-vignette-v1.webp" alt="" draggable="false"/><div><span class="eyebrow">Topçubaşının silah deposu</span><h2>TOP YERLEŞTİRME</h2><div class="inventory-capacity" id="shipSummary"></div></div><button id="closeShip" aria-label="Envanteri kapat">×</button></header><div class="cannon-rows" id="cannonRows"></div></section></div>
       <div class="development-overlay" id="developmentOverlay"><section class="development-menu"><header><div><span class="eyebrow">Kaptanın gelişim planı</span><h2>GELİŞTİRME</h2></div><button id="closeDevelopment" aria-label="Geliştirmeyi kapat">×</button></header><div id="talentPanel"><div class="dev-tree" id="upgradeList"></div><div class="upgrade-confirm" id="upgradeConfirm"></div></div></section></div>
       <div class="market-overlay" id="marketOverlay"><section class="market-menu"><header><div><span class="eyebrow">Tüccar loncası</span><h2>DENİZ MARKETİ</h2></div><button id="closeMarket" aria-label="Marketi kapat">×</button></header><div class="inventory-strip" id="inventoryStrip"></div><h3 class="market-heading">MÜHİMMAT</h3><div class="market-list" id="marketList"></div><h3 class="market-heading">İNCİ PAKETLERİ</h3><div class="pearl-shop"><div><b>◈ İnci Sandıkları</b><span>Gerçek ödeme sistemi kullanıcı hesaplarıyla birlikte açılacak.</span></div><button disabled>YAKINDA</button></div><div class="market-confirm" id="marketConfirm"></div></section></div>
@@ -112,8 +113,8 @@ function eliteArtImage(id:string){let im=eliteArtImages.get(id);if(!im){im=new I
 let eliteFacing=-1;
 const ui = (id:string) => document.getElementById(id)!;
 const keys = new Set<string>();
-const QUEST_STORAGE='kara-yelken-quests-v2';
-const ACCOUNT_STORAGE='kara-yelken-account-v1';
+const QUEST_STORAGE='yedi-deniz-quests-v2';
+const ACCOUNT_STORAGE='yedi-deniz-account-v1';
 let storedQuests:{active:string|null;progress:Record<string,number>;cooldowns:Record<string,number>}|null=null;
 let storedAccount:{pearls?:number;gold:number;wood:number;fame:number;level:number;maxHp:number;hp:number;chainAmmo:number;elitePoints?:number;battlePoints?:number;cannonType?:CannonKind;cannonInventory?:CannonStock;mountedCannons?:CannonStock;quickSlots?:Array<QuickItemId|null>;upgrades:Record<UpgradeKind,number>;eliteShip?:EliteShipId;activeShip?:ShipSelection;elitePurchased?:boolean;currentMap?:MapKey}|null=null;
 try{storedQuests=JSON.parse(localStorage.getItem(QUEST_STORAGE)||'null');}catch{storedQuests=null;}
@@ -151,7 +152,7 @@ const camera = { x:player.x, y:player.y, zoom:.7, targetZoom:.7 };
 const shots:Shot[]=[]; const enemies:Enemy[]=[];
 const salvoQueue:SalvoRound[]=[];
 const particles:Particle[]=[];
-const WORLD_STORAGE='kara-yelken-world-v2';
+const WORLD_STORAGE='yedi-deniz-world-v2';
 let currentMap:MapKey=(()=>{try{const k=(storedAccount?.currentMap||localStorage.getItem(WORLD_STORAGE)) as MapKey|null;if(k&&k in MAPS&&tierOf(k)<=state.level)return k;}catch{}return'1/1';})();
 const mapDef=()=>MAPS[currentMap];
 const theme=()=>THEMES[mapDef().tier];
@@ -579,13 +580,13 @@ function purchaseEliteOne(){
 }
 function renderEliteShips(){
   const unlocked=ELITE_TEST_MODE?15:elitePurchased?Math.max(1,Math.min(15,Math.floor(state.elitePoints/100)+1)):0;
-  const starter=`<button class="elite-card starter-card ${activeShip==='starter'?'active':''}" data-starter><span class="elite-level">BAŞLANGIÇ</span><span class="starter-ship-art" role="img" aria-label="Kara Yelken başlangıç gemisi"></span><strong>Kara Yelken</strong><small>Başlangıç gemisi · Özel güç yok</small></button>`;
+  const starter=`<button class="elite-card starter-card ${activeShip==='starter'?'active':''}" data-starter><span class="elite-level">BAŞLANGIÇ</span><span class="starter-ship-art" role="img" aria-label="Yedi Deniz başlangıç gemisi"></span><strong>Yedi Deniz</strong><small>Başlangıç gemisi · Özel güç yok</small></button>`;
   const eliteCards=ELITE_SHIPS.map(ship=>{const locked=ship.level>unlocked;return`<button class="elite-card ${activeShip===ship.id?'active':''} ${locked?'locked':''}" data-elite="${ship.id}"><span class="elite-level">ELİT ${ship.level}</span><span class="elite-art" role="img" aria-label="${ship.name}" style="--elite-img:url(${eliteArtUrl(ship.id)})"></span><strong>${ship.name}</strong><small>${ship.role}</small>${locked?`<b>🔒 ${ship.level===1?`${ELITE_ONE_PRICE} İnci ile açılır`:`${(ship.level-1)*100} Elit Puan gerekli`}</b>`:''}</button>`}).join('');
   ui('eliteShipGrid').innerHTML=starter+eliteCards;
   ui('eliteShipGrid').querySelector<HTMLElement>('[data-starter]')!.onclick=()=>{previewShip='starter';renderEliteShips();};
   ui('eliteShipGrid').querySelectorAll<HTMLElement>('[data-elite]').forEach(el=>el.onclick=()=>{previewShip=el.dataset.elite as EliteShipId;renderEliteShips();});
   if(previewShip==='starter'){
-    ui('eliteShipDetail').innerHTML=`<span class="eyebrow">Başlangıç gemisi</span><div class="starter-preview" role="img" aria-label="Kara Yelken başlangıç gemisi"></div><h3>Kara Yelken</h3><em>Kaptanın ilk gemisi</em><b>Dengeli başlangıç sınıfı</b><dl><dt>Özellik</dt><dd>Elit pasifi veya özel yeteneği yoktur. Oyuna başlayan her kaptanda ücretsiz bulunur.</dd></dl><button id="equipStarter" ${activeShip==='starter'?'disabled':''}>${activeShip==='starter'?'AKTİF GEMİ':'GEMİYİ SEÇ'}</button>`;
+    ui('eliteShipDetail').innerHTML=`<span class="eyebrow">Başlangıç gemisi</span><div class="starter-preview" role="img" aria-label="Yedi Deniz başlangıç gemisi"></div><h3>Yedi Deniz</h3><em>Kaptanın ilk gemisi</em><b>Dengeli başlangıç sınıfı</b><dl><dt>Özellik</dt><dd>Elit pasifi veya özel yeteneği yoktur. Oyuna başlayan her kaptanda ücretsiz bulunur.</dd></dl><button id="equipStarter" ${activeShip==='starter'?'disabled':''}>${activeShip==='starter'?'AKTİF GEMİ':'GEMİYİ SEÇ'}</button>`;
     const button=document.getElementById('equipStarter') as HTMLButtonElement|null;if(button&&!button.disabled)button.onclick=equipStarterShip;return;
   }
   const ship=eliteById(previewShip),locked=ship.level>unlocked;
@@ -1149,7 +1150,7 @@ const SHIP_DIRECTION_FRAMES=[4,3,6,5,0,1,2,7] as const;
 // Açı birçok tur dönünce -2π'nin altına inebilir; negatif mod boş kare (görünmez gemi) verirdi → her zaman 0..7
 function shipCompass(angle:number){return((Math.round(angle/(Math.PI/4))%8)+8)%8;}
 function shipDirectionFrame(angle:number){return SHIP_DIRECTION_FRAMES[shipCompass(angle)];}
-// Elit gemiler de Kara Yelken gibi 8 yönlü çizilir: pruva gidilen yöne döner (elite-dir-<id>-v1.webp, 4 × 2 kare, 221 × 256).
+// Elit gemiler de başlangıç gemisi gibi 8 yönlü çizilir: pruva gidilen yöne döner (elite-dir-<id>-v1.webp, 4 × 2 kare, 221 × 256).
 // Tüm elit ve sonradan eklenecek özel gemiler aynı kare düzenini ve aynı yön eşlemesini (shipDirectionFrame) kullanır.
 const eliteDirImages=new Map<string,HTMLImageElement>();
 function eliteDirImage(id:string){let im=eliteDirImages.get(id);if(!im){im=new Image();im.decoding='async';im.src=`/assets/elite-dir-${id}-v1.webp`;eliteDirImages.set(id,im);}return im;}
@@ -1167,7 +1168,7 @@ function drawEliteDirectionalShip(s:Vec){
 function drawPlayerShip(){
   const s=worldToScreen(player);
   if(eliteEnabled()&&drawEliteDirectionalShip(s))return;
-  // Elit atlas yüklenene kadar aynı yön karesindeki Kara Yelken görünür kalır; gemi asla kaybolmaz.
+  // Elit atlas yüklenene kadar aynı yön karesindeki başlangıç gemisi görünür kalır; gemi asla kaybolmaz.
 
   if(!directionalShipImage.complete||!directionalShipImage.naturalWidth){
     if(!playerShipImage.complete||!playerShipImage.naturalWidth){drawShip(player,player.angle,'#173f48',1.1);return;}
@@ -1175,7 +1176,7 @@ function drawPlayerShip(){
   const bob=Math.sin(performance.now()/420)*1.8;
   ctx.save();ctx.translate(s.x,s.y+bob);ctx.shadowColor='#000b';ctx.shadowBlur=13;ctx.globalAlpha=state.invulnerable&&Math.floor(performance.now()/120)%2?.55:1;
   if(directionalShipImage.complete&&directionalShipImage.naturalWidth){
-    // Kara Yelken sayfasında kuzeybatı karesi (7) yanlışlıkla güneydoğuya bakar; kuzeybatıda kuzeydoğu karesi (3) aynalanır.
+    // Başlangıç gemisi sayfasında kuzeybatı karesi (7) yanlışlıkla güneydoğuya bakar; kuzeybatıda kuzeydoğu karesi (3) aynalanır.
     const nw=shipCompass(player.angle)===7,frame=nw?3:shipDirectionFrame(player.angle);
     const sx=(frame%4)*256,sy=Math.floor(frame/4)*256;if(nw)ctx.scale(-1,1);
     ctx.drawImage(directionalShipImage,sx,sy,256,256,-58,-58,116,116);

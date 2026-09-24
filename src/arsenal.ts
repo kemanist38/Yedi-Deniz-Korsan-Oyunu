@@ -32,7 +32,7 @@ export const ARSENAL_MARKET=[
   {kind:'leech' as const,name:'Can Emici Kesesi',amount:15,price:140,description:'Vurdukça gemini onaran 15 ruh güllesi.'}
 ];
 
-const STORAGE='kara-yelken-arsenal-v1';
+const STORAGE='yedi-deniz-arsenal-v1';
 export function loadArsenal():ArsenalStock{
   try{const raw=JSON.parse(localStorage.getItem(STORAGE)||'null');const n=(v:unknown,d:number)=>v===undefined?d:Math.max(0,+(v as number)||0);if(raw)return{fire:n(raw.fire,0),grape:n(raw.grape,0),mine:n(raw.mine,0),explosive:n(raw.explosive,10),breaker:n(raw.breaker,10),leech:n(raw.leech,10),seeded:!!raw.seeded,seededV2:!!raw.seededV2};}catch{}
   // İlk açılışta tanıtım stoğu

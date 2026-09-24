@@ -1,4 +1,4 @@
-// Kara Yelken kampanyası: 8 seviye, 16 deniz. Her denizin kendi NPC gemileri, canavarı ve filo adası vardır.
+// Yedi Deniz Korsan Oyunu kampanyası: 8 seviye, 16 deniz. Her denizin kendi NPC gemileri, canavarı ve filo adası vardır.
 // Güç ve ödüller denizin seviyesiyle birlikte artar.
 export type MapKey='1/1'|'1/2'|'2/1'|'2/2'|'3/1'|'3/2'|'4/1'|'4/2'|'5/1'|'5/2'|'6/1'|'6/2'|'7/1'|'7/2'|'8/1'|'8/2';
 export type IslandLook='verdant'|'misty'|'coral'|'haven'|'crimson'|'storm'|'ice'|'toxic'|'lava'|'abyss';

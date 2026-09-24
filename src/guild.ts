@@ -23,7 +23,7 @@ export const GUILD_NAME_MAX=24,GUILD_TAG_MIN=2,GUILD_TAG_MAX=4;
 // Filo kısaltması (tag): 2–4 büyük harf, rakam ya da ★; eski kayıtlarda filo adının baş harflerinden türetilir.
 export const tagError=(t:string)=>t.length<GUILD_TAG_MIN||t.length>GUILD_TAG_MAX?`Kısaltma ${GUILD_TAG_MIN}–${GUILD_TAG_MAX} karakter olmalı`:!/^[\p{Lu}\p{N}★]+$/u.test(t)?'Kısaltma büyük harf, rakam ya da ★ olabilir':'';
 const initials=(n:string)=>n.split(/\s+/).map(w=>w[0]||'').join('').toLocaleUpperCase('tr').slice(0,GUILD_TAG_MAX)||'KY';
-const STORAGE='kara-yelken-guild-v1';
+const STORAGE='yedi-deniz-guild-v1';
 
 export function loadGuild():Guild|null{
   try{const raw=JSON.parse(localStorage.getItem(STORAGE)||'null');if(raw&&typeof raw.name==='string')return{name:raw.name,tag:typeof raw.tag==='string'&&raw.tag?raw.tag:initials(raw.name).padEnd(GUILD_TAG_MIN,'★'),role:raw.role==='deputy'||raw.role==='member'?raw.role:'leader',treasury:Math.max(0,raw.treasury|0),donated:Math.max(0,raw.donated|0),created:raw.created||Date.now(),towers:normalizeTowers(raw.towers)};}catch{}

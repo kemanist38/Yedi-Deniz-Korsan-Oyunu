@@ -3,7 +3,7 @@ export type Profile={nick:string;changedAt:number;named:boolean};
 export const NICK_CHANGE_COST=50;
 export const NICK_COOLDOWN_MS=24*60*60*1000;
 export const NICK_MIN=3,NICK_MAX=16;
-const STORAGE='kara-yelken-profile-v1';
+const STORAGE='yedi-deniz-profile-v1';
 export function loadProfile():Profile{
   try{const raw=JSON.parse(localStorage.getItem(STORAGE)||'null');if(raw&&typeof raw.nick==='string')return{nick:raw.nick,changedAt:raw.changedAt||0,named:!!raw.named};}catch{}
   return{nick:'Kaptan',changedAt:0,named:false};

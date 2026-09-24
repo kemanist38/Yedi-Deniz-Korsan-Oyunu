@@ -1,4 +1,4 @@
-// Kara Yelken — 2B raster boyamalar: tekrarlanan deniz dokusu ve parşömen dünya haritası.
+// Yedi Deniz Korsan Oyunu — 2B raster boyamalar: tekrarlanan deniz dokusu ve parşömen dünya haritası.
 import {canvas,rng,grain,blotches,noise2} from './textures.js';
 
 // 512 px, dört kenarı kesintisiz birleşen deniz ışıltısı. Oyunda deniz renginin üstüne biner.
