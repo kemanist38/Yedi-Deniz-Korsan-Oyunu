@@ -32,17 +32,6 @@ export function drawMonsterSheet(ctx:CanvasRenderingContext2D,def:{sprite:string
   ctx.restore();return true;
 }
 
-// Hayalet Amiral: 16 yön, 240 px kare.
-const BOSS_SHIP={frame:240,dirs:16,cols:8,anchorX:120,anchorY:135.1,size:170};
-export const BOSS_LABEL_OFFSET=-76;
-export function drawBossSprite(ctx:CanvasRenderingContext2D,x:number,y:number,angle:number,time:number){
-  const sheet=load('/assets/enemy-ghost-v1.webp');if(!ready(sheet))return false;
-  const step=Math.PI*2/BOSS_SHIP.dirs,index=((Math.round(angle/step)%BOSS_SHIP.dirs)+BOSS_SHIP.dirs)%BOSS_SHIP.dirs,k=BOSS_SHIP.size/BOSS_SHIP.frame,bob=Math.sin(time/520)*1.8;
-  ctx.save();ctx.shadowColor='#6dffc4';ctx.shadowBlur=18+Math.sin(time/300)*6;
-  ctx.drawImage(sheet,(index%BOSS_SHIP.cols)*BOSS_SHIP.frame,Math.floor(index/BOSS_SHIP.cols)*BOSS_SHIP.frame,BOSS_SHIP.frame,BOSS_SHIP.frame,x-BOSS_SHIP.anchorX*k,y+bob-BOSS_SHIP.anchorY*k,BOSS_SHIP.size,BOSS_SHIP.size);
-  ctx.restore();return true;
-}
-
 // Adalar: görünüm başına 2 varyantlı sayfa (512 px). Çizim boyu = 2.36 × ada yarıçapı.
 export function islandSheetUrl(_look:string){return'/assets/islands-seven-seas-v1.webp';}
 export function drawIslandSprite(ctx:CanvasRenderingContext2D,island:{look:string;variant:number;r:number;flip?:boolean},x:number,y:number){

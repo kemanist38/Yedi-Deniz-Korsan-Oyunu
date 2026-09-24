@@ -1,15 +1,14 @@
-// Ganimet sandıkları: açık denizde sürüklenen sandıklar ve Hayalet Amiral etkinliğinin bıraktığı sandıklar.
+// Ganimet sandıkları: açık denizde sürüklenen sandıklar.
 // NPC ve canavar sandık düşürmez; onlar yalnızca tecrübe puanı ve altın verir.
 import type {ChestKind} from './sprites';
 
-export type LootSource='boss'|'drift';
+export type LootSource='drift';
 export type LootChest={x:number;y:number;kind:ChestKind;source:LootSource;life:number;maxLife:number;gold:number;wood:number;chain:number;pearls:number};
 
 type Range=readonly [number,number];
 type LootTable={gildedChance:number;gold:Range;wood:Range;chain:{chance:number;amount:Range};pearls:{chance:number;amount:Range};life:number};
 
 export const LOOT_TABLES:Record<LootSource,LootTable>={
-  boss:   {gildedChance:1,  gold:[40,60],wood:[6,10],chain:{chance:1,amount:[4,6]},pearls:{chance:1,amount:[1,2]},life:60},
   drift:  {gildedChance:.06,gold:[4,10], wood:[1,3],chain:{chance:.25,amount:[1,1]},pearls:{chance:.03,amount:[1,1]},life:Infinity}
 };
 export const CHEST_PICKUP_RADIUS=46;
