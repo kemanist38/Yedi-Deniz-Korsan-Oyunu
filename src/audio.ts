@@ -141,3 +141,18 @@ export function playClick(){
 export function playSink(gain=1){const c=audio();if(!c||throttle('sink',300))return;sample('sink',{gain:.7*gain});}
 // Can emici onarımı
 export function playHeal(){const c=audio();if(!c||throttle('heal',250))return;sample('heal',{gain:.45});}
+// ---- boss müziği: yalnızca bossun bulunduğu haritada, tema başına (deniz seviyesi 1–8) bir parça, kesintisiz döngü
+const musicBuffers=new Map<number,Promise<AudioBuffer|null>>();
+let music:{src:AudioBufferSourceNode;gain:GainNode;tier:number}|null=null,musicWanted:number|null=null;
+function musicBuffer(c:AudioContext,tier:number){let p=musicBuffers.get(tier);if(!p){p=fetch(`/assets/music/boss-${tier}.mp3`).then(r=>r.arrayBuffer()).then(b=>c.decodeAudioData(b)).catch(()=>null);musicBuffers.set(tier,p);}return p;}
+export function playBossMusic(tier:number){
+  musicWanted=tier;const c=audio();if(!c||!master)return;if(music?.tier===tier)return;stopBossMusic(true);musicWanted=tier;
+  void musicBuffer(c,tier).then(buf=>{if(!buf||musicWanted!==tier||music?.tier===tier||!master)return;
+    const src=c.createBufferSource();src.buffer=buf;src.loop=true;const g=c.createGain();g.gain.setValueAtTime(0,c.currentTime);g.gain.linearRampToValueAtTime(.42,c.currentTime+2.5);
+    src.connect(g);g.connect(master);src.start(c.currentTime+.05);music={src,gain:g,tier};});
+}
+export function stopBossMusic(keepWanted=false){
+  if(!keepWanted)musicWanted=null;if(!music||!ctx)return;const {src,gain}=music,t=ctx.currentTime;music=null;
+  gain.gain.cancelScheduledValues(t);gain.gain.setValueAtTime(gain.gain.value,t);gain.gain.linearRampToValueAtTime(0,t+1.8);src.stop(t+2);
+}
+export function playBossHorn(){audio();sample('boss-horn',{gain:1.1,jitter:0});}

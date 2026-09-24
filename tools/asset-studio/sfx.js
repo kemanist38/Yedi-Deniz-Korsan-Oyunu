@@ -137,6 +137,14 @@ function wind(k){const b=k.bus({wet:.3});const g=k.noise(b,{dur:1.8,color:'pink'
   for(let i=0;i<5;i++)k.noise(b,{t:.15+i*.11,dur:.09,color:'brown',filters:[{type:'lowpass',f0:400}],a:.005,peak:.5,tau:.03});return 2;}
 function mapjump(k){k.setVerb(3,.35);const b=k.bus({wet:.6});k.noise(b,{dur:2.2,color:'brown',filters:[{type:'lowpass',f0:120,f1:2200,sweep:1.1,q:1.5}],a:.6,peak:1.1,tau:.4});
   k.osc(b,{dur:2,f0:55,f1:110,peak:.6,tau:.5,a:.4});[880,1175,1568,2093].forEach((f,i)=>k.osc(b,{t:.5+i*.12,dur:1.5,f0:f,peak:.14,tau:.35,a:.05,vib:f*.01}));return 2.8;}
+// Boss borusu: iki savaş borusu (beşli aralık), yavaş açılan parlaklık, vibrato ve timpani gümbürtüsü
+function horn(k,b,t,f,dur){[[1,0],[1.003,7],[.997,-7]].forEach(([m,det])=>{const g=k.osc(b,{t,dur:dur+.6,type:'sawtooth',f0:f*m,detune:det,a:.18,hold:dur-.3,peak:.22,tau:.35,vib:f*.006,vibRate:5.2});
+  const lp=k.c.createBiquadFilter();lp.type='lowpass';lp.Q.value=2.2;lp.frequency.setValueAtTime(300,t);lp.frequency.linearRampToValueAtTime(f*7,t+.35);lp.frequency.setTargetAtTime(f*4,t+.5,.4);g.disconnect();g.connect(lp);lp.connect(b);});}
+function bossHorn(k){k.setVerb(3.2,.3);const b=k.bus({wet:.55}),d=k.bus({wet:.35});
+  horn(k,b,0,110,1.1);horn(k,b,0,164.8,1.1);horn(k,b,1.35,146.8,.5);horn(k,b,1.35,220,.5);horn(k,b,1.95,110,1.6);horn(k,b,1.95,164.8,1.6);horn(k,b,1.95,82.4,1.6);
+  for(let i=0;i<14;i++){const t=1.2+i*.055;k.osc(d,{t,dur:.4,f0:72,f1:58,peak:.25+i*.03,tau:.12});k.noise(d,{t,dur:.2,color:'brown',filters:[{type:'lowpass',f0:400}],peak:.2,tau:.06});}
+  [0,1.95].forEach(t=>{k.osc(d,{t,dur:1.8,f0:64,f1:44,peak:1,tau:.5});k.noise(d,{t,dur:1.2,color:'brown',filters:[{type:'lowpass',f0:260}],peak:.8,tau:.4});});
+  return 4.4;}
 function click(k){const b=k.bus({wet:.05});k.ping(b,{f:1900,q:9,peak:.9,tau:.012});k.ping(b,{f:680,q:6,peak:.7,tau:.02});return .15;}
 function heal(k){const b=k.bus({wet:.6});[880,1318.5,1760].forEach((f,i)=>k.osc(b,{t:i*.06,dur:1.2,f0:f,peak:.22,tau:.3,a:.08,vib:6,vibRate:6}));k.noise(b,{dur:.9,color:'white',filters:[{type:'bandpass',f0:6000,q:3}],a:.15,peak:.15,tau:.2});return 1.3;}
 
@@ -145,7 +153,7 @@ export const SOUNDS={
   'cannon-cast':[3,k=>cannon(k,'cast')],'cannon-long':[3,k=>cannon(k,'long')],'cannon-rapid':[3,k=>cannon(k,'rapid')],'cannon-heavy':[3,k=>cannon(k,'heavy')],
   'ammo-chain':[2,AMMO.chain],'ammo-fire':[2,AMMO.fire],'ammo-grape':[2,AMMO.grape],'ammo-explosive':[2,AMMO.explosive],'ammo-breaker':[2,AMMO.breaker],'ammo-leech':[2,AMMO.leech],
   hit:[4,hit],explosion:[2,k=>explosion(k,true)],blast:[2,k=>explosion(k,false)],splash:[3,splash],sink:[2,sink],
-  coins:[2,coins],levelup:[1,levelup],shield:[1,shield],wind:[2,wind],mapjump:[1,mapjump],click:[2,click],heal:[2,heal],
+  coins:[2,coins],levelup:[1,levelup],'boss-horn':[1,bossHorn],shield:[1,shield],wind:[2,wind],mapjump:[1,mapjump],click:[2,click],heal:[2,heal],
 };
 // Tek ses varyantını üretir: {l,r} Float32Array, tepe -1 dBFS'e normalize, kuyruğu sessizlikte kırpılmış
 export async function renderSfx(name,variant){
@@ -157,3 +165,4 @@ export async function renderSfx(name,variant){
   const L=new Float32Array(end),R=new Float32Array(end),fade=Math.floor(SR*.02);for(let i=0;i<end;i++){const f=i>end-fade?(end-i)/fade:1;L[i]=l[i]*g*f;R[i]=r[i]*g*f;}
   return{l:L,r:R,sr:SR};
 }
+export {Kit,rng};

@@ -1,9 +1,12 @@
 <!doctype html><html><head><meta charset="utf-8"><title>Yedi Deniz Korsan Oyunu ses atölyesi</title></head><body>
 <script type="module">
 import {renderSfx,SOUNDS} from './sfx.js';
+import {renderMusic,THEMES} from './music.js';
+window.MUSIC_LIST=Object.keys(THEMES);
 window.SOUND_LIST=Object.fromEntries(Object.entries(SOUNDS).map(([k,[n]])=>[k,n]));
 // Float32 → Int16 → base64 (sayfadan Node'a hızlı aktarım)
 function pack(a){const i16=new Int16Array(a.length);for(let i=0;i<a.length;i++)i16[i]=Math.max(-32768,Math.min(32767,Math.round(a[i]*32767)));let s='';const u=new Uint8Array(i16.buffer);for(let i=0;i<u.length;i+=32768)s+=String.fromCharCode.apply(null,u.subarray(i,i+32768));return btoa(s);}
 window.renderOne=async(name,v)=>{const {l,r,sr}=await renderSfx(name,v);return{sr,l:pack(l),r:pack(r)};};
+window.renderMusicOne=async(t)=>{const {l,r,sr,seconds}=await renderMusic(+t);return{sr,seconds,l:pack(l),r:pack(r)};};
 window.sfxReady=true;
 </script></body></html>
