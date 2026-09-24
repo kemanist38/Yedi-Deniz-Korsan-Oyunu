@@ -511,13 +511,7 @@ body.shop-open .market-overlay,body.shop-open .ship-overlay,body.shop-open .load
 .bottom-command .quick-slot{isolation:isolate;background:radial-gradient(circle at 50% 45%,#d8f1f033,#9fc7c814 62%,transparent 75%)}
 .bottom-command .quick-slot::before{content:'';position:absolute;inset:0;z-index:-1;background:url(/assets/ui-slot-v1.webp) center/100% 100% no-repeat;opacity:.5;pointer-events:none}
 /* Top dükkânı */
-.cannon-shop-note{margin:0 0 10px;color:#9fb4ae;font:500 11px Inter}
-.cannon-shop-item{grid-template-columns:78px 1fr auto}
-.cannon-shop-item .cannon-shop-art{width:78px;height:62px}.cannon-shop-art img{width:100%;height:100%;object-fit:contain}
-.cannon-shop-item small{display:block;margin-top:4px;color:#e7c77f;font:600 10px Inter}
-.cannon-shop-item.locked{opacity:.6}
-.cannon-buy{display:flex;flex-direction:column;gap:4px}.cannon-buy button{padding:7px 10px;border:1px solid #b8904e77;border-radius:5px;background:#3a3020;color:#f1d091;font:700 9px Cinzel;white-space:nowrap;cursor:pointer}.cannon-buy button:hover:not(:disabled){background:#4d3f28}.cannon-buy button:disabled{opacity:.5;cursor:not-allowed}
-@media(max-width:800px){.cannon-shop-item{grid-template-columns:56px 1fr}.cannon-buy{grid-column:1/-1;flex-direction:row}.cannon-buy button{flex:1;font-size:9px}}
+.ammo-icon.cannon-shop-art{width:74px;height:58px;border-radius:10px}.cannon-shop-art img{width:100%;height:100%;object-fit:contain}
 /* Envanter: sürükle-bırak */
 .cannon-transfer-row .cannon-side{cursor:grab;touch-action:none;transition:border-color .12s,box-shadow .12s}
 .cannon-transfer-row .cannon-side.dragging{opacity:.55;cursor:grabbing}
@@ -562,3 +556,25 @@ body.shop-open .market-overlay,body.shop-open .ship-overlay,body.shop-open .load
 .inv-window .inv-panel>header,.inv-window .inv-info>header{display:flex;align-items:center;justify-content:center;gap:12px;padding:0;height:36px;border-bottom:3px solid #a66d25}
 .inv-window .inv-panel>header .inv-arrow{width:34px;height:26px;border:0;border-radius:4px;background:none;font-size:22px}
 .inv-window>header{display:grid;padding:0 10px}.inv-window>header button{border-radius:4px;background:#2a0705;color:#fff}
+/* Ortak satın alma satırı: adet kutusu, toplam ve onay penceresi */
+.market-item.buy-row{grid-template-columns:60px 1fr 250px}
+.buy-row:has(.cannon-shop-art){grid-template-columns:78px 1fr 250px}
+.buy-row small{display:block;margin-top:3px;color:#9fb4ae;font:600 10px Inter}
+.buy-row em{display:block;margin-top:4px;color:#e7c77f;font:700 10px Inter;font-style:normal}
+.buy-box{display:grid;grid-template-columns:1fr auto;gap:5px 8px;align-items:center}
+.buy-box input{min-width:0;padding:8px;border:1px solid #b8904e88;border-radius:5px;background:#04121a;color:#fff;font:700 13px Inter;text-align:center}
+.buy-box input::placeholder{color:#6f8a8a;font-weight:600}
+.buy-box button{padding:9px 12px;border:1px solid #b8904e;border-radius:5px;background:#5a4220;color:#ffe3a3;font:700 10px Cinzel;cursor:pointer}
+.buy-box button:disabled{opacity:.4;cursor:default}
+.buy-total{grid-column:1/-1;color:#d9e6e2;font:700 11px Inter}.buy-total.short{color:#ff7a66}
+.buy-confirm{position:fixed;inset:0;z-index:60;display:none;place-items:center;background:#0009;pointer-events:auto}
+.buy-confirm.open{display:grid}
+.buy-confirm section{width:min(360px,92vw);padding:18px 20px;border:1px solid #d0a95b;border-radius:10px;background:linear-gradient(#0d2a31,#061519);box-shadow:0 20px 50px #000c;text-align:center}
+.buy-confirm h3{margin:0 0 8px;color:#e7c77f;font:700 12px Cinzel;letter-spacing:.14em}
+.buy-confirm p{margin:0 0 10px;color:#fff;font:600 14px Inter}
+.buy-confirm dl{display:grid;grid-template-columns:1fr auto;gap:5px 10px;margin:0 0 14px;padding:10px;border-radius:6px;background:#04121a;text-align:left}
+.buy-confirm dt{color:#9fb4ae;font:600 11px Inter}.buy-confirm dd{margin:0;color:#fff;font:700 12px Inter}.buy-confirm dd.total{color:#f1c662;font-size:14px}.buy-confirm dd.short{color:#ff7a66}
+.buy-confirm section>div{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.buy-confirm button{padding:10px;border:1px solid #b8904e;border-radius:5px;font:700 11px Cinzel;cursor:pointer}
+#buyOk{background:#2f6b3e;border-color:#6fd68a;color:#eaffef}#buyOk:disabled{opacity:.45;cursor:default}#buyCancel{background:#3a2a1a;color:#f1d091}
+@media(max-width:800px){.market-item.buy-row,.buy-row:has(.cannon-shop-art){grid-template-columns:54px 1fr}.buy-box{grid-column:1/-1}}
