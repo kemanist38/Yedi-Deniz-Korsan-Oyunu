@@ -132,7 +132,6 @@ button { font: inherit; }
 .combat-action.speed{opacity:1}
 .combat-action.ability::after{content:'';position:absolute;inset:0;border-radius:50%;background:conic-gradient(#020a0dcc calc(var(--cd,0)*360deg),transparent 0);pointer-events:none}
 .combat-action.ability.active{border-color:#6fd6c4;box-shadow:0 0 16px #6fd6c477,inset 0 0 14px #6fd6c422}
-.combat-action.shield.active{border-color:#d4a64c;box-shadow:0 0 16px #d4a64c88}
 .combat-action small{position:relative;z-index:1;font-weight:700}
 .combat-action span{position:relative;z-index:1}
 @media (max-width:720px){.combat-action b img{width:24px;height:24px}.combat-action.attack b img{width:30px;height:30px}}
@@ -233,11 +232,9 @@ button.event-row{cursor:pointer}
 .combat-controls .combat-action.attack span{bottom:-16px;font-size:8px}
 .combat-controls .combat-action.repair{right:104px;bottom:18px}
 .combat-controls .combat-action.speed{right:94px;bottom:86px}
-.combat-controls .combat-action.shield{right:50px;bottom:134px}
 .combat-controls .combat-action.mine{right:0;bottom:142px}
 .combat-controls .combat-action.active{box-shadow:0 0 0 3px #6fd6c4,0 0 18px #6fd6c4aa}
 .combat-controls .combat-action.attack.active{box-shadow:0 0 0 3px #ef7459,0 0 22px #ef7459aa}
-.combat-controls .combat-action.shield.active{box-shadow:0 0 0 3px #d4a64c,0 0 18px #d4a64caa}
 .combat-controls .combat-action.ability::after{inset:9%}
 .combat-controls .combat-action:active{transform:scale(.94)}
 @media (max-width:900px),(max-height:520px){.combat-controls{right:8px;bottom:8px;transform:scale(.78);transform-origin:bottom right}}
@@ -527,3 +524,41 @@ body.shop-open .market-overlay,body.shop-open .ship-overlay,body.shop-open .load
 .cannon-transfer-row .cannon-side.drop-target{border-color:#f1c662;box-shadow:inset 0 0 18px #f1c66255,0 0 12px #f1c66244}
 .cannon-drag-ghost{position:fixed;left:0;top:0;z-index:100;width:72px;height:60px;pointer-events:none;filter:drop-shadow(0 8px 10px #000c)}
 .cannon-drag-ghost img{width:100%;height:100%;object-fit:contain}
+/* Envanter (Seafight tarzı): kaptan · depo · gemi · bilgi */
+.inv-window{width:min(1080px,96vw);padding:0;overflow:hidden;border:2px solid #b8862f;background:#1a0d08}
+.inv-window>header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;height:52px;padding:0 10px;border-bottom:3px solid #a66d25;background:linear-gradient(#5a120c,#3a0906)}
+.inv-window>header h2{margin:0;color:#f3d496;font:700 18px Cinzel;letter-spacing:.14em}
+.inv-window>header button{justify-self:end;width:36px;height:36px;border:1px solid #d7a85a88;border-radius:4px;background:#2a0705;color:#fff;font-size:22px;cursor:pointer}
+.inv-top{display:flex;align-items:center;gap:8px}.inv-top img{width:46px;height:40px;object-fit:contain;filter:drop-shadow(0 2px 3px #000)}
+.inv-top b{color:#f1c662;font:700 15px Inter}.inv-top small{display:block;color:#d7b983;font:600 9px Inter;letter-spacing:.06em}
+.inv-body{display:grid;grid-template-columns:170px 1fr 1fr 230px;gap:0;min-height:330px;background:#241209}
+.inv-captain{display:flex;align-items:flex-end;justify-content:center;overflow:hidden;border-right:3px solid #a66d25;background:radial-gradient(circle at 50% 30%,#3a4a55,#10161b 75%)}
+.inv-captain img{width:100%;height:100%;object-fit:cover;object-position:top}
+.inv-panel{display:flex;flex-direction:column;border-right:3px solid #a66d25;background:repeating-linear-gradient(90deg,#4a2a17 0 58px,#3d2213 58px 60px),#3d2213}
+.inv-panel>header{display:flex;align-items:center;justify-content:center;gap:12px;height:36px;border-bottom:3px solid #a66d25;background:linear-gradient(#0f1d24,#081217);color:#e8e0cc;font:600 15px Inter}
+.inv-arrow{width:34px;height:26px;border:0;border-radius:4px;background:none;font:900 22px/1 Inter;cursor:pointer;filter:drop-shadow(0 1px 2px #000)}
+.inv-arrow.to-depot{color:#e0443a}.inv-arrow.to-ship{color:#3bd46a}.inv-arrow:hover{transform:scale(1.15)}
+.inv-grid{flex:1;display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:92px;gap:8px;padding:10px;align-content:start;transition:box-shadow .12s}
+.inv-grid.drop-target{box-shadow:inset 0 0 0 3px #f1c662,inset 0 0 30px #f1c66244}
+.inv-empty{border-radius:6px;background:#0000001f;box-shadow:inset 0 0 12px #0005}
+.inv-tile{position:relative;padding:4px;border:2px solid #7a5325;border-radius:6px;background:linear-gradient(#5b3a22,#2e1a0e);cursor:grab;touch-action:none}
+.inv-tile img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 3px 4px #000c);pointer-events:none}
+.inv-tile b{position:absolute;left:0;right:0;bottom:3px;color:#fff;font:800 13px Inter;text-shadow:0 1px 3px #000,0 0 4px #000}
+.inv-tile i{position:absolute;right:3px;top:3px;padding:1px 4px;border-radius:8px;background:#d4a64c;color:#1a0d08;font:800 7px Inter;font-style:normal}
+.inv-tile.selected{border-color:#f1c662;box-shadow:0 0 0 2px #f1c66288,0 0 12px #f1c66266}
+.inv-tile.active{background:linear-gradient(#6a4a26,#3b2410)}
+.inv-info{display:flex;flex-direction:column;background:#1b0f09}
+.inv-info>header{height:36px;display:grid;place-items:center;border-bottom:3px solid #a66d25;background:linear-gradient(#0f1d24,#081217);color:#e8e0cc;font:600 15px Inter}
+.inv-info #cannonRows{padding:10px 12px;text-align:center}
+.inv-info-art{height:74px}.inv-info-art img{height:100%;max-width:100%;object-fit:contain}
+.inv-info h3{margin:4px 0 8px;color:#f3d496;font:700 15px Cinzel}
+.inv-info dl{display:grid;grid-template-columns:1fr auto;gap:4px 8px;margin:0 0 10px;padding:8px;border:1px solid #6b4a2455;border-radius:6px;background:#2a170c;text-align:left}
+.inv-info dt{color:#c9b089;font:600 11px Inter}.inv-info dd{margin:0;color:#fff;font:700 11px Inter}
+.inv-amount{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:6px;margin-bottom:8px;color:#c9b089;font:600 11px Inter}
+.inv-amount input{min-width:0;padding:6px;border:1px solid #b8904e88;border-radius:4px;background:#0b1418;color:#fff;font:700 13px Inter;text-align:center}
+.inv-amount button,.inv-equip{padding:6px 9px;border:1px solid #b8904e88;border-radius:4px;background:#3a3020;color:#f1d091;font:700 9px Cinzel;cursor:pointer}
+.inv-equip{width:100%;padding:9px}.inv-equip:disabled{opacity:.55;cursor:default}
+@media(max-width:900px){.inv-body{grid-template-columns:1fr 1fr;min-height:0}.inv-captain{display:none}.inv-info{grid-column:1/-1}.inv-grid{grid-auto-rows:70px;gap:5px;padding:6px}.inv-panel{min-height:170px}}
+.inv-window .inv-panel>header,.inv-window .inv-info>header{display:flex;align-items:center;justify-content:center;gap:12px;padding:0;height:36px;border-bottom:3px solid #a66d25}
+.inv-window .inv-panel>header .inv-arrow{width:34px;height:26px;border:0;border-radius:4px;background:none;font-size:22px}
+.inv-window>header{display:grid;padding:0 10px}.inv-window>header button{border-radius:4px;background:#2a0705;color:#fff}
