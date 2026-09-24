@@ -1256,8 +1256,8 @@ const eliteDirImages=new Map<string,HTMLImageElement>();
 function eliteDirImage(id:string){let im=eliteDirImages.get(id);if(!im){im=new Image();im.decoding='async';im.src=`/assets/elite-dir-${id}-v1.webp`;eliteDirImages.set(id,im);}return im;}
 const ELITE_FRAME={w:221,h:256,scale:.56};
 function drawEliteDirectionalShip(s:Vec){
-  const id=eliteShip().id,dir=eliteDirImage(id),bob=Math.sin(performance.now()/420)*1.8;
-  ctx.save();ctx.translate(s.x,s.y+bob);ctx.globalAlpha=state.invulnerable&&Math.floor(performance.now()/120)%2?.55:1;
+  const id=eliteShip().id,dir=eliteDirImage(id);
+  ctx.save();ctx.translate(s.x,s.y);ctx.globalAlpha=state.invulnerable&&Math.floor(performance.now()/120)%2?.55:1;
   ctx.shadowColor='#000b';ctx.shadowBlur=13;ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
   if(dir.complete&&dir.naturalWidth){const f=shipDirectionFrame(player.angle),{w,h,scale}=ELITE_FRAME;ctx.drawImage(dir,(f%4)*w,Math.floor(f/4)*h,w,h,-w*scale/2,-h*scale/2,w*scale,h*scale);ctx.restore();return true;}
   // Yön sayfası yüklenene kadar yan görünüş (sağa giderken aynalanır)
@@ -1273,8 +1273,7 @@ function drawPlayerShip(){
   if(!directionalShipImage.complete||!directionalShipImage.naturalWidth){
     if(!playerShipImage.complete||!playerShipImage.naturalWidth){drawShip(player,player.angle,'#173f48',1.1);return;}
   }
-  const bob=Math.sin(performance.now()/420)*1.8;
-  ctx.save();ctx.translate(s.x,s.y+bob);ctx.shadowColor='#000b';ctx.shadowBlur=13;ctx.globalAlpha=state.invulnerable&&Math.floor(performance.now()/120)%2?.55:1;
+  ctx.save();ctx.translate(s.x,s.y);ctx.shadowColor='#000b';ctx.shadowBlur=13;ctx.globalAlpha=state.invulnerable&&Math.floor(performance.now()/120)%2?.55:1;
   if(directionalShipImage.complete&&directionalShipImage.naturalWidth){
     // Başlangıç gemisi sayfasında kuzeybatı karesi (7) yanlışlıkla güneydoğuya bakar; kuzeybatıda kuzeydoğu karesi (3) aynalanır.
     const nw=shipCompass(player.angle)===7,frame=nw?3:shipDirectionFrame(player.angle);
