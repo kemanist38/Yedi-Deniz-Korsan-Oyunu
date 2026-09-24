@@ -11,13 +11,6 @@ const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'
 const page=await browser.newPage();page.on('console',m=>console.log('[studio]',m.text()));page.on('pageerror',e=>{console.error(e);process.exitCode=1;});
 await page.goto(`http://localhost:${port}/studio.html`);await page.waitForFunction(()=>window.studioReady);
 const only=process.argv.slice(2);
-// 3B ada: boyalı görsel, seyir maskesi ve kaide konumları (kule konumu + FLEET_BASTIONS px/py)
-function islandArgs(){const root=path.resolve(here,'../..'),src='data:image/webp;base64,'+fs.readFileSync(path.join(root,'public/assets/fleet-base-v3.b64'),'utf8').trim();
-  const rle=fs.readFileSync(path.join(root,'src/fleetMask.ts'),'utf8').match(/rle:'([^']+)'/)[1],fleet=fs.readFileSync(path.join(root,'src/campaign.ts'),'utf8'),towers=JSON.parse(fleet.match(/towers:(\[\[.*?\]\])/)[1]);
-  const offs=JSON.parse(fs.readFileSync(path.join(root,'src/fleetBastions.ts'),'utf8').match(/offsets:(\[.*\])\}/)[1]);
-  // kapı kuleleri geniş kanal için dışa alınır (src/campaign.ts FLEET.towers ile aynı tutulmalı)
-  const GATE_X=128;towers[3][0]=-GATE_X;towers[4][0]=GATE_X;
-  return{src,mask:{n:125,cell:8,rle},pads:towers.map(([x,y],i)=>[x,y,offs[i].px,offs[i].py])};}
 const jobs={
   'enemy-scout-v1':()=>page.evaluate(()=>renderShipSheet('scout')),
   'enemy-raider-v1':()=>page.evaluate(()=>renderShipSheet('raider')),
@@ -34,20 +27,13 @@ const jobs={
   'vfx-atlas-v1':()=>page.evaluate(()=>renderVfxAtlas()),
   'world-scroll-v1':()=>page.evaluate(()=>renderWorldScroll()),
   'sea-sparkle-v1':()=>page.evaluate(()=>renderSeaSparkle()),
-  'fleet-towers-built-v1':()=>page.evaluate(()=>renderBuiltTowers()),
-  'fleet-island-3d-v1':()=>page.evaluate(a=>renderFleetIsland3D(a),islandArgs()),
-  'fleet-island-3d-map':()=>page.evaluate(a=>debugFleetMap(a),islandArgs()),
 };
 for(const name of ['ammo-fire','ammo-grape','ammo-explosive','ammo-breaker','ammo-leech','icon-mine','icon-attack','icon-repair','icon-speed','icon-shield','icon-hat','icon-chest','officer-gunner','officer-helmsman','officer-carpenter','officer-lookout','officer-quartermaster','officer-surgeon','ui-ring','ui-ring-attack','ui-slot','icon-scroll','icon-gear','icon-anvil','gunner-vignette','icon-market','icon-menu','captain-bust','icon-flag'])jobs[`${name}-v1`]=()=>page.evaluate(n=>renderIcon(n),name);
 jobs['sea-mine-v1']=()=>page.evaluate(()=>renderMineSprite());
 const {SHIPS,MONSTERS}=await import('./catalog.js');
 for(const sp of SHIPS)jobs[`ship-${sp.id}`]=()=>page.evaluate(id=>renderCatalogShip(id),sp.id);
 for(const m of MONSTERS)jobs[`monster-${m.id}`]=()=>page.evaluate(id=>renderCatalogMonster(id),m.id);
-const {FLEET_THEMES}=await import('./fleet.js');
 {const src=fs.readFileSync(path.resolve(here,'../../src/campaign.ts'),'utf8');const npcIds=[...src.matchAll(/npc\('(n\d-\d-(?:light|heavy))'/g)].map(m=>m[1]),monIds=[...src.matchAll(/mon\('(m\d-\d)'/g)].map(m=>m[1]);jobs['portraits-v2']=()=>page.evaluate(order=>renderPortraitsV2(order),[...npcIds,...monIds,'boss']);}
-for(const th of Object.keys(FLEET_THEMES)){jobs[`fleet-base-${th}-v2`]=()=>page.evaluate(t=>renderFleetBase(t),th);jobs[`fleet-towers-${th}-v2`]=()=>page.evaluate(t=>renderFleetTowers(t),th);}
-for(const [look,a,b] of [['ice',71,72],['toxic',81,82],['lava',91,92],['abyss',101,102],['verdant',11,12],['misty',21,22],['coral',31,32],['haven',41,42],['crimson',51,52],['storm',61,62]])
-  jobs[`islands-${look}-v1`]=()=>page.evaluate(([look,a,b])=>renderIslands([[look,a],[look,b]]),[look,a,b]);
 for(const [name,job] of Object.entries(jobs)){
   if(only.length&&!only.includes(name))continue;
   const t=Date.now(),r=await job();

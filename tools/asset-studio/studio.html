@@ -4,15 +4,12 @@
 <body style="margin:0;background:#0e3b48">
 <script type="module">
 import * as THREE from 'three';
-import {buildShip,buildLeviathan,buildChest,buildIsland,buildPortal,buildFort,FLEET} from './models.js';
+import {buildShip,buildLeviathan,buildChest,buildPortal,buildFort,FLEET} from './models.js';
 import {paintSeaTile,paintWorldChart,paintSeaSparkle} from './paint.js';
 import {paintVfxAtlas} from './vfx.js';
 import {paintWorldScroll} from './ui-paint.js';
 import {buildIcon} from './icons.js';
-import {buildFleetBase,buildFleetTower,FLEET_TOWERS,FLEET_ELEVATION} from './fleet.js';
 import {SHIPS,MONSTERS} from './catalog.js';
-import {buildBuiltTower,BUILT_TOWER_TYPES} from './fleet-towers.js';
-import {buildFleetIsland3D,ISLAND3D_ELEVATION,readMap} from './fleet3d.js';
 import {buildCrab,buildSerpent,buildJelly,buildTurtle,buildHydra} from './monsters.js';
 import * as T from './textures.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
@@ -75,8 +72,6 @@ window.renderChests=({frame=128,span=28}={})=>{
   return{...exportCanvas(sheet(frames,2)),frame,anchor:anchorOf(cam,frame)};
 };
 function cameraAt(span,elevDeg){const e=elevDeg*Math.PI/180,c=new THREE.OrthographicCamera(-span/2,span/2,span/2,-span/2,1,1200);c.position.set(0,Math.sin(e)*500,Math.cos(e)*500);c.lookAt(0,0,0);c.updateMatrixWorld();c.updateProjectionMatrix();return c;}
-window.renderIsland=(look,seed,{frame=512,span=236}={})=>{const scene=stage(),isl=buildIsland(look,seed);prepare(isl);scene.add(isl);return{...exportCanvas(shot(scene,cameraAt(span,65),frame)),frame};};
-window.renderIslands=(list,{frame=512,span=236}={})=>{const frames=list.map(([look,seed])=>{const scene=stage(),isl=buildIsland(look,seed);prepare(isl);scene.add(isl);return shot(scene,cameraAt(span,65),frame);});return{...exportCanvas(sheet(frames,frames.length)),frame};};
 window.renderPortal=({count=8,frame=256,span=150}={})=>{const cam=camera(span,6),frames=[];for(let i=0;i<count;i++){const scene=stage(),p=buildPortal(i,count);prepare(p);scene.add(p);frames.push(shot(scene,cam,frame));}return{...exportCanvas(sheet(frames,4)),frame,count,anchor:anchorOf(cam,frame)};};
 window.renderSeaTile=()=>exportCanvas(paintSeaTile());
 window.renderWorldChart=()=>exportCanvas(paintWorldChart());
@@ -103,11 +98,6 @@ const MONSTER_BUILDERS={crab:buildCrab,serpent:buildSerpent,jelly:buildJelly,tur
 window.renderCatalogMonster=(id,{count=8,frame=256,span=140}={})=>{const spec=MONSTERS.find(x=>x.id===id),cam=camera(span,4),frames=[];
   for(let i=0;i<count;i++){const scene=stage(),m=MONSTER_BUILDERS[spec.kind](spec.pal,i/count*Math.PI*2);prepare(m);scene.add(m);frames.push(shot(scene,cam,frame));}
   return{...exportCanvas(sheet(frames,4)),frame,count,span,anchor:anchorOf(cam,frame)};};
-window.renderFleetBase=(theme,{frame=1024,span=1000}={})=>{const scene=stage(),b=buildFleetBase(theme);prepare(b);scene.add(b);
-  const sun=scene.children.find(o=>o.isDirectionalLight&&o.castShadow);Object.assign(sun.shadow.camera,{left:-520,right:520,top:520,bottom:-520,far:1400});sun.position.multiplyScalar(4);sun.shadow.mapSize.set(4096,4096);sun.shadow.camera.updateProjectionMatrix();
-  return{...exportCanvas(shot(scene,cameraAt(span,FLEET_ELEVATION),frame)),frame,span,towers:FLEET_TOWERS};};
-window.renderFleetTowers=(theme,{frame=256,span=120}={})=>{const cam=cameraAt(span,FLEET_ELEVATION);cam.position.y+=22;cam.lookAt(0,22,0);cam.updateMatrixWorld();
-  const frames=['npc','player'].map(o=>{const scene=stage(),t=buildFleetTower(theme,o);prepare(t);scene.add(t);return shot(scene,cam,frame);});return{...exportCanvas(sheet(frames,2)),frame,span,anchor:anchorOf(cam,frame,new THREE.Vector3(0,4,0))};};
 // Portre atlası v2: src/campaign.ts sırası (36 NPC, 18 canavar, boss). 10 sütun, 96 px.
 window.renderPortraitsV2=(order,{cell=96,cols=10}={})=>{const legacy={'n1-2-light':'scout','n1-2-heavy':'raider','n2-1-heavy':'warship',boss:'ghost'},legacyMon={'m2-1':'deep','m8-1':'storm'};
   const frames=order.map(id=>{const scene=stage();let cam;
@@ -115,28 +105,6 @@ window.renderPortraitsV2=(order,{cell=96,cols=10}={})=>{const legacy={'n1-2-ligh
     else{const def=legacy[id]?FLEET[legacy[id]]:SHIPS.find(x=>x.id===id).def,ship=buildShip(def,{heading:Math.PI*1.25});prepare(ship);ship.rotation.y=Math.PI-Math.PI*1.25;scene.add(ship);const L=def.hull.L;cam=camera(L*1.12,L*.19);}
     return shot(scene,cam,cell);});
   return{...exportCanvas(sheet(frames,cols)),cell,cols};};
-// Filonun diktiği tam kuleler: ada görselinin bakış açısına (≈60°) göre render + boyalı son işlem (renk, kontrast, ince kontur).
-function painterly(c){const x=c.getContext('2d'),W=c.width,H=c.height,img=x.getImageData(0,0,W,H),d=img.data,a=new Uint8Array(W*H);for(let i=0;i<W*H;i++)a[i]=d[i*4+3];
-  // Renk eşleme: opak piksellerin ortalamasını ada görselindeki burçların ortalamasına (72,62,45) çek
-  {let R=0,G=0,B=0,n=0;for(let i=0;i<W*H;i++){if(a[i]<250)continue;R+=d[i*4];G+=d[i*4+1];B+=d[i*4+2];n++;}if(n){const gr=Math.min(2.4,72/(R/n)),gg=Math.min(2.4,62/(G/n)),gb=Math.min(2.4,45/(B/n));for(let i=0;i<W*H;i++){const k=i*4;if(!d[k+3])continue;d[k]*=gr;d[k+1]*=gg;d[k+2]*=gb;}}}
-  for(let i=0;i<W*H;i++){const k=i*4;if(!d[k+3])continue;let r=d[k],g=d[k+1],b=d[k+2];const l=(r+g+b)/3;r=l+(r-l)*.9;g=l+(g-l)*.9;b=l+(b-l)*.86;r=(r-128)*1.12+128;g=(g-128)*1.12+128;b=(b-128)*1.12+128+2;d[k]=r;d[k+1]=g;d[k+2]=b;}
-  for(let y=1;y<H-1;y++)for(let xx=1;xx<W-1;xx++){const i=y*W+xx;if(a[i]>40)continue;const n=Math.max(a[i-1],a[i+1],a[i-W],a[i+W]);if(n>140){const k=i*4;d[k]=18;d[k+1]=13;d[k+2]=6;d[k+3]=Math.max(d[k+3],150);}}
-  x.putImageData(img,0,0);return c;}
-// Bakış: ada görselindeki burçlar gibi yuvarlak tepe + uzun gövde → 42° kamera ve modelde z ölçeği 1,3
-window.renderBuiltTowers=({frame=320,span=160}={})=>{const e=42*Math.PI/180,cam=new THREE.OrthographicCamera(-span/2,span/2,span/2,-span/2,1,1500);cam.position.set(0,52+Math.sin(e)*600,Math.cos(e)*600);cam.lookAt(0,52,0);cam.updateMatrixWorld();cam.updateProjectionMatrix();
-  const frames=BUILT_TOWER_TYPES.map(t=>{const scene=stage(),m=buildBuiltTower(t);m.scale.z=1.3;prepare(m);scene.add(m);const sun=scene.children.find(o=>o.isDirectionalLight&&o.castShadow);Object.assign(sun.shadow.camera,{left:-120,right:120,top:120,bottom:-120,far:900});sun.position.set(-180,260,160);sun.intensity=3.4;sun.shadow.camera.updateProjectionMatrix();const fill=new THREE.DirectionalLight('#dfe6ff',.8);fill.position.set(160,120,200);scene.add(fill);return painterly(shot(scene,cam,frame));});
-  return{...exportCanvas(sheet(frames,frames.length)),frame,span,types:BUILT_TOWER_TYPES,anchor:anchorOf(cam,frame,new THREE.Vector3(0,0,0))};};
 
-// 3B filo adası (deneme): boyalı görselin yerleşimi üzerine kurulur; 1024 px = 1000 birim, 50° kamera.
-function gradeIsland(c){const x=c.getContext('2d'),W=c.width,H=c.height,img=x.getImageData(0,0,W,H),d=img.data;
-  for(let i=0;i<W*H;i++){const k=i*4;if(!d[k+3])continue;let r=d[k],g=d[k+1],b=d[k+2];const l=(r+g+b)/3;r=l+(r-l)*1.14;g=l+(g-l)*1.14;b=l+(b-l)*1.08;r=(r-120)*1.1+124;g=(g-120)*1.1+120;b=(b-120)*1.1+114;d[k]=r;d[k+1]=g;d[k+2]=b;}
-  x.putImageData(img,0,0);return c;}
-window.renderFleetIsland3D=async({src,mask,pads,frame=1024,span=1000})=>{const scene=stage(),m=await buildFleetIsland3D({src,mask,pads});prepare(m);scene.add(m);
-  const sun=scene.children.find(o=>o.isDirectionalLight&&o.castShadow);Object.assign(sun.shadow.camera,{left:-760,right:760,top:760,bottom:-760,near:10,far:3000});sun.position.set(-420,760,300);sun.intensity=2.9;sun.shadow.mapSize.set(4096,4096);sun.shadow.bias=-.0004;sun.shadow.normalBias=.6;sun.shadow.camera.updateProjectionMatrix();
-  const e=ISLAND3D_ELEVATION*Math.PI/180,cam=new THREE.OrthographicCamera(-span/2,span/2,span/2,-span/2,10,4000);cam.position.set(0,Math.sin(e)*1600,Math.cos(e)*1600);cam.lookAt(0,0,0);cam.updateMatrixWorld();cam.updateProjectionMatrix();
-  return{...exportCanvas(gradeIsland(shot(scene,cam,frame))),frame,span,stats:m.userData.stats};};
-window.debugFleetMap=async({src,mask})=>{const M=await readMap(src,mask),N=512,c=document.createElement('canvas');c.width=c.height=N;const x=c.getContext('2d'),img=x.createImageData(N,N);
-  for(let k=0;k<N*N;k++){const o=k*4;if(!M.isLand[k]){img.data[o]=20;img.data[o+1]=60+M.lagS[k]*140;img.data[o+2]=120;}else{const s=M.sandS[k],v=M.vegS[k],r=M.rockS[k];img.data[o]=230*s+40*v+130*r;img.data[o+1]=200*s+120*v+130*r;img.data[o+2]=140*s+30*v+130*r;}img.data[o+3]=255;}
-  x.putImageData(img,0,0);return exportCanvas(c);};
 window.studioReady=true;
 </script></body></html>
