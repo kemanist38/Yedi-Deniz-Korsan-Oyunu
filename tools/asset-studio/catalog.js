@@ -29,10 +29,6 @@ const F={
 // ---------------------------------------------------------------- Gemi tipleri
 function hullPaint(p,extra={}){return{plank:p.plank,plankDark:p.plankDark,trim:p.trim,tar:p.tar||'#120c09',band:p.band,ports:extra.ports||0,portLid:p.portLid||p.band,portColor:p.portColor||'#140d0a',stripe:extra.stripe?p.band:null};}
 const ARCH={
-  sloop:(p)=>({hull:{L:40,B:13.5,D:8,bowRise:2.6,sternRise:2.8,sternW:.52,bulwark:1,waterline:.72},hp:hullPaint(p,{stripe:true}),
-    masts:[{t:.56,h:30,r:.6,flag:4,gaff:{foot:2.2,throat:24,peak:28,len:16,sail:0,bulge:1.6}}],jib:{sail:1,bulge:1.3,drop:1},bowsprit:9,cargo:3,castles:[{from:0,to:.14,h:1.6,windows:2}],span:104}),
-  lugger:(p)=>({hull:{L:44,B:13,D:8,bowRise:3.2,sternRise:3,sternW:.45,bulwark:1,waterline:.72},hp:hullPaint(p,{stripe:true}),
-    masts:[{t:.66,h:26,r:.6,flag:4,lateen:{len:30,low:5,high:30,sail:0}},{t:.3,h:22,r:.55,flag:0,lateen:{len:24,low:4,high:25,sail:1}}],bowsprit:6,cargo:2,castles:[{from:0,to:.12,h:1.4,windows:2}],span:104}),
   brig:(p)=>({hull:{L:52,B:16.5,D:9.5,bowRise:3,sternRise:4,sternW:.6,bulwark:1.2,waterline:.72},hp:hullPaint(p,{ports:4}),guns:{count:4},
     masts:[{t:.66,h:36,r:.75,flag:5,yards:[{y:33,w:17,drop:12,sail:0,bulge:1.9},{y:20.5,w:20,drop:13,sail:1,bulge:2}]},{t:.33,h:38,r:.8,flag:5,gaff:{foot:2.5,throat:30,peak:35,len:19,sail:2,bulge:1.5}}],
     jib:{sail:2,bulge:1.2,drop:2},bowsprit:11,cargo:4,castles:[{from:0,to:.17,h:2.4,windows:3,lanterns:true}],span:104}),
@@ -80,53 +76,50 @@ function ship(id,arch,p){
 const wood={plank:'#3a2519',plankDark:'#24160f',trim:'#b8904c',band:'#5b2a20'};
 export const SHIPS=[
   // 1 · Zümrüt Sular
-  ship('n1-1-light','sloop',{...wood,sail:'#d8cda6',sail2:'#e2d8b8',emblem:'fish',emblemColor:'#3f6a3a',flag:'#3f6a3a',band:'#3f6a3a',patches:2,patchColors:['#b8a57a','#c9b98e']}),
+  ship('n1-1-light','schooner',{...wood,sail:'#d8cda6',sail2:'#e2d8b8',emblem:'fish',emblemColor:'#3f6a3a',flag:'#3f6a3a',band:'#3f6a3a',patches:2,patchColors:['#b8a57a','#c9b98e']}),
   ship('n1-1-heavy','brig',{...wood,sail:'#d6c9a0',sail2:'#cfc196',stripes:4,stripeColor:'#4f7d4a',emblem:'anchor',emblemColor:'#2e4a2c',flag:'#2e5a36',flagMark:'bar',band:'#35573a',portLid:'#4f7d4a'}),
   // 2 · Mercan
-  ship('n2-1-light','lugger',{...wood,plank:'#4a3024',sail:'#f0b0a0',sail2:'#f4c2b2',emblem:'shell',emblemColor:'#b0453a',flag:'#d0604e',band:'#b0453a'}),
-  ship('n2-2-light','sloop',{...wood,plank:'#e0d8c8',plankDark:'#b8ae9a',trim:'#4fb8b0',band:'#3f9a98',sail:'#f4f2ea',sail2:'#e8f4f2',emblem:'crescent',emblemColor:'#3f9a98',flag:'#3f9a98',flagMark:'dot',flagColor:'#f4f2ea',deck:'#9a8a6a'}),
+  ship('n2-1-light','caravel',{...wood,plank:'#4a3024',sail:'#f0b0a0',sail2:'#f4c2b2',emblem:'shell',emblemColor:'#b0453a',flag:'#d0604e',band:'#b0453a'}),
+  ship('n2-2-light','schooner',{...wood,plank:'#e0d8c8',plankDark:'#b8ae9a',trim:'#4fb8b0',band:'#3f9a98',sail:'#f4f2ea',sail2:'#e8f4f2',emblem:'crescent',emblemColor:'#3f9a98',flag:'#3f9a98',flagMark:'dot',flagColor:'#f4f2ea',deck:'#9a8a6a'}),
   ship('n2-2-heavy','frigate',{plank:'#1f3a3e',plankDark:'#12262a',trim:'#e0b24e',band:'#2f7a7a',portLid:'#3fa8a0',sail:'#bfeee6',sail2:'#d8f4ee',sail3:'#e8f8f4',border:'#e0b24e',emblem:'trident',emblemColor:'#1f6f6a',flag:'#1f6f6a',flagMark:'diamond',flagColor:'#e0b24e',glass:'#bff6ea'}),
   // 3 · Sis
-  ship('n3-1-light','sloop',{plank:'#3d3f3c',plankDark:'#262826',trim:'#8a9a96',band:'#4a5550',sail:'#aab0aa',sail2:'#b8beb8',ragged:18,emblem:'eye',emblemColor:'#3a4440',flag:'#3a4440',flagColor:'#c8d4ce',dirt:.3}),
+  ship('n3-1-light','schooner',{plank:'#3d3f3c',plankDark:'#262826',trim:'#8a9a96',band:'#4a5550',sail:'#aab0aa',sail2:'#b8beb8',ragged:18,emblem:'eye',emblemColor:'#3a4440',flag:'#3a4440',flagColor:'#c8d4ce',dirt:.3}),
   ship('n3-1-heavy','brig',{plank:'#343a36',plankDark:'#1f2421',trim:'#8fa89a',band:'#3a4a42',portLid:'#56695e',sail:'#9aa89c',sail2:'#a8b4aa',sail3:'#b4beb6',ragged:22,patches:3,patchColors:['#7a8a7c','#c0c8c0'],emblem:'spiral',emblemColor:'#2c3833',flag:'#2c3833',flagMark:'bar',flagColor:'#b8c8be',dirt:.3}),
-  ship('n3-2-light','lugger',{plank:'#d8d0bc',plankDark:'#a89e88',trim:'#6a6456',band:'#8a826e',sail:'#e8e2d0',sail2:'#ddd6c2',ragged:30,emblem:'skull',emblemColor:'#3a3428',flag:'#1a1814',flagColor:'#e8e2d0',dirt:.35}),
+  ship('n3-2-light','caravel',{plank:'#d8d0bc',plankDark:'#a89e88',trim:'#6a6456',band:'#8a826e',sail:'#e8e2d0',sail2:'#ddd6c2',ragged:30,emblem:'skull',emblemColor:'#3a3428',flag:'#1a1814',flagColor:'#e8e2d0',dirt:.35}),
   ship('n3-2-heavy','galleon',{plank:'#23302a',plankDark:'#121a16',trim:'#6fd6a8',band:'#1f3a30',portLid:'#2f5a48',portColor:'#6dffc4',sail:'#8ec8ae',sail2:'#9fd8bf',sail3:'#aee2cc',ragged:38,patches:3,patchColors:['#6aa892'],emblem:'skull',emblemColor:'#16302a',flag:'#0e1a17',flagMark:'cross',flagColor:'#8dffd0',glow:'#4dffb0',glass:'#8dffd0',dirt:.35}),
   // 4 · Kızıl
   ship('n4-1-light','brig',{plank:'#2a1a16',plankDark:'#170d0b',trim:'#c8503c',band:'#7a1f1a',portLid:'#a3302a',sail:'#1e1a1a',sail2:'#2a2222',sail3:'#302626',stripes:0,emblem:'skull',emblemColor:'#c83c2c',flag:'#8a1a14',flagMark:'cross',flagColor:'#1a1010',border:'#8a1a14'}),
   ship('n4-1-heavy','frigate',{plank:'#301512',plankDark:'#1a0a08',trim:'#d4a64c',band:'#8a1f1a',portLid:'#b03028',sail:'#9a1f1a',sail2:'#a82a22',sail3:'#b0342a',border:'#1a1010',emblem:'crown',emblemColor:'#1a1010',flag:'#1a1010',flagMark:'diamond',flagColor:'#c83c2c'}),
-  ship('n4-2-light','lugger',{plank:'#4a2e1e',plankDark:'#2a1810',trim:'#a86a3a',band:'#7a4020',sail:'#b0683a',sail2:'#a25e34',patches:4,patchColors:['#7a4a2a','#c8844a','#5a3020'],emblem:'anchor',emblemColor:'#3a1c10',flag:'#5a2a14',flagColor:'#d09058',dirt:.35}),
+  ship('n4-2-light','caravel',{plank:'#4a2e1e',plankDark:'#2a1810',trim:'#a86a3a',band:'#7a4020',sail:'#b0683a',sail2:'#a25e34',patches:4,patchColors:['#7a4a2a','#c8844a','#5a3020'],emblem:'anchor',emblemColor:'#3a1c10',flag:'#5a2a14',flagColor:'#d09058',dirt:.35}),
   ship('n4-2-heavy','junk',{plank:'#231a16',plankDark:'#120c0a',trim:'#b8602c',band:'#5a2a18',portLid:'#8a4020',sail:'#8a3a22',sail2:'#7a3420',sail3:'#6a2e1c',emblem:'sun',emblemColor:'#e0a040',flag:'#1a1210',flagMark:'dot',flagColor:'#e0a040',dirt:.25}),
   // 5 · Buz
-  ship('n5-1-light','sloop',{plank:'#c8d8e4',plankDark:'#9ab0c0',trim:'#4a7aa8',band:'#6a9ac8',sail:'#f0f6fa',sail2:'#e4eef6',emblem:'snow',emblemColor:'#4a7aa8',flag:'#4a7aa8',flagColor:'#f0f6fa',deck:'#b8c4cc',deckDark:'#8a98a4'}),
+  ship('n5-1-light','schooner',{plank:'#c8d8e4',plankDark:'#9ab0c0',trim:'#4a7aa8',band:'#6a9ac8',sail:'#f0f6fa',sail2:'#e4eef6',emblem:'snow',emblemColor:'#4a7aa8',flag:'#4a7aa8',flagColor:'#f0f6fa',deck:'#b8c4cc',deckDark:'#8a98a4'}),
   ship('n5-1-heavy','brig',{plank:'#2a3a4c',plankDark:'#16222e',trim:'#bfe6ff',band:'#4a7aa8',portLid:'#6a9ac8',sail:'#dceaf4',sail2:'#cfe2f0',sail3:'#c4dcee',hstripes:6,stripeColor:'#7aaad0',emblem:'snow',emblemColor:'#2a4a6a',flag:'#2a4a6a',flagMark:'diamond',flagColor:'#bfe6ff',glass:'#bfe6ff'}),
-  ship('n5-2-light','lugger',{plank:'#9ac0d8',plankDark:'#6a90aa',trim:'#e8f6ff',band:'#5a8ab0',sail:'#bfe6ff',sail2:'#a8dcf8',emblem:'drop',emblemColor:'#2a5a80',flag:'#5a8ab0',flagColor:'#e8f6ff',glow:'#7fd0ff',glass:'#bfe6ff'}),
+  ship('n5-2-light','caravel',{plank:'#9ac0d8',plankDark:'#6a90aa',trim:'#e8f6ff',band:'#5a8ab0',sail:'#bfe6ff',sail2:'#a8dcf8',emblem:'drop',emblemColor:'#2a5a80',flag:'#5a8ab0',flagColor:'#e8f6ff',glow:'#7fd0ff',glass:'#bfe6ff'}),
   ship('n5-2-heavy','galleon',{plank:'#e4ecf2',plankDark:'#b8c6d2',trim:'#9ab8d0',band:'#3a5a7a',portLid:'#5a7a9a',sail:'#f4f8fb',sail2:'#e8f0f6',sail3:'#dce8f2',border:'#9ab8d0',emblem:'crown',emblemColor:'#5a7a9a',flag:'#3a5a7a',flagMark:'cross',flagColor:'#e4ecf2',deck:'#c0ccd4',deckDark:'#909ea8',glass:'#bfe6ff'}),
   // 6 · Zehir
-  ship('n6-1-light','sloop',{plank:'#3a3a22',plankDark:'#222212',trim:'#8aa83a',band:'#4a5a22',sail:'#8a9a5a',sail2:'#9aa866',patches:3,patchColors:['#6a7a3a','#b0b870'],emblem:'drop',emblemColor:'#2a3a12',flag:'#4a5a22',flagColor:'#c8e070',dirt:.35}),
+  ship('n6-1-light','schooner',{plank:'#3a3a22',plankDark:'#222212',trim:'#8aa83a',band:'#4a5a22',sail:'#8a9a5a',sail2:'#9aa866',patches:3,patchColors:['#6a7a3a','#b0b870'],emblem:'drop',emblemColor:'#2a3a12',flag:'#4a5a22',flagColor:'#c8e070',dirt:.35}),
   ship('n6-1-heavy','brig',{plank:'#1a2216',plankDark:'#0c120a',trim:'#9aff5a',band:'#2a4a1a',portLid:'#3a6a22',portColor:'#9aff5a',sail:'#2a3a22',sail2:'#34462a',sail3:'#3e5232',emblem:'skull',emblemColor:'#9aff5a',flag:'#1a2216',flagMark:'cross',flagColor:'#9aff5a',glow:'#6aff3a',glass:'#b0ff70'}),
-  ship('n6-2-light','lugger',{plank:'#4a4030',plankDark:'#2a2418',trim:'#8a8a4a',band:'#5a5a2a',sail:'#a8a070',sail2:'#9a9262',ragged:28,patches:4,patchColors:['#6a6a3a','#8a7a4a','#c0b880'],emblem:'spiral',emblemColor:'#3a3a1a',flag:'#5a5a2a',flagColor:'#d0d080',dirt:.45}),
+  ship('n6-2-light','caravel',{plank:'#4a4030',plankDark:'#2a2418',trim:'#8a8a4a',band:'#5a5a2a',sail:'#a8a070',sail2:'#9a9262',ragged:28,patches:4,patchColors:['#6a6a3a','#8a7a4a','#c0b880'],emblem:'spiral',emblemColor:'#3a3a1a',flag:'#5a5a2a',flagColor:'#d0d080',dirt:.45}),
   ship('n6-2-heavy','galleon',{plank:'#2e3018',plankDark:'#181a0c',trim:'#c8c04a',band:'#4a4a1a',portLid:'#6a6a22',sail:'#c8c46a',sail2:'#bab45e',sail3:'#aca652',ragged:20,patches:3,patchColors:['#8a8a3a','#dada8a'],emblem:'skull',emblemColor:'#2e3018',flag:'#c8c04a',flagMark:'dot',flagColor:'#2e3018',dirt:.4}),
   // 7 · Alev
   ship('n7-1-light','brig',{plank:'#1c1816',plankDark:'#0c0a08',trim:'#ff8a2a',band:'#3a1a10',portLid:'#6a2a14',portColor:'#ff8a2a',sail:'#3a3432',sail2:'#443c38',sail3:'#4e4440',ragged:14,emblem:'flame',emblemColor:'#ff7a1a',flag:'#1c1816',flagMark:'bar',flagColor:'#ff7a1a',glow:'#ff5a10',glass:'#ffb060'}),
   ship('n7-1-heavy','frigate',{plank:'#141010',plankDark:'#080606',trim:'#ffb040',band:'#5a1a0a',portLid:'#a0300a',portColor:'#ffa040',sail:'#c8481a',sail2:'#d0561e',sail3:'#d86424',border:'#1a1010',emblem:'flame',emblemColor:'#ffd070',flag:'#1a1010',flagMark:'diamond',flagColor:'#ff8a2a',glow:'#ff6a1a',glass:'#ffb060'}),
-  ship('n7-2-light','lugger',{plank:'#2a1a12',plankDark:'#140c08',trim:'#ffa040',band:'#7a2a0a',sail:'#ff9a3a',sail2:'#ff8a2a',emblem:'flame',emblemColor:'#7a1a0a',flag:'#7a2a0a',flagColor:'#ffd070',glow:'#ff7a1a'}),
+  ship('n7-2-light','caravel',{plank:'#2a1a12',plankDark:'#140c08',trim:'#ffa040',band:'#7a2a0a',sail:'#ff9a3a',sail2:'#ff8a2a',emblem:'flame',emblemColor:'#7a1a0a',flag:'#7a2a0a',flagColor:'#ffd070',glow:'#ff7a1a'}),
   ship('n7-2-heavy','junk',{plank:'#120c0a',plankDark:'#060404',trim:'#ff6a1a',band:'#3a0e06',portLid:'#7a1a0a',portColor:'#ff6a1a',sail:'#5a140a',sail2:'#4a1008',sail3:'#3a0c06',emblem:'sun',emblemColor:'#ff8a2a',flag:'#120c0a',flagMark:'cross',flagColor:'#ff6a1a',glow:'#ff3a0a',glass:'#ff8a3a'}),
   // 8 · Fırtına
-  ship('n8-1-light','sloop',{plank:'#2a2e36',plankDark:'#16181e',trim:'#e0c040',band:'#3a4050',sail:'#5a606e',sail2:'#666c7a',emblem:'bolt',emblemColor:'#f0d040',flag:'#2a2e36',flagMark:'bar',flagColor:'#f0d040'}),
+  ship('n8-1-light','schooner',{plank:'#2a2e36',plankDark:'#16181e',trim:'#e0c040',band:'#3a4050',sail:'#5a606e',sail2:'#666c7a',emblem:'bolt',emblemColor:'#f0d040',flag:'#2a2e36',flagMark:'bar',flagColor:'#f0d040'}),
   ship('n8-1-heavy','frigate',{plank:'#1a2030',plankDark:'#0c1018',trim:'#f0d040',band:'#243050',portLid:'#34426a',sail:'#2a3450',sail2:'#323e5c',sail3:'#3a4868',border:'#f0d040',emblem:'bolt',emblemColor:'#f0d040',flag:'#1a2030',flagMark:'diamond',flagColor:'#f0d040',glow:'#6a8aff',glass:'#bfd0ff'}),
   ship('n8-2-light','brig',{plank:'#30343c',plankDark:'#1a1c22',trim:'#a0aac0',band:'#44485a',portLid:'#5a6078',sail:'#8a92a4',sail2:'#9aa2b2',sail3:'#a8b0c0',hstripes:4,stripeColor:'#5a6278',emblem:'spiral',emblemColor:'#2a2e3a',flag:'#44485a',flagMark:'cross',flagColor:'#d0d8e8'}),
   ship('n8-2-heavy','galleon',{plank:'#141a2a',plankDark:'#0a0e18',trim:'#e0b24e',band:'#1a2a50',portLid:'#2a3a6a',sail:'#1e2a4a',sail2:'#243258',sail3:'#2a3a64',border:'#e0b24e',emblem:'bolt',emblemColor:'#e0b24e',flag:'#e0b24e',flagMark:'dot',flagColor:'#1a2a50',glow:'#4a6aff',glass:'#ffd070'}),
   // 9 · Derinlik
-  ship('n9-1-light','lugger',{plank:'#1a1422',plankDark:'#0c0812',trim:'#b070ff',band:'#2a1a40',sail:'#3a2a5a',sail2:'#342650',emblem:'crescent',emblemColor:'#c890ff',flag:'#1a1422',flagColor:'#c890ff',glow:'#9a4aff',glass:'#d0a0ff'}),
+  ship('n9-1-light','caravel',{plank:'#1a1422',plankDark:'#0c0812',trim:'#b070ff',band:'#2a1a40',sail:'#3a2a5a',sail2:'#342650',emblem:'crescent',emblemColor:'#c890ff',flag:'#1a1422',flagColor:'#c890ff',glow:'#9a4aff',glass:'#d0a0ff'}),
   ship('n9-1-heavy','junk',{plank:'#140e1c',plankDark:'#08060e',trim:'#c890ff',band:'#2a1440',portLid:'#4a2270',portColor:'#c890ff',sail:'#2a1840',sail2:'#241438',sail3:'#1e1030',emblem:'eye',emblemColor:'#d8a8ff',flag:'#140e1c',flagMark:'diamond',flagColor:'#c890ff',glow:'#8a3aff',glass:'#d0a0ff'}),
   ship('n9-2-light','frigate',{plank:'#101014',plankDark:'#060608',trim:'#c0c0c8',band:'#1a1a22',portLid:'#2a2a34',sail:'#18181e',sail2:'#202028',sail3:'#282830',border:'#6a6a78',emblem:'skull',emblemColor:'#c0c0c8',flag:'#101014',flagMark:'cross',flagColor:'#c0c0c8'}),
   ship('n9-2-heavy','galleon',{plank:'#0c0a0e',plankDark:'#040306',trim:'#f0c04a',band:'#1a1020',portLid:'#3a2240',portColor:'#f0c04a',sail:'#14101a',sail2:'#1a1422',sail3:'#201a2a',border:'#f0c04a',emblem:'crown',emblemColor:'#f0c04a',flag:'#0c0a0e',flagMark:'diamond',flagColor:'#f0c04a',glow:'#7a3aff',glass:'#ffd070'}),
 ];
 
 // ---------------------------------------------------------------- Canavarlar (tür + palet)
-// Hafif gemilerin gelişmiş sürümleri (id: <npc>-v2). sloop → uskuna, lugger → karavela; renkler aynı.
-const LIGHT_UP={sloop:'schooner',lugger:'caravel'};
-export const LIGHT_V2=SHIPS.filter(x=>x.id.endsWith('-light')&&LIGHT_UP[x.arch]).map(x=>ship(`${x.id}-v2`,LIGHT_UP[x.arch],x.pal));
 // ---------------------------------------------------------------- Harita bossları
 // Her haritanın bossu, o haritanın en güçlü NPC'sinin (ağır) renklerini taşır; altın süsleme ve amiral sancağıyla büyütülür.
 // Eski görselli iki ağır NPC (Yağmacılar, Kızıl Savaş Gemisi) katalogda olmadığı için paletleri burada.
