@@ -513,3 +513,9 @@ body.shop-open .market-overlay,body.shop-open .ship-overlay,body.shop-open .load
 .map-badge{left:4px;right:auto;top:4px;bottom:auto;align-items:flex-start;padding:0;border:0;background:none}
 .map-badge strong,.map-badge small{display:none}
 .map-badge .map-coord{margin:0;padding:1px 6px;border-radius:4px;background:#030d11b3;font-size:10px}
+/* Oyun logosu: sol üstte, mini harita onun altında */
+.brand{left:18px;top:4px;z-index:12;display:flex;flex-direction:column;align-items:center;width:185px;font-size:0;letter-spacing:0;pointer-events:none}
+.brand img{display:block;width:185px;height:auto;filter:drop-shadow(0 4px 10px #000c)}
+.brand small{margin-top:-4px;font:700 8px Cinzel;letter-spacing:.3em;color:#e8c47a;text-shadow:0 1px 4px #000}
+.map-cluster{top:170px}.combat-targets{top:356px}
+@media(max-width:900px),(max-height:520px){.brand{display:flex;width:96px;left:8px;top:2px}.brand img{width:96px}.brand small{display:none}.map-cluster{top:84px}.combat-targets{top:250px}}
