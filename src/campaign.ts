@@ -45,11 +45,16 @@ export const THEMES:Record<number,Theme>={
 };
 
 // ---------------------------------------------------------------- NPC gemileri
-export type NpcDef={id:string;name:string;sprite:string;span:number;role:'light'|'heavy';tier:number;hp:number;damage:number;reload:number;speed:number;gold:number;wood:number;xp:number;portrait:number};
+export type NpcDef={id:string;name:string;sprite:string;span:number;role:'light'|'heavy';tier:number;hp:number;damage:number;reload:number;speed:number;gold:number;xp:number;portrait:number};
+// Seafight'taki gibi ödül canla orantılıdır: aynı denizde can başına tecrübe ve altın NPC ile canavarda aynıdır.
+// NPC ve canavar yalnızca tecrübe puanı (TP) ve altın verir; savaş puanı sadece rakip oyuncu batırınca kazanılır.
+export const XP_PER_HP=(tier:number)=>.5*Math.pow(tier,.6);
+export const GOLD_PER_HP=.65;
+export const killReward=(hp:number,tier:number)=>({xp:Math.round(hp*XP_PER_HP(tier)),gold:Math.round(hp*GOLD_PER_HP)});
+const hpScale=(tier:number)=>1+.55*(tier-1);
 const npc=(id:string,name:string,role:'light'|'heavy',tier:number,sprite=`/assets/ship-${id}.webp`,span=role==='light'?104:112):Omit<NpcDef,'portrait'>=>{
-  const hp=role==='light'?42:95,dmg=role==='light'?5:11,t=tier-1;
-  return{id,name,sprite,span,role,tier,hp:Math.round(hp*(1+.55*t)),damage:Math.round(dmg*(1+.35*t)),reload:role==='light'?2.6:2.7,speed:(role==='light'?50:34)+t*1.5,
-    gold:Math.round((role==='light'?14:32)*(1+.6*t)),wood:Math.round((role==='light'?3:8)*(1+.35*t)),xp:Math.round((role==='light'?22:46)*Math.pow(tier,1.25))};
+  const dmg=role==='light'?5:11,t=tier-1,hp=Math.round((role==='light'?42:95)*hpScale(tier)),r=killReward(hp,tier);
+  return{id,name,sprite,span,role,tier,hp,damage:Math.round(dmg*(1+.35*t)),reload:role==='light'?2.6:2.7,speed:(role==='light'?50:34)+t*1.5,gold:r.gold,xp:r.xp};
 };
 const NPC_LIST:Omit<NpcDef,'portrait'>[]=[
   npc('n1-1-light','Kaçak Balıkçı','light',1),npc('n1-1-heavy','Kıyı Yağmacısı','heavy',1,undefined,104),
@@ -74,9 +79,10 @@ const NPC_LIST:Omit<NpcDef,'portrait'>[]=[
 export const NPCS:Record<string,NpcDef>=Object.fromEntries(NPC_LIST.map((n,i)=>[n.id,{...n,portrait:i}]));
 
 // ---------------------------------------------------------------- Canavarlar
-export type MonsterDef={id:string;name:string;sprite:string;span:number;frame:number;anchorY:number;radius:number;tier:number;hp:number;damage:number;reload:number;gold:number;wood:number;pearls:number;xp:number;portrait:number};
-const mon=(id:string,name:string,tier:number,radius=54,sprite=`/assets/monster-${id}.webp`,span=140,anchorY=133.4):Omit<MonsterDef,'portrait'>=>{const t=tier-1;
-  return{id,name,sprite,span,frame:256,anchorY,radius,tier,hp:Math.round(320*(1+.7*t)),damage:Math.round(10*(1+.35*t)),reload:2.8-t*.08,gold:Math.round(110*(1+.6*t)),wood:Math.round(15*(1+.4*t)),pearls:2+Math.floor(tier/2),xp:Math.round(240*Math.pow(tier,1.25))};};
+export type MonsterDef={id:string;name:string;sprite:string;span:number;frame:number;anchorY:number;radius:number;tier:number;hp:number;damage:number;reload:number;gold:number;xp:number;portrait:number};
+// Canavar, aynı denizin ağır NPC'sinden yaklaşık 2,2 kat daha dayanıklıdır (Seafight'ta canavarlar ağır NPC'lerin 1,5–2 katı).
+const mon=(id:string,name:string,tier:number,radius=54,sprite=`/assets/monster-${id}.webp`,span=140,anchorY=133.4):Omit<MonsterDef,'portrait'>=>{const t=tier-1,hp=Math.round(210*hpScale(tier)),r=killReward(hp,tier);
+  return{id,name,sprite,span,frame:256,anchorY,radius,tier,hp,damage:Math.round(10*(1+.35*t)),reload:2.8-t*.08,gold:r.gold,xp:r.xp};};
 const MONSTER_LIST:Omit<MonsterDef,'portrait'>[]=[
   mon('m1-1','Yosun Yengeci',1,50),mon('m1-2','Kıyı Yılanı',1,56),
   mon('m2-1','Derinlik Leviathanı',2,54,'/assets/leviathan-v1.webp',132,130.9),mon('m2-2','İnci Denizanası',2,50),

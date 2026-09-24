@@ -42,3 +42,10 @@ test('actual edge detection uses width for east/west and height for north/south'
     c.player={x,y};assert.equal(vm.runInContext('edgeDir()',c),dir);
   }
 });
+test('NPC and monster rewards scale with hitpoints and give only XP and gold',()=>{
+  const {NPCS,MONSTERS,XP_PER_HP,GOLD_PER_HP}=world;
+  for(const d of [...Object.values(NPCS),...Object.values(MONSTERS)]){
+    assert.equal(d.xp,Math.round(d.hp*XP_PER_HP(d.tier)));assert.equal(d.gold,Math.round(d.hp*GOLD_PER_HP));
+    assert.ok(!('wood' in d)&&!('pearls' in d),`${d.id} gives only XP and gold`);}
+  const heavy=NPCS['n3-1-heavy'],monster=MONSTERS['m3-1'];assert.ok(monster.hp>heavy.hp*2&&monster.hp<heavy.hp*2.5);
+});

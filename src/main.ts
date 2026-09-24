@@ -23,7 +23,7 @@ type CannonStock=Record<CannonKind,number>;
 type Shot = Vec & { vx:number; vy:number; life:number; owner:'player'|'enemy'; damage:number; hit:boolean; ammo:AmmoKind; target?:Target; slow?:number; splash?:number; visual?:'spit'; age?:number; flight?:number; arc?:number; trail?:number };
 type SalvoRound = { delay:number; target:Target; side:number; slot:number; damage:number; ammo:AmmoKind };
 type EnemyRole='light'|'heavy';
-type Enemy = Vec & { kind:'ship'; def?:NpcDef; burnTimer?:number; tower?:boolean; towerIndex?:number; boss?:boolean; summoned?:boolean; hitRadius?:number; fireRange?:number; rewardXp?:number; role:EnemyRole; angle:number; hp:number; maxHp:number; cooldown:number; speed:number; damage:number; reload:number; rewardGold:number; rewardWood:number; rewardFame:number; color:string; name:string; tier:number; aggro:boolean; wander:number; slowTimer:number; homeX:number; homeY:number; combatTimer:number };
+type Enemy = Vec & { kind:'ship'; def?:NpcDef; burnTimer?:number; tower?:boolean; towerIndex?:number; boss?:boolean; summoned?:boolean; hitRadius?:number; fireRange?:number; rewardXp?:number; role:EnemyRole; angle:number; hp:number; maxHp:number; cooldown:number; speed:number; damage:number; reload:number; rewardGold:number; rewardFame:number; color:string; name:string; tier:number; aggro:boolean; wander:number; slowTimer:number; homeX:number; homeY:number; combatTimer:number };
 type ParticleKind='foam'|'smoke'|'spark'|'damage'|'flash'|'explosion'|'splash'|'splinter'|'bubble'|'plank'|'firePuff'|'target'|'poison'|'soul'|'shock';
 // z: su üstünden yükseklik (ekranda yukarı kayar); vz ile savrulan parçalar suya düşer
 type Particle = Vec & { vx:number; vy:number; life:number; maxLife:number; kind:ParticleKind; text?:string; z?:number; vz?:number; rot?:number; vr?:number; size?:number; variant?:number };
@@ -314,7 +314,7 @@ function spawnEnemy(){
   enemies.push(makeShip(def,p.x,p.y,Math.random()*Math.PI*2));
 }
 function makeShip(def:NpcDef,x:number,y:number,angle:number):Enemy{
-  return{kind:'ship',def,role:def.role,x,y,angle,hp:def.hp,maxHp:def.hp,cooldown:Math.random()*2,speed:def.speed+Math.random()*4,damage:def.damage,reload:def.reload,rewardGold:def.gold,rewardWood:def.wood,rewardFame:def.xp,color:'#79372f',name:def.name,tier:def.tier,aggro:false,wander:Math.random()*6,slowTimer:0,homeX:x,homeY:y,combatTimer:0};
+  return{kind:'ship',def,role:def.role,x,y,angle,hp:def.hp,maxHp:def.hp,cooldown:Math.random()*2,speed:def.speed+Math.random()*4,damage:def.damage,reload:def.reload,rewardGold:def.gold,rewardFame:def.xp,color:'#79372f',name:def.name,tier:def.tier,aggro:false,wander:Math.random()*6,slowTimer:0,homeX:x,homeY:y,combatTimer:0};
 }
 const regularEnemyCount=()=>enemies.filter(e=>!e.tower&&!e.boss).length;
 // Adalardan, filo adasından ve oyuncudan uzak rastgele deniz noktası
@@ -327,7 +327,7 @@ function setupFleetIsland(){
   const map=mapDef(),f=map.fleet,t=fleetTower(map.tier);ownTowers.length=0;towersDestroyedHere=0;if(!hasFleetIsland())return;
   // Kendi adanda yalnızca filonun diktiği kuleler vardır; boş kaideler FİLO sekmesinden inciyle doldurulur.
   if(fleetOwner()==='player'){if(guild){const slots=islandSlots(guild,currentMap);FLEET.towers.forEach(([dx,dy],i)=>{const t=slots[i];if(t)ownTowers.push({x:f.x+dx,y:f.y+dy,cooldown:Math.random()*2,slot:i,type:t.type});});}return;}
-  FLEET.towers.forEach(([dx,dy],i)=>{const tower:Enemy={kind:'ship',role:'heavy',tower:true,towerIndex:i,x:f.x+dx,y:f.y+dy,angle:0,hp:t.hp,maxHp:t.hp,cooldown:Math.random()*2,speed:0,damage:t.damage,reload:t.reload,rewardGold:0,rewardWood:0,rewardFame:0,color:'#555',name:`${f.name} Kulesi`,tier:map.tier,aggro:false,wander:0,slowTimer:0,homeX:f.x+dx,homeY:f.y+dy,combatTimer:0,hitRadius:34,fireRange:t.range};enemies.push(tower);});
+  FLEET.towers.forEach(([dx,dy],i)=>{const tower:Enemy={kind:'ship',role:'heavy',tower:true,towerIndex:i,x:f.x+dx,y:f.y+dy,angle:0,hp:t.hp,maxHp:t.hp,cooldown:Math.random()*2,speed:0,damage:t.damage,reload:t.reload,rewardGold:0,rewardFame:0,color:'#555',name:`${f.name} Kulesi`,tier:map.tier,aggro:false,wander:0,slowTimer:0,homeX:f.x+dx,homeY:f.y+dy,combatTimer:0,hitRadius:34,fireRange:t.range};enemies.push(tower);});
 }
 function populateMap(){
   const map=mapDef();islands.splice(0,islands.length,...map.islands.map(i=>({...i})));
@@ -948,15 +948,16 @@ function sinkEnemy(e:Enemy){
   if(e.def&&!e.tower&&!e.boss)wrecks.push({x:e.x,y:e.y,angle:e.angle,sprite:e.def.sprite,span:e.def.span,t:0,bubble:0});
   if(e.tower){destroyTower();return;}
   if(e.boss){burst(e.x,e.y,true);defeatBoss(e);return;}
-  // NPC batınca sandık düşmez: sandığın ganimeti doğrudan hesaba eklenir.
-  const battle=e.role==='heavy'?8:4,scale=1+.55*(e.tier-1),loot=createChest(e.role==='heavy'?'warship':'raider',e.x,e.y,bonus.gilded,scale);
-  if(eliteEnabled()&&activeEliteShip==='bone'){soulStacks=Math.min(3,soulStacks+1);soulTimer=30;}const eliteLoot=eliteEnabled()&&activeEliteShip==='sovereign'?1.2:1;const bountyGold=Math.round(e.rewardGold*bonus.bounty);const goldGain=Math.round((e.rewardGold+bountyGold+loot.gold*bonus.chestGold)*eliteLoot),pearlGain=Math.round(loot.pearls*eliteLoot);state.gold+=goldGain;state.wood+=e.rewardWood+loot.wood;state.chainAmmo+=loot.chain;state.pearls+=pearlGain;state.fame+=e.rewardFame;state.battlePoints=Math.min(500,state.battlePoints+battle);saveAccount();
-  if(loot.chain)renderQuickSlots();rewardNotice(`+${goldGain} Altın   +${e.rewardWood+loot.wood} Kereste${loot.chain?`   +${loot.chain} Zincir`:''}${pearlGain?`   +${pearlGain} İnci`:''}   +${e.rewardFame} TP   +${battle} Savaş Puanı`);toast(`${e.name} batırıldı`);if(e.def)recordQuestProgress('npc',e.def.id);setTimeout(spawnEnemy,1800);
+  // NPC ve canavar yalnızca tecrübe puanı ve altın verir (Seafight'taki gibi); savaş puanı sadece rakip oyuncu batırınca gelir.
+  if(eliteEnabled()&&activeEliteShip==='bone'){soulStacks=Math.min(3,soulStacks+1);soulTimer=30;}const eliteLoot=eliteEnabled()&&activeEliteShip==='sovereign'?1.2:1;
+  const goldGain=Math.round(e.rewardGold*(1+bonus.bounty)*eliteLoot);state.gold+=goldGain;state.fame+=e.rewardFame;saveAccount();
+  rewardNotice(`+${goldGain} Altın   +${e.rewardFame} TP`);toast(`${e.name} batırıldı`);if(e.def)recordQuestProgress('npc',e.def.id);setTimeout(spawnEnemy,1800);
 }
 function defeatMonster(m:Monster){
   playExplosion();const d=m.def;
-  if(eliteEnabled()&&activeEliteShip==='bone'){soulStacks=Math.min(3,soulStacks+1);soulTimer=30;}const eliteLoot=eliteEnabled()&&activeEliteShip==='sovereign'?1.2:1;state.gold+=Math.round(d.gold*eliteLoot);state.wood+=d.wood;state.fame+=d.xp;state.pearls+=Math.round(d.pearls*eliteLoot);state.elitePoints=Math.min(1500,state.elitePoints+10);state.battlePoints=Math.min(500,state.battlePoints+20);saveAccount();
-  rewardNotice(`+${d.gold} Altın   +${d.pearls} İnci   +${d.xp} TP   +10 Elit Puan`);recordQuestProgress('monster',d.id);lootChests.push(createChest('monster',m.x,m.y,bonus.gilded,1+.5*(d.tier-1)));
+  if(eliteEnabled()&&activeEliteShip==='bone'){soulStacks=Math.min(3,soulStacks+1);soulTimer=30;}const eliteLoot=eliteEnabled()&&activeEliteShip==='sovereign'?1.2:1;
+  const goldGain=Math.round(d.gold*(1+bonus.bounty)*eliteLoot);state.gold+=goldGain;state.fame+=d.xp;saveAccount();
+  rewardNotice(`+${goldGain} Altın   +${d.xp} TP`);recordQuestProgress('monster',d.id);
   const p=randomSeaPoint(900);m.hp=m.maxHp;m.aggro=false;m.burnTimer=0;m.x=p.x;m.y=p.y;m.homeX=m.x;m.homeY=m.y;m.combatTimer=0;selected=null;state.attacking=false;toast(`${m.name} yenildi`);
 }
 function updateTower(e:Enemy,dt:number){
@@ -991,7 +992,7 @@ function towerSplash(s:Shot,hit:Target){burst(hit.x,hit.y,true);
     if(o.hp<=0){if(o.kind==='ship')sinkEnemy(o);else defeatMonster(o);}}}
 function spawnBoss(){
   const map=mapDef(),p=randomSeaPoint(800),tier=map.tier,hp=Math.round(BOSS.hp(tier));
-  enemies.push({kind:'ship',role:'heavy',x:p.x,y:p.y,angle:Math.random()*6,boss:true,name:BOSS.name,hp,maxHp:hp,cooldown:1,damage:BOSS.damage(tier),reload:BOSS.reload,speed:BOSS.speed,hitRadius:BOSS.hitRadius,rewardGold:0,rewardWood:0,rewardFame:0,color:'#2f5a4a',tier,aggro:false,wander:0,slowTimer:0,homeX:p.x,homeY:p.y,combatTimer:0});
+  enemies.push({kind:'ship',role:'heavy',x:p.x,y:p.y,angle:Math.random()*6,boss:true,name:BOSS.name,hp,maxHp:hp,cooldown:1,damage:BOSS.damage(tier),reload:BOSS.reload,speed:BOSS.speed,hitRadius:BOSS.hitRadius,rewardGold:0,rewardFame:0,color:'#2f5a4a',tier,aggro:false,wander:0,slowTimer:0,homeX:p.x,homeY:p.y,combatTimer:0});
   toast(`${BOSS.name} ${map.name} sularında belirdi!`);rewardNotice(`ETKİNLİK   ${BOSS.name.toLocaleUpperCase('tr')} BELİRDİ`);
 }
 function bossFire(e:Enemy){
@@ -1001,8 +1002,8 @@ function bossFire(e:Enemy){
   if(enraged&&!e.summoned){e.summoned=true;const def=NPCS[mapDef().npcs[1]];for(let k=0;k<2;k++){const ship=makeShip(def,e.x+(k?60:-60),e.y+40,e.angle);ship.aggro=true;ship.combatTimer=20;ship.name='Hayalet Muhafız';enemies.push(ship);}toast('Hayalet Amiral muhafızlarını çağırdı!');}
 }
 function defeatBoss(e:Enemy){
-  const r=BOSS.reward(e.tier);state.gold+=r.gold;state.pearls+=r.pearls;state.fame+=r.xp;state.elitePoints=Math.min(100,state.elitePoints+r.elite);state.battlePoints=Math.min(500,state.battlePoints+r.battle);saveAccount();
-  for(let k=0;k<BOSS.chests;k++)lootChests.push(createChest('monster',e.x+(k-1)*40,e.y+(k%2)*30,bonus.gilded,1+.5*(e.tier-1)));
+  const r=BOSS.reward(e.tier);state.gold+=r.gold;state.pearls+=r.pearls;state.fame+=r.xp;state.elitePoints=Math.min(1500,state.elitePoints+r.elite);saveAccount();
+  for(let k=0;k<BOSS.chests;k++)lootChests.push(createChest('boss',e.x+(k-1)*40,e.y+(k%2)*30,bonus.gilded,1+.5*(e.tier-1)));
   bossNextAt=performance.now()+BOSS.intervalSeconds*1000;
   rewardNotice(`${BOSS.name.toLocaleUpperCase('tr')} BATIRILDI   +${r.gold} Altın   +${r.pearls} İnci   +${r.xp} TP`);toast(`${BOSS.name} denizin dibine gönderildi!`);
 }
