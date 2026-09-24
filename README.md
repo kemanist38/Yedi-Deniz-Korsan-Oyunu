@@ -23,6 +23,13 @@ Varsayılan tuşlar (hepsi **AYARLAR → Klavye kısayolları** bölümünden de
 
 Ses efektleri WebAudio ile anlık üretilir; AYARLAR'dan açılıp kapatılabilir ve düzeyi ayarlanabilir.
 
+## Ekran düzeni
+
+- **Üst orta:** TP (tecrübe), EP (elit puan), CP (can) ve SP (savaş puanı) çubukları; ortada kaptan seviyesi madalyası.
+- **Sağ üst:** altın/inci bakiyesi, **market** düğmesi (sekmeler: Tersane, Toplar, Gülle & Mühimmat, Malzemeler) ve **menü** düğmesi (Kaptan profili, Filo, Geliştirme, Tayfa, Görevler, Dünya haritası, Ayarlar).
+- **Sol üst:** mini harita; yanında dünya haritası ve altında görevleri açan korsan kaptan (aktif görevin ilerlemesi rozet olarak görünür).
+- **Sol alt:** hızlı gülle/malzeme yuvaları. **Alt orta:** gemiyi ekrana ortalama düğmesi. **Sağ alt:** savaş düğmeleri.
+
 ## Dünya: 9 seviye, 18 deniz
 
 Dünya haritası (`M` veya **DÜNYA**) 6 × 3 ızgaradır:

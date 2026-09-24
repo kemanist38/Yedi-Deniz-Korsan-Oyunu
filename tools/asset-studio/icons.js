@@ -221,6 +221,54 @@ export function buildIcon(name){
   if(name==='icon-chest'){
     const c=buildChestIcon();root.add(c);root.userData.cam={pos:[0,8,15],look:[0,3,0]};
   }
+  if(name==='icon-market'){
+    // Pazar tezgâhı: ahşap tezgâh, dört direk, kırmızı-krem çizgili tente, çuval, fıçı ve altın yığını
+    const wood=std({map:T.chestWoodTexture({seed:131,wood:'#8a5a32',dark:'#4a2c16'}),roughness:.8,metalness:0}),post=std({color:'#5a3a20',roughness:.8,metalness:0});
+    const counter=new THREE.Mesh(new THREE.BoxGeometry(9,3,4),wood);counter.position.set(0,1.5,1);root.add(counter);
+    const top=new THREE.Mesh(new THREE.BoxGeometry(9.6,.4,4.6),post);top.position.set(0,3.2,1);root.add(top);
+    for(const [x,z] of [[-4.3,-1.6],[4.3,-1.6],[-4.3,2.8],[4.3,2.8]]){const p=new THREE.Mesh(new THREE.CylinderGeometry(.22,.26,z<0?8.6:7,8),post);p.position.set(x,(z<0?8.6:7)/2,z);root.add(p);}
+    const [sc,sx]=T.canvas(256,128);for(let i=0;i<8;i++){sx.fillStyle=i%2?'#efe2c4':'#b3261e';sx.fillRect(i*32,0,32,128);}T.grain(sx,256,128,T.rng(5),{alpha:.12,count:600});
+    const cloth=std({map:T.toTexture(sc),roughness:.9,metalness:0,side:THREE.DoubleSide});
+    const aw=new THREE.PlaneGeometry(10.4,5.6,12,6),ap=aw.attributes.position;for(let i=0;i<ap.count;i++){const y=ap.getY(i);ap.setZ(i,Math.sin((y+2.8)/5.6*Math.PI)*.35);}aw.computeVertexNormals();
+    const awning=new THREE.Mesh(aw,cloth);awning.rotation.x=-Math.PI/2+.42;awning.position.set(0,7.8,.6);root.add(awning);
+    for(let k=0;k<8;k++){const f=new THREE.Mesh(new THREE.CircleGeometry(.66,12,0,Math.PI),cloth);f.rotation.z=Math.PI;f.position.set(-4.55+k*1.3,6.72,3.2);f.rotation.x=-.2;root.add(f);}
+    const sack=std({color:'#b89868',roughness:1,metalness:0});for(const [x,z,s] of [[-3,1.4,1.1],[-1.6,.6,1]]){const m=new THREE.Mesh(new THREE.SphereGeometry(s,16,12),sack);m.scale.y=1.2;m.position.set(x,3.4+s*1.1,z);root.add(m);}
+    const barrel=new THREE.Mesh(new THREE.CylinderGeometry(.9,.9,1.9,16),wood);barrel.position.set(3,4.35,.8);root.add(barrel);
+    const coin=std({color:'#f0c04a',metalness:.9,roughness:.25});for(let i=0;i<6;i++){const c=new THREE.Mesh(new THREE.CylinderGeometry(.55,.55,.16,16),coin);c.position.set(.6+(i%3)*.3,3.5+i*.17,1.6);root.add(c);}
+    const gem=new THREE.Mesh(new THREE.OctahedronGeometry(.6,0),std({color:'#6fd8ff',metalness:.2,roughness:.1,emissive:'#1a6a8a',emissiveIntensity:.5}));gem.position.set(1.5,3.9,2.2);root.add(gem);
+    root.rotation.y=-.35;root.userData.cam={pos:[0,6,15],look:[0,4,0]};
+  }
+  if(name==='icon-menu'){
+    // Üç yatay pirinç çubuk (menü)
+    const brass=std({color:'#d9a94a',metalness:.9,roughness:.3}),cap=std({color:'#7a4a1a',metalness:.6,roughness:.4});
+    for(const y of [2.6,0,-2.6]){const bar=new THREE.Mesh(new THREE.CapsuleGeometry(.85,7.6,8,20),brass);bar.rotation.z=Math.PI/2;bar.position.y=y;root.add(bar);
+      for(const x of [-4.4,4.4]){const k=new THREE.Mesh(new THREE.SphereGeometry(.95,16,12),cap);k.position.set(x,y,0);root.add(k);}}
+    root.rotation.x=.25;root.userData.cam={pos:[0,1,15],look:[0,0,0],flat:true};
+  }
+  if(name==='captain-bust'){
+    // Korsan kaptan büstü: kızıl sakal, göz bandı, üç köşeli şapka, apoletli lacivert ceket
+    const skin=std({color:'#d99a74',roughness:.75,metalness:0}),beardM=std({color:'#b4481f',roughness:.95,metalness:0}),dark=std({color:'#141010',roughness:.6,metalness:0});
+    const head=new THREE.Mesh(new THREE.SphereGeometry(3.1,40,32),skin);head.scale.set(1,1.15,1.02);root.add(head);
+    const nose=new THREE.Mesh(new THREE.SphereGeometry(.7,20,16),skin);nose.scale.set(.85,1,1.25);nose.position.set(0,-.1,3.1);root.add(nose);
+    for(const x of [-3,3]){const ear=new THREE.Mesh(new THREE.SphereGeometry(.75,16,12),skin);ear.scale.set(.45,1,.8);ear.position.set(x,.1,0);root.add(ear);}
+    const eyeW=std({color:'#f4efe6',roughness:.3,metalness:0});const ew=new THREE.Mesh(new THREE.SphereGeometry(.42,16,12),eyeW);ew.position.set(1.15,.85,2.72);root.add(ew);
+    const pupil=new THREE.Mesh(new THREE.SphereGeometry(.22,12,10),dark);pupil.position.set(1.2,.85,3.08);root.add(pupil);
+    const patch=new THREE.Mesh(new THREE.SphereGeometry(.75,20,14),dark);patch.scale.set(1,.85,.35);patch.position.set(-1.15,.85,2.8);root.add(patch);
+    const strap=new THREE.Mesh(new THREE.TorusGeometry(3.18,.1,6,48),dark);strap.rotation.set(0,0,-.35);strap.scale.set(1,1.1,1.05);strap.position.y=.9;root.add(strap);
+    const brow=std({color:'#8a2e14',roughness:.9,metalness:0});for(const x of [-1.2,1.2]){const b=new THREE.Mesh(new THREE.BoxGeometry(1.5,.32,.4),brow);b.position.set(x,1.55,2.75);b.rotation.z=x>0?-.18:.18;root.add(b);}
+    const bg=new THREE.SphereGeometry(2.9,36,28),bp=bg.attributes.position,n=T.noise2(21),v=new THREE.Vector3();
+    for(let i=0;i<bp.count;i++){v.fromBufferAttribute(bp,i);v.multiplyScalar(1+n(v.x*1.4,v.y*1.4+v.z,3)*.18);bp.setXYZ(i,v.x,v.y,v.z);}bg.computeVertexNormals();
+    const beard=new THREE.Mesh(bg,beardM);beard.scale.set(1.02,1.05,.78);beard.position.set(0,-2.2,1.2);root.add(beard);
+    for(const s of [-1,1]){const m=new THREE.Mesh(new THREE.CapsuleGeometry(.36,1.6,6,12),beardM);m.rotation.z=s*1.2;m.position.set(s*1.05,-.72,3.05);root.add(m);}
+    const mouth=new THREE.Mesh(new THREE.BoxGeometry(1.1,.18,.3),std({color:'#5a1a10',roughness:.8,metalness:0}));mouth.position.set(0,-1.15,3.05);root.add(mouth);
+    const coat=std({color:'#20304c',roughness:.8,metalness:0}),gold=std({color:'#d4a64c',metalness:.9,roughness:.3});
+    const body=new THREE.Mesh(new THREE.SphereGeometry(4.6,32,20,0,Math.PI*2,0,Math.PI/2),coat);body.scale.set(1.25,.7,.8);body.position.y=-6.2;root.add(body);
+    for(const x of [-4.6,4.6]){const ep=new THREE.Mesh(new THREE.CylinderGeometry(1.2,1.2,.4,20),gold);ep.position.set(x,-3.8,.2);ep.rotation.z=x>0?-.35:.35;root.add(ep);}
+    const collar=new THREE.Mesh(new THREE.TorusGeometry(2.2,.5,10,24,Math.PI),std({color:'#e8e0cc',roughness:.9,metalness:0}));collar.rotation.x=Math.PI/2;collar.position.set(0,-4,.8);root.add(collar);
+    const hat=buildIcon('icon-hat');hat.userData={};hat.scale.setScalar(.78);hat.position.set(0,2.4,-.2);hat.rotation.set(-.12,0,.05);root.add(hat);
+    root.rotation.y=.28;root.userData.cam={pos:[0,1.5,16],look:[0,-.4,0]};
+  }
+
   return root;
 }
 function buildChestIcon(){
