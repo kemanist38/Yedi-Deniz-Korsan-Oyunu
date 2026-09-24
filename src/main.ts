@@ -466,6 +466,7 @@ function respawn(){
   try{localStorage.setItem(WORLD_STORAGE,deathMap);}catch{}
   const spot=randomSafePlayerPoint();
   player.x=spot.x;player.y=spot.y;player.speed=0;destination=null;routeTarget=null;camera.x=player.x;camera.y=player.y;
+  fleetSafe={x:spot.x,y:spot.y};collisionNotice=0;
   state.hp=Math.max(1,Math.round(effectiveMaxHp()*.1));state.repairing=true;state.invulnerable=4;state.attacking=false;selected=null;shots.length=0;salvoQueue.length=0;
   enemies.forEach(e=>{e.aggro=false;e.combatTimer=0;});monsters.forEach(m=>{m.aggro=false;m.combatTimer=0;});ui('attack').classList.remove('active');
   mapFade=1;playSplash();saveAccount();toast(`Gemin battı — ${mapDef().key} ${coordLabel(player)} konumunda %10 gövdeyle yeniden doğdun`);
@@ -842,7 +843,21 @@ function update(dt:number){
           if(m.hp<=0)defeatMonster(m);
         }
       }
-    }else if(state.invulnerable<=0&&dist(s,player)<22){s.hit=true;if(eliteEnabled()&&activeEliteShip==='phantom'&&Math.random()<.15){damageText(player.x,player.y,0);s.life=0;continue;}state.repairing=false;const taken=s.damage*bonus.taken*eliteIncomingFactor()*(abilityActive('shield')?SHIELD_FACTOR:1);state.hp-=taken;damageText(player.x,player.y,Math.round(taken));playHit(true);burst(player.x,player.y);s.life=0;if(state.hp<=0){if(eliteEnabled()&&activeEliteShip==='ragnarok'&&valhallaTimer>0){state.hp=1;}else respawn();}}
+    }else if(state.invulnerable<=0&&dist(s,player)<22){
+      s.hit=true;
+      if(eliteEnabled()&&activeEliteShip==='phantom'&&Math.random()<.15){damageText(player.x,player.y,0);shots.splice(i,1);continue;}
+      state.repairing=false;
+      const taken=s.damage*bonus.taken*eliteIncomingFactor()*(abilityActive('shield')?SHIELD_FACTOR:1);
+      state.hp-=taken;damageText(player.x,player.y,Math.round(taken));playHit(true);burst(player.x,player.y);s.life=0;
+      if(state.hp<=0){
+        if(eliteEnabled()&&activeEliteShip==='ragnarok'&&valhallaTimer>0){state.hp=1;}
+        else{
+          respawn();
+          // Respawn empties shots. Stop reading this volley, then finish UI/draw normally.
+          break;
+        }
+      }
+    }
     if(s.life<=0)shots.splice(i,1);
   }
   updateLootChests(dt);updateSparkles(dt);updateArsenal(dt);updateEvents(dt);
