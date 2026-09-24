@@ -1,9 +1,9 @@
 // Başarımlar: oyun içi sayaçlar hedefe ulaşınca madalya açılır, bir kez inci verir ve küçük kalıcı bir bonus ekler
-// (altın, tecrübe, top hasarı ya da can yüzdesi). Madalya atlası: public/assets/badge-atlas-v1.webp (6 × 3, sıra aynı).
+// (altın, tecrübe, top hasarı ya da can yüzdesi). Madalya atlası: public/assets/badge-atlas-v2.webp (3B, 6 × 3, sıra aynı).
 export type AchStat='npc'|'heavy'|'monster'|'boss'|'chest'|'treasure'|'quest'|'eliteBalls'|'level'|'daily';
 export type AchBonus={gold?:number;xp?:number;damage?:number;hp?:number};
 export type AchievementDef={id:string;name:string;desc:string;stat:AchStat;goal:number;pearls:number;bonus:AchBonus};
-export const BADGE_ATLAS='/assets/badge-atlas-v1.webp',BADGE_COLS=6,BADGE_ROWS=3;
+export const BADGE_ATLAS='/assets/badge-atlas-v2.webp',BADGE_COLS=6,BADGE_ROWS=3;
 export const ACHIEVEMENTS:AchievementDef[]=[
   {id:'npc-100',name:'Kıyı Belası',desc:'100 NPC gemisi batır',stat:'npc',goal:100,pearls:10,bonus:{gold:.01}},
   {id:'npc-1000',name:'Deniz Kurdu',desc:'1.000 NPC gemisi batır',stat:'npc',goal:1000,pearls:50,bonus:{gold:.02}},

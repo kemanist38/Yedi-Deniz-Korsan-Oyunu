@@ -623,7 +623,6 @@ body.shop-open .market-overlay,body.shop-open .ship-overlay,body.shop-open .load
 .daily-note{margin:12px 0 0;color:#9fb4ae;font:500 11px Inter;text-align:center}
 @media(max-width:800px){.daily-grid{grid-template-columns:repeat(4,1fr)}.daily-day{min-height:120px}}
 /* Başarımlar */
-.ach-nav{background:url(/assets/badge-atlas-v1.webp) 60% 0/600% 300% no-repeat}
 .ach-window{width:min(960px,95vw);max-height:88vh;overflow:auto}
 .ach-summary{margin:0 0 12px;color:#c9d6d2;font:600 12px Inter}.ach-summary b{color:#f1c662}
 .ach-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px}
@@ -634,3 +633,9 @@ body.shop-open .market-overlay,body.shop-open .ship-overlay,body.shop-open .load
 .ach-card small{display:block;color:#e7c77f;font:700 9px Inter}
 .ach-bar{display:block;height:5px;margin:5px 0 3px;border-radius:3px;background:#04121a;overflow:hidden}.ach-bar em{display:block;height:100%;background:linear-gradient(90deg,#9b7b45,#f1c662)}
 .ach-card b{color:#d9e6e2;font:700 10px Inter}.ach-card.done b{color:#6fd68a}
+/* Kaptan profili: madalyalar */
+.captain-profile{max-height:90vh;overflow:auto}
+.captain-medals{margin-top:14px;padding-top:12px;border-top:1px solid #c49a5344}
+.captain-medals header{display:block;margin-bottom:8px}.captain-medals .ach-summary{margin:4px 0 0}
+.captain-medals .ach-grid{grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+.captain-profile:has(.captain-medals){width:min(860px,94vw)}

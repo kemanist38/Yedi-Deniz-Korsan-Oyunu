@@ -9,6 +9,7 @@ import {paintSeaTile,paintWorldChart,paintSeaSparkle} from './paint.js';
 import {paintVfxAtlas} from './vfx.js';
 import {paintWorldScroll} from './ui-paint.js';
 import {buildIcon} from './icons.js';
+import {buildMedal} from './medals.js';
 import {SHIPS,MONSTERS,BOSSES} from './catalog.js';
 const ALL_SHIPS=[...SHIPS,...BOSSES];
 import {buildCrab,buildSerpent,buildJelly,buildTurtle,buildHydra} from './monsters.js';
@@ -88,6 +89,15 @@ window.renderIcon=(name,{frame=256,margin=.8}={})=>{const scene=stage(),icon=bui
   const dir=new THREE.Vector3(...c.pos).sub(new THREE.Vector3(...c.look)).normalize(),fov=34,dist=sphere.radius*(icon.userData.flat?.74:margin)/Math.sin(fov/2*Math.PI/180);
   const cam=new THREE.PerspectiveCamera(fov,1,.1,500);cam.position.copy(sphere.center).addScaledVector(dir,dist);cam.lookAt(sphere.center);
   return{...exportCanvas(shot(scene,cam,frame)),frame};};
+// Hazır bir 3B nesneyi ikon olarak çeker (renderIcon ile aynı ışık/ortam ve kadraj)
+function iconShot(icon,frame,margin=.8){const scene=stage();scene.add(icon);icon.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
+  envMap??=new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(),.04).texture;scene.environment=envMap;scene.environmentIntensity=.8;
+  const key=new THREE.DirectionalLight('#fff1d6',1.6);key.position.set(-8,14,12);scene.add(key);
+  const c=icon.userData.cam,box=new THREE.Box3().setFromObject(icon),sphere=box.getBoundingSphere(new THREE.Sphere());
+  const dir=new THREE.Vector3(...c.pos).sub(new THREE.Vector3(...c.look)).normalize(),fov=34,dist=sphere.radius*margin/Math.sin(fov/2*Math.PI/180);
+  const cam=new THREE.PerspectiveCamera(fov,1,.1,500);cam.position.copy(sphere.center).addScaledVector(dir,dist);cam.lookAt(sphere.center);return shot(scene,cam,frame);}
+// Başarım madalyaları atlası: list = [[amblem, 0|1|2], …]
+window.renderMedalAtlas=(list,{cell=192,cols=6}={})=>({...exportCanvas(sheet(list.map(([n,t])=>iconShot(buildMedal(n,t),cell,.86)),cols)),cell,cols});
 window.renderMineSprite=({frame=128,span=18}={})=>{const scene=stage(),m=buildIcon('icon-mine');m.userData.waterline=2.6;prepare(m);scene.add(m);
   const foam=new THREE.Mesh(new THREE.PlaneGeometry(16,16),new THREE.MeshBasicMaterial({map:T.foamTexture({seed:12,color:'220,245,240',strength:.7,inner:.3}),transparent:true,depthWrite:false}));foam.rotation.x=-Math.PI/2;foam.position.y=2.65;scene.add(foam);
   const cam=camera(span,3.5);return{...exportCanvas(shot(scene,cam,frame)),frame,anchor:anchorOf(cam,frame,new THREE.Vector3(0,2.6,0))};};
