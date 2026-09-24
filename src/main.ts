@@ -7,6 +7,7 @@ import {ABILITIES,SPECIAL_AMMO,MINE,SPEED_BOOST,SHIELD_FACTOR,ARSENAL_MARKET,loa
 import {BOSS,loadFleetOwners,saveFleetOwners} from './conquest';
 import {TALENTS,OFFICERS,OFFICER_MAX_RANK,officerCost,officerSlots,talentPoints,loadCrew,saveCrew,spentPoints,computeBonus,type TalentId,type OfficerId} from './crew';
 import {FLEET_MASK} from './fleetMask';
+import {towerContains,towerMuzzle} from './towerGeometry';
 import {loadGuild,saveGuild,islandSlots,towerTypeCost,tagError,canBuild,TOWER_TYPES,ROLE_NAMES,TOWER_SLOTS,type TowerType,type GuildRole,GUILD_NAME_MAX,GUILD_TAG_MAX,type Guild} from './guild';
 import {loadProfile,saveProfile,nickError,rankOf,NICK_CHANGE_COST,NICK_COOLDOWN_MS,NICK_MAX} from './profile';
 import {createChest,chestRewardText,CHEST_PICKUP_RADIUS,CHEST_CLICK_RADIUS,DRIFT_RESPAWN_SECONDS,type LootChest} from './loot';
@@ -197,6 +198,7 @@ const fleetOwner=(key:MapKey=currentMap)=>fleetOwners[key]??'npc';
 const ownTowers:{x:number;y:number;cooldown:number;slot:number;type:TowerType}[]=[];
 let guild:Guild|null=loadGuild();
 let buildType:TowerType='cannon';
+let focusedFoundation:string|null=null;
 const profile=loadProfile();
 function escapeHtml(t:string){return t.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));}
 let bossNextAt=performance.now()+BOSS.firstDelaySeconds*1000;
@@ -236,10 +238,11 @@ canvas.addEventListener('pointerdown',e=>{
   const world={x:(e.clientX-innerWidth/2)/camera.zoom+camera.x,y:(e.clientY-innerHeight/2)/camera.zoom+camera.y};
   if(hasFleetIsland()&&fleetOwner()==='player'&&guild){
     const f=mapDef().fleet,slots=islandSlots(guild,currentMap);
-    const slot=FLEET.towers.findIndex(([dx,dy],i)=>!slots[i]&&dist(world,{x:f.x+dx,y:f.y+dy})<48);
-    if(slot>=0){openGuild();const button=document.querySelector<HTMLButtonElement>(`[data-build="${currentMap}:${slot}"]`);button?.scrollIntoView({block:'center'});button?.classList.add('chosen-foundation');toast(`Kaide ${slot+1}: kule tipini seçip DİK düğmesine bas`);return;}
+    const slot=FLEET.towers.map(([dx,dy],i)=>({x:f.x+dx,y:f.y+dy,i})).sort((a,b)=>b.y-a.y).find(t=>towerContains(world,t,!!slots[t.i]))?.i;
+    if(slot!==undefined){focusedFoundation=`${currentMap}:${slot}`;openGuild();document.querySelector(`[data-foundation="${focusedFoundation}"]`)?.scrollIntoView({block:'center'});toast(slots[slot]?`${TOWER_TYPES[slots[slot]!.type].name} · Kaide ${slot+1}`:`Kaide ${slot+1}: kule tipini seçip DİK düğmesine bas`);return;}
   }
-  const hit=[...enemies,...monsters].filter(n=>dist(n,world)<Math.max(42,n.kind==='monster'?n.radius:(n.hitRadius??0))).sort((a,b)=>dist(a,world)-dist(b,world))[0];
+  const towerHit=enemies.filter(n=>n.tower&&towerContains(world,n)).sort((a,b)=>b.y-a.y)[0];
+  const hit=towerHit??[...enemies,...monsters].filter(n=>dist(n,world)<Math.max(42,n.kind==='monster'?n.radius:(n.hitRadius??0))).sort((a,b)=>dist(a,world)-dist(b,world))[0];
   if(hit){selected=hit;state.attacking=false;ui('attack').classList.remove('active');toast(`${hit.name} hedef seçildi`);}
   else{const glint=sparkles.find(g=>dist(g,world)<34);if(glint){routeTarget={x:glint.x,y:glint.y};destination=routeVia(routeTarget);state.attacking=false;ui('attack').classList.remove('active');toast('Rota inci pırıltısına çizildi');return;}const chest=lootChests.find(c=>dist(c,world)<CHEST_CLICK_RADIUS);routeTarget=chest?{x:chest.x,y:chest.y}:navigablePoint(world);destination=routeVia(routeTarget);state.attacking=false;ui('attack').classList.remove('active');if(chest)toast('Rota ganimet sandığına çizildi');}
 });
@@ -656,7 +659,7 @@ function drawPlayerLabel(){
 }
 // ---------------------------------------------------------------- Filo: hazine, bağış ve kule dikme
 function openGuild(){renderGuild();ui('guildOverlay').classList.add('open');}
-function closeGuild(){ui('guildOverlay').classList.remove('open');}
+function closeGuild(){ui('guildOverlay').classList.remove('open');focusedFoundation=null;}
 function ownedFleetIslands(){return(Object.keys(MAPS) as MapKey[]).filter(k=>MAPS[k].tier>=5&&fleetOwner(k)==='player');}
 function renderGuild(){
   const panel=ui('guildPanel');
@@ -678,6 +681,13 @@ function renderGuild(){
     <div class="guild-types"><span class="eyebrow">Dikilecek kule tipi</span><div class="tower-types">${typeCards}</div></div>
     ${testClaim}<div class="guild-islands">${islandHtml}</div>`;
   const donate=(n:number)=>{n=Math.floor(n);if(!(n>0)){toast('Geçerli bir miktar gir');return;}if(state.pearls<n){toast('Yeterli incin yok');return;}state.pearls-=n;g.treasury+=n;g.donated+=n;saveGuild(g);saveAccount();updateUI();playCoins();rewardNotice(`FİLO HAZİNESİNE +${n} İNCİ BAĞIŞLANDI`);renderGuild();};
+  // Restore the selected foundation after type changes, donations and construction.
+  panel.querySelectorAll<HTMLElement>('.guild-island').forEach((article,index)=>{
+    article.querySelectorAll<HTMLElement>('.tower-slot').forEach((slot,i)=>{
+      const key=`${islands[index]}:${i}`;slot.dataset.foundation=key;
+      slot.classList.toggle('chosen-foundation',key===focusedFoundation);
+    });
+  });
   panel.querySelectorAll<HTMLButtonElement>('[data-donate]').forEach(b=>b.onclick=()=>donate(Number(b.dataset.donate)));
   ui('donateCustom').onclick=()=>donate(Number((ui('donateAmount') as HTMLInputElement).value));
   panel.querySelectorAll<HTMLButtonElement>('[data-type]').forEach(b=>b.onclick=()=>{buildType=b.dataset.type as TowerType;renderGuild();});
@@ -865,7 +875,7 @@ function updateTower(e:Enemy,dt:number){
   const d=dist(e,player);e.cooldown-=dt;e.combatTimer=Math.max(0,e.combatTimer-dt);e.slowTimer=0;e.burnTimer=Math.max(0,(e.burnTimer??0));
   e.aggro=!mapDef().safe&&(d<(e.fireRange??460)+30||e.combatTimer>0);
   if(e.hp<e.maxHp)e.hp=Math.min(e.maxHp,e.hp+e.maxHp*(e.aggro?.004:.02)*(activeEliteShip==='plague'&&e.burnTimer&&e.burnTimer>0?.5:1)*dt);
-  if(e.aggro&&d<(e.fireRange??460)&&e.cooldown<=0&&state.invulnerable<=0){const tx=e.x,ty=e.y-30,a=Math.atan2(player.y-ty,player.x-tx);
+  if(e.aggro&&d<(e.fireRange??460)&&e.cooldown<=0&&state.invulnerable<=0){const muzzle=towerMuzzle(e),tx=muzzle.x,ty=muzzle.y,a=Math.atan2(player.y-ty,player.x-tx);
     for(const off of [-.05,.05])shots.push({x:tx,y:ty,vx:Math.cos(a+off)*320,vy:Math.sin(a+off)*320,life:2.2,owner:'enemy',damage:e.damage,hit:false,ammo:theme().fleet==='lava'?'fire':'iron'});
     playEnemyCannon(d,(e.x-player.x)/600);e.cooldown=e.reload+Math.random()*.4;}
 }
@@ -883,8 +893,8 @@ function updateOwnTowers(dt:number){
     if(tw.type==='beacon'){if(dist(player,tw)<range&&state.hp<effectiveMaxHp()){state.hp=Math.min(effectiveMaxHp(),state.hp+effectiveMaxHp()*.03*dt);if(Math.random()<dt*6)particles.push({x:player.x+(Math.random()-.5)*40,y:player.y+(Math.random()-.5)*30,vx:0,vy:-20,life:.6,maxLife:.6,kind:'foam'});}continue;}
     tw.cooldown-=dt;if(tw.cooldown>0)continue;
     const target=enemies.filter(e=>!e.tower&&dist(e,tw)<range).sort((a,b)=>dist(a,tw)-dist(b,tw))[0]??monsters.find(m=>dist(m,tw)<range);
-    if(!target)continue;tw.cooldown=t.reload*def.reload;const sy=tw.y-40,a=Math.atan2(target.y-sy,target.x-tw.x),speed=tw.type==='mortar'?300:420;
-    shots.push({x:tw.x,y:sy,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,life:2.8,owner:'player',damage:t.ownDamage*def.damage,hit:false,ammo:tw.type==='chain'?'chain':theme().fleet==='lava'?'fire':'iron',target,
+    if(!target)continue;tw.cooldown=t.reload*def.reload;const muzzle=towerMuzzle(tw,tw.type),a=Math.atan2(target.y-muzzle.y,target.x-muzzle.x),speed=tw.type==='mortar'?300:420;
+    shots.push({x:muzzle.x,y:muzzle.y,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,life:2.8,owner:'player',damage:t.ownDamage*def.damage,hit:false,ammo:tw.type==='chain'?'chain':theme().fleet==='lava'?'fire':'iron',target,
       slow:tw.type==='chain'?3:undefined,splash:tw.type==='mortar'?90:undefined});}
 }
 // Havan: isabet noktasının çevresindeki diğer düşmanlara %60 hasar
