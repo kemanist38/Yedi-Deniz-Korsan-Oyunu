@@ -30,6 +30,18 @@ Ses efektleri WebAudio ile anlık üretilir; AYARLAR'dan açılıp kapatılabili
 - **Sol üst:** mini harita; yanında dünya haritası ve altında görevleri açan korsan kaptan (aktif görevin ilerlemesi rozet olarak görünür).
 - **Sol alt:** hızlı gülle/malzeme yuvaları. **Alt orta:** gemiyi ekrana ortalama düğmesi. **Sağ alt:** savaş düğmeleri.
 
+## Özel gülleler
+
+| Gülle | Etki | Market |
+|---|---|---|
+| Ateş Güllesi | Hedefi 4 sn yakar | 20 adet · 95 altın |
+| Saçma | Kısa menzil, yüksek hasar | 25 adet · 80 altın |
+| Patlayıcı Gülle | Çarptığı yerde patlar; 120 birim içindeki diğer düşmanlara %50 hasar | 15 adet · 130 altın |
+| Kule Kırıcı | Kulelere 2,6 kat hasar; gemilere %85 | 15 adet · 150 altın |
+| Can Emici | Verdiği hasarın %25'i kadar gemini onarır | 15 adet · 140 altın |
+
+Yeni üç gülleden her kaptana 10'ar adet tanıtım stoğu verilir; hızlı gülle sırasında yer varsa kendiliğinden yerleşir, yoksa MALZEMELER sekmesinden eklenir.
+
 ## Atış efektleri
 
 Gülleler kavis çizerek uçar, suda gölgeleri kayar; her güllenin kendi izi vardır (demir: duman, ateş: kor ve alev, zincir: dönen zincirli çift gülle, saçma: yelpaze gibi dağılan taneler, canavar: köpüklü su topu). Atışta namlu alevi ve duman, isabette patlama, savrulup suya düşen kıymıklar ve korlar, ıskada su sütunu çıkar. Havan kulesi atışında hedefe önce kırmızı hedef halkası düşer. Batan gemi yan yatarak kabarcıklar içinde gömülür, arkasında yüzen enkaz kalır. Tüm efektler `public/assets/vfx-atlas-v1.webp` raster atlasındadır (`tools/asset-studio/vfx.js`).

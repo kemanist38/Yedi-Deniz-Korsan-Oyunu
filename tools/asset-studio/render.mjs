@@ -37,7 +37,7 @@ const jobs={
   'fleet-island-3d-v1':()=>page.evaluate(a=>renderFleetIsland3D(a),islandArgs()),
   'fleet-island-3d-map':()=>page.evaluate(a=>debugFleetMap(a),islandArgs()),
 };
-for(const name of ['ammo-fire','ammo-grape','icon-mine','icon-attack','icon-repair','icon-speed','icon-shield','icon-hat','icon-chest','officer-gunner','officer-helmsman','officer-carpenter','officer-lookout','officer-quartermaster','officer-surgeon','ui-ring','ui-ring-attack','ui-slot','icon-scroll','icon-gear','icon-anvil','gunner-vignette','icon-market','icon-menu','captain-bust'])jobs[`${name}-v1`]=()=>page.evaluate(n=>renderIcon(n),name);
+for(const name of ['ammo-fire','ammo-grape','ammo-explosive','ammo-breaker','ammo-leech','icon-mine','icon-attack','icon-repair','icon-speed','icon-shield','icon-hat','icon-chest','officer-gunner','officer-helmsman','officer-carpenter','officer-lookout','officer-quartermaster','officer-surgeon','ui-ring','ui-ring-attack','ui-slot','icon-scroll','icon-gear','icon-anvil','gunner-vignette','icon-market','icon-menu','captain-bust'])jobs[`${name}-v1`]=()=>page.evaluate(n=>renderIcon(n),name);
 jobs['sea-mine-v1']=()=>page.evaluate(()=>renderMineSprite());
 const {SHIPS,MONSTERS}=await import('./catalog.js');
 for(const sp of SHIPS)jobs[`ship-${sp.id}`]=()=>page.evaluate(id=>renderCatalogShip(id),sp.id);

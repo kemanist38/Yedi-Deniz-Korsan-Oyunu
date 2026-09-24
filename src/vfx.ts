@@ -1,9 +1,10 @@
-// Atış ve savaş efektleri: tools/asset-studio/vfx.js ile boyanan raster atlas (8 × 5 kare, kare 128 px).
+// Atış ve savaş efektleri: tools/asset-studio/vfx.js ile boyanan raster atlas (8 × 6 kare, kare 128 px).
 const atlas=new Image();atlas.src='/assets/vfx-atlas-v1.webp';
 const CELL=128;
 export const VFX={
   iron:[0,0],fire:[1,0],pellet:[2,0],chain:[3,0],enemy:[4,0],shadow:[5,0],target:[6,0],flash:[7,0],
   smoke:[0,3],splinter:[4,3],ember:[7,3],foam:[0,4],bubble:[2,4],firePuff:[3,4],spit:[4,4],plank:[5,4],star:[6,4],poison:[7,4],
+  bomb:[0,5],breaker:[1,5],leech:[2,5],soul:[3,5],shock:[4,5],
 } as const;
 export type VfxName=keyof typeof VFX;
 // Sayısı birden fazla olan kareler (aynı satırda yan yana)

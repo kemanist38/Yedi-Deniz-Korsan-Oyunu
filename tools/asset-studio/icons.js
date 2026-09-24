@@ -40,6 +40,36 @@ export function buildIcon(name){
     [[-1.4,6.6,.6,4.2,-.25],[.6,7.2,.2,5,.1],[1.9,6,.8,3.4,.35],[-.3,5.4,1.6,2.8,0]].forEach(([x,y,z,h,rz])=>{const f=flame(h,fm);f.position.set(x,y,z);f.rotation.z=rz;root.add(f);});
     root.userData.cam={pos:[0,6.5,14],look:[0,3.4,0],fov:38};
   }
+  if(name==='ammo-explosive'){
+    // Fitilli iki bomba: dövme demir gövde, pirinç ağız, kıvrık fitil ve ucunda kıvılcım
+    const brass=std({color:'#c8943e',metalness:.85,roughness:.35}),rope=std({color:'#8a6a3a',roughness:.95,metalness:0});
+    const fm=new THREE.MeshBasicMaterial({map:flameTexture(),transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide});
+    [[-1.9,0,.4,2.6],[2.4,0,-1,2.2]].forEach(([x,y,z,r],i)=>{const b=new THREE.Mesh(new THREE.SphereGeometry(r,36,28),iron(50+i));b.position.set(x,y+r,z);root.add(b);
+      const neck=new THREE.Mesh(new THREE.CylinderGeometry(r*.3,r*.36,r*.4,18),brass);neck.position.set(x,y+r*2.05,z);root.add(neck);
+      const pts=[0,1,2,3].map(k=>new THREE.Vector3(x+Math.sin(k*.9)*.5*(i?-1:1),y+r*2.2+k*.55,z+k*.15));const fuse=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),16,.13,8),rope);root.add(fuse);
+      const tip=pts[3],f=flame(1.8,fm);f.position.set(tip.x,tip.y+.7,tip.z);root.add(f);const spark=new THREE.Mesh(new THREE.SphereGeometry(.25,10,8),std({color:'#fff0b0',emissive:'#ffc040',emissiveIntensity:4}));spark.position.copy(tip);root.add(spark);});
+    root.userData.cam={pos:[0,6,14],look:[0,2.8,0]};
+  }
+  if(name==='ammo-breaker'){
+    // Kule kırıcı: sivri uçlu çelik mermiler, pirinç kuşaklar, yanında kırık taş parçaları
+    const steel=std({map:hammered(61,{base:'#4a4c50',light:'#b0b4b8'}),metalness:.85,roughness:.35}),brass=std({color:'#c8943e',metalness:.85,roughness:.3});
+    const shell=()=>{const g=new THREE.Group(),body=new THREE.Mesh(new THREE.CylinderGeometry(1.1,1.1,3.4,28),steel);g.add(body);const tip=new THREE.Mesh(new THREE.ConeGeometry(1.1,2.4,28),steel);tip.position.y=2.9;g.add(tip);
+      for(const y of [-1.1,.9]){const band=new THREE.Mesh(new THREE.CylinderGeometry(1.18,1.18,.35,28),brass);band.position.y=y;g.add(band);}const base=new THREE.Mesh(new THREE.CylinderGeometry(1.2,1.2,.3,28),brass);base.position.y=-1.8;g.add(base);return g;};
+    const a=shell();a.position.set(-1.4,1.95,0);a.rotation.z=.12;root.add(a);
+    const b=shell();b.position.set(1.6,1.2,1.2);b.rotation.set(0,.4,-1.45);root.add(b);
+    const stone=std({map:T.stoneTexture({seed:66,base:'#8a8478',dark:'#4a463e'}),roughness:.9,metalness:0}),r=T.rng(12);
+    for(let i=0;i<5;i++){const m=new THREE.Mesh(new THREE.DodecahedronGeometry(.5+r()*.5,0),stone);m.position.set(-3.6+r()*7.2,.4,2.4+r()*1.2);m.rotation.set(r()*3,r()*3,0);root.add(m);}
+    root.userData.cam={pos:[0,6,14],look:[0,2.2,0]};
+  }
+  if(name==='ammo-leech'){
+    // Can emici: yeşil ruh damarları parlayan kara gülleler ve yükselen hayalet alevleri
+    const vein=(seed)=>{const W=256,[c,x]=T.canvas(W,W),r=T.rng(seed);x.fillStyle='#000';x.fillRect(0,0,W,W);x.strokeStyle='#5aff9a';x.lineCap='round';for(let i=0;i<40;i++){let px=r()*W,py=r()*W;x.lineWidth=1+r()*3;x.beginPath();x.moveTo(px,py);for(let k=0;k<5;k++){px+=(r()-.5)*40;py+=(r()-.5)*40;x.lineTo(px,py);}x.stroke();}const t=T.toTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;return t;};
+    const mats=[0,1].map(i=>std({map:hammered(70+i,{base:'#1c1a24',light:'#4a4658'}),metalness:.6,roughness:.5,emissive:'#3aff8a',emissiveMap:vein(80+i),emissiveIntensity:2.2}));
+    [[-1.7,0,0,2.3],[1.9,0,-1,2]].forEach(([x,y,z,r],i)=>{const b=new THREE.Mesh(new THREE.SphereGeometry(r,36,28),mats[i]);b.position.set(x,y+r,z);root.add(b);});
+    const gm=new THREE.MeshBasicMaterial({map:flameTexture(),color:'#6affb0',transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide});
+    [[-1.8,6,.4,4],[1.6,5.4,-.4,3.2],[.1,7,0,3.6]].forEach(([x,y,z,h],i)=>{const f=flame(h,gm);f.position.set(x,y,z);f.rotation.z=(i-1)*.25;root.add(f);});
+    root.userData.cam={pos:[0,6,14],look:[0,3.2,0]};
+  }
   if(name==='ammo-grape'){
     const cloth=std({map:T.sailTexture({seed:5,base:'#b39a72',dirt:.35}),roughness:.95,metalness:0});
     const sack=new THREE.Mesh(new THREE.SphereGeometry(3.4,32,24),cloth);sack.scale.set(1,1.05,.95);sack.position.y=3.2;root.add(sack);
