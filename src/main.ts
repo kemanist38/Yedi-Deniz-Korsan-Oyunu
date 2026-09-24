@@ -4,7 +4,7 @@ import {ACTIONS,loadSettings,saveSettings,keyLabel,normalizeKey,DEFAULT_BINDS,ty
 import {setAudio,unlockAudio,playCannon,playEnemyCannon,playHit,playExplosion,playCoins,playWind,playShield,playSplash,playLevelUp,playMapJump,playSink,playHeal,playClick} from './audio';
 import {drawSeaSparkle,drawNpcShip,drawMonsterSheet,drawChestSprite,drawIslandSprite,drawFleetBase,drawBastion,drawBuiltTower,drawMineSprite,seaTilePattern,islandSheetUrl,shipLabelOffset,portraitStyle,preload,fleetBaseUrl,fleetTowerUrl,TOWER_LABEL_OFFSET} from './sprites';
 import {MAPS,GRID,THEMES,NPCS,MONSTERS,QUESTS,QUEST_COOLDOWN_MS,FLEET,WORLD_WIDTH,WORLD_HEIGHT,MAX_LEVEL,xpNeed,neighbor,tierOf,fleetTower,fleetReward,PORTRAIT_COUNT,PORTRAIT_COLS,PORTRAIT_ATLAS,GRID_COLS,GRID_ROWS,CELL_W,CELL_H,colName,rowName,gridCell,coordLabel,type MapKey,type WorldIsland,type NpcDef,type MonsterDef,type Dir,type QuestDef} from './campaign';
-import {ABILITIES,SPECIAL_AMMO,MINE,SPEED_BOOST,CONSUMABLES,AMMO_PRICES,SUPPLY_PRICES,loadArsenal,saveArsenal,type AbilityId,type SpecialAmmo,type ConsumableId,type SupplyId} from './arsenal';
+import {BALL_DAMAGE,CHAIN_FACTOR,ABILITIES,SPECIAL_AMMO,MINE,SPEED_BOOST,CONSUMABLES,AMMO_PRICES,SUPPLY_PRICES,loadArsenal,saveArsenal,type AbilityId,type SpecialAmmo,type ConsumableId,type SupplyId,type Price} from './arsenal';
 import {loadFleetOwners,saveFleetOwners} from './conquest';
 import {TALENTS,OFFICERS,OFFICER_MAX_RANK,officerCost,officerSlots,talentPoints,loadCrew,saveCrew,spentPoints,computeBonus,type TalentId,type OfficerId} from './crew';
 import {FLEET_MASK} from './fleetMask';
@@ -42,7 +42,7 @@ const CANNONS:Record<CannonKind,{name:string;damage:number;range:number;reload:n
   heavy:{name:'Ağır',damage:1.38,range:365,reload:2.65}
 };
 const UPGRADES:Record<UpgradeKind,{name:string;description:string;effect:string;pearls:number}>={
-  hull:{name:'Güçlendirilmiş Gövde',description:'Geminin azami gövde dayanıklılığını artırır.',effect:'+20 gövde',pearls:8},
+  hull:{name:'Güçlendirilmiş Gövde',description:'Geminin azami gövde dayanıklılığını artırır.',effect:'+2.500 gövde · +5 top yuvası',pearls:8},
   damage:{name:'Top Güvertesi',description:'Her borda atışının verdiği hasarı artırır.',effect:'+%11 hasar',pearls:10},
   range:{name:'Uzun Namlular',description:'Tüm top türlerinin etkili menzilini artırır.',effect:'+18 menzil',pearls:9},
   reload:{name:'Tecrübeli Topçular',description:'Topların yeniden dolma süresini azaltır.',effect:'-%4 dolum',pearls:12},
@@ -118,12 +118,17 @@ let storedAccount:{pearls?:number;gold:number;wood:number;fame:number;level:numb
 try{storedQuests=JSON.parse(localStorage.getItem(QUEST_STORAGE)||'null');}catch{storedQuests=null;}
 try{storedAccount=JSON.parse(localStorage.getItem(ACCOUNT_STORAGE)||'null');}catch{storedAccount=null;}
 const storedActive=storedQuests?.active&&QUESTS.some(q=>q.id===storedQuests!.active)?storedQuests.active:null;
+const BASE_HP=75000,HP_PER_LEVEL=2500,HP_PER_HULL=2500,HP_PER_ELITE=5000,BASE_CANNONS=100,CANNONS_PER_ELITE=25,CANNONS_PER_HULL=5;
 const upgrades:Record<UpgradeKind,number>={hull:storedAccount?.upgrades?.hull||0,damage:storedAccount?.upgrades?.damage||0,range:storedAccount?.upgrades?.range||0,reload:storedAccount?.upgrades?.reload||0,speed:storedAccount?.upgrades?.speed||0,repair:storedAccount?.upgrades?.repair||0};
-const defaultCannonStock:CannonStock={cast:12,long:6,rapid:4,heavy:2};
-const defaultMountedCannons:CannonStock={cast:18,long:0,rapid:0,heavy:0};
+const defaultCannonStock:CannonStock={cast:20,long:6,rapid:4,heavy:2};
+const defaultMountedCannons:CannonStock={cast:50,long:0,rapid:0,heavy:0};
 const cannonInventory:CannonStock={...defaultCannonStock,...storedAccount?.cannonInventory};
 const mountedCannons:CannonStock={...defaultMountedCannons,...storedAccount?.mountedCannons};
-const state = { pearls:storedAccount?.pearls??30, gold:storedAccount?.gold??40, wood:storedAccount?.wood??10, fame:storedAccount?.fame??0, level:Math.min(MAX_LEVEL,storedAccount?.level??1), hp:storedAccount?.hp??100, maxHp:storedAccount?.maxHp??100, elitePoints:storedAccount?.elitePoints??0,battlePoints:storedAccount?.battlePoints??0,cannon:18, cannonType:storedAccount?.cannonType&&CANNONS[storedAccount.cannonType]?storedAccount.cannonType:'cast' as CannonKind, activeQuest:storedActive as string|null, ammo:'iron' as AmmoKind, chainAmmo:storedAccount?.chainAmmo??40, attacking:false, repairing:false, invulnerable:0 };
+const state = { pearls:storedAccount?.pearls??30, gold:storedAccount?.gold??40, wood:storedAccount?.wood??10, fame:storedAccount?.fame??0, level:Math.min(MAX_LEVEL,storedAccount?.level??1), hp:storedAccount?.hp??Infinity, maxHp:storedAccount?.maxHp??100, elitePoints:storedAccount?.elitePoints??0,battlePoints:storedAccount?.battlePoints??0,cannon:18, cannonType:storedAccount?.cannonType&&CANNONS[storedAccount.cannonType]?storedAccount.cannonType:'cast' as CannonKind, activeQuest:storedActive as string|null, ammo:'iron' as AmmoKind, chainAmmo:storedAccount?.chainAmmo??40, attacking:false, repairing:false, invulnerable:0 };
+// Eski ölçekli kayıtlar (100 canlı, 18 toplu gemi) bir kez Seafight ölçeğine taşınır: can formülden hesaplanır,
+// gemiye en az 50 döküm top yerleştirilir.
+if(storedAccount&&storedAccount.maxHp<5000){const total=(Object.keys(mountedCannons) as CannonKind[]).reduce((sum,kind)=>sum+mountedCannons[kind],0);if(total<50)mountedCannons.cast+=50-total;state.hp=Infinity;}
+state.maxHp=BASE_HP+(state.level-1)*HP_PER_LEVEL+upgrades.hull*HP_PER_HULL;
 state.cannon=(Object.keys(mountedCannons) as CannonKind[]).reduce((sum,kind)=>sum+mountedCannons[kind],0);
 let elitePurchased=storedAccount?.elitePurchased===true;
 let activeEliteShip:EliteShipId=storedAccount?.eliteShip&&ELITE_SHIPS.some(s=>s.id===storedAccount!.eliteShip)?storedAccount.eliteShip:'phantom';
@@ -173,7 +178,11 @@ let soulStacks=0,soulTimer=0,shadowReady=true,valhallaTimer=0;
 const eliteEnabled=()=>activeShip!=='starter';
 const eliteShip=()=>eliteById(activeEliteShip);
 const eliteMaxHpFactor=()=>!eliteEnabled()?1:activeEliteShip==='glacial'?1.2:activeEliteShip==='void'?1.15:1;
-const effectiveMaxHp=()=>Math.round(state.maxHp*eliteMaxHpFactor());
+// Seafight ölçeği: başlangıç gemisi 75.000 can ve 100 top yuvası. Elit seviyesi başına +5.000 can ve +25 yuva
+// (Seafight: Elit 1 75.000 can/100 top, Elit 2 80.000/105). Kaptan seviyesi ve Güçlendirilmiş Gövde +2.500 can verir.
+const baseMaxHp=()=>BASE_HP+(state.level-1)*HP_PER_LEVEL+upgrades.hull*HP_PER_HULL;
+const effectiveMaxHp=()=>Math.round((state.maxHp+(eliteEnabled()?eliteShip().level*HP_PER_ELITE:0))*eliteMaxHpFactor());
+if(!Number.isFinite(state.hp)||state.hp>effectiveMaxHp())state.hp=effectiveMaxHp();
 const eliteIncomingFactor=()=>!eliteEnabled()?1:activeEliteShip==='ironclad'?.75:activeEliteShip==='void'?.87:1;
 function eliteSpeedFactor(){
   if(!eliteEnabled())return 1;
@@ -466,7 +475,7 @@ function fireAtTarget(){
   if(state.ammo==='chain'&&state.chainAmmo<=0){state.ammo='iron';toast('Zincir güllesi tükendi');}
   if(isSpecial(state.ammo)&&arsenal[state.ammo]<=0){toast(`${SPECIAL_AMMO[state.ammo].name} tükendi`);state.ammo='iron';renderQuickSlots();}
   const fx=Math.sin(player.angle),fy=-Math.cos(player.angle),tx=selected.x-player.x,ty=selected.y-player.y;
-  const side=fx*ty-fy*tx>0?-1:1,damage=state.cannon*5*(1+upgrades.damage*.11)*cannon.damage*bonus.damage*eliteDamageFactor(selected)*eliteCritFactor()*(state.ammo==='chain'?1.45:1)*(isSpecial(state.ammo)?SPECIAL_AMMO[state.ammo].damage:1)*useConsumable('powder');
+  const side=fx*ty-fy*tx>0?-1:1,damage=state.cannon*BALL_DAMAGE*(1+upgrades.damage*.11)*cannon.damage*bonus.damage*eliteDamageFactor(selected)*eliteCritFactor()*(state.ammo==='chain'?CHAIN_FACTOR:1)*(isSpecial(state.ammo)?SPECIAL_AMMO[state.ammo].damage:1)*useConsumable('powder');
   salvoQueue.push({delay:0,target:selected,side,slot:0,damage,ammo:state.ammo});
   if(state.ammo==='chain'){state.chainAmmo-=1;saveAccount();}
   else if(isSpecial(state.ammo)){arsenal[state.ammo]-=1;saveArsenal(arsenal);renderQuickSlots();}
@@ -526,7 +535,7 @@ function ammoImpact(s:Shot,target:Target,hit:number){
 function muzzleFlash(x:number,y:number,angle:number,size=64){particles.push({x,y,vx:0,vy:0,life:.13,maxLife:.13,kind:'flash',rot:angle,size,z:6});for(let n=0;n<2;n++)particles.push({x,y,vx:Math.cos(angle)*(30+n*25)+(Math.random()-.5)*10,vy:Math.sin(angle)*(30+n*25)+(Math.random()-.5)*10,life:.9+Math.random()*.4,maxLife:1.3,kind:'smoke',z:6,size:36+n*10,variant:(n+Math.floor(Math.random()*4))%4,rot:Math.random()*6});}
 const wrecks:Wreck[]=[];
 const WRECK_TIME=1.8;
-function damageText(x:number,y:number,value:number){particles.push({x,y,vx:0,vy:-24,life:1,maxLife:1,kind:'damage',text:`-${Math.round(value)}`});}
+function damageText(x:number,y:number,value:number){particles.push({x,y,vx:0,vy:-24,life:1,maxLife:1,kind:'damage',text:`-${Math.round(value).toLocaleString('tr-TR')}`});}
 let toastTimer=0;
 function toast(msg:string){ui('toast').textContent=msg;ui('toast').classList.add('show');toastTimer=2.2;}
 let rewardTimer=0;
@@ -537,7 +546,7 @@ function saveQuestState(){localStorage.setItem(QUEST_STORAGE,JSON.stringify({act
 function saveAccount(){localStorage.setItem(ACCOUNT_STORAGE,JSON.stringify({pearls:state.pearls,gold:state.gold,wood:state.wood,fame:state.fame,level:state.level,maxHp:state.maxHp,hp:state.hp,chainAmmo:state.chainAmmo,elitePoints:state.elitePoints,battlePoints:state.battlePoints,cannonType:state.cannonType,cannonInventory,mountedCannons,quickSlots,upgrades,eliteShip:activeEliteShip,activeShip,elitePurchased,currentMap}));try{localStorage.setItem(WORLD_STORAGE,currentMap);}catch{}}
 function effectiveRange(){return(CANNONS[state.cannonType].range+upgrades.range*18+bonus.range)*(state.ammo==='grape'?SPECIAL_AMMO.grape.rangeFactor:1);}
 function effectiveSpeed(){return(104+upgrades.speed*5)*bonus.speed*eliteSpeedFactor()*(abilityActive('speed')?SPEED_BOOST:1);}
-function cannonCapacity(){return 30+upgrades.hull*2;}
+function cannonCapacity(){return BASE_CANNONS+upgrades.hull*CANNONS_PER_HULL+(eliteEnabled()?eliteShip().level*CANNONS_PER_ELITE:0);}
 function mountedCannonCount(){return (Object.keys(mountedCannons) as CannonKind[]).reduce((sum,kind)=>sum+mountedCannons[kind],0);}
 function cannonAsset(kind:CannonKind){
   return cannonAssetSources[kind]?`<img src="${cannonAssetSources[kind]}" alt="${CANNONS[kind].name} Top" draggable="false"/>`:'<span class="asset-loading"></span>';
@@ -554,7 +563,7 @@ let invSelected:CannonKind='cast';
 const INV_CELLS=9;
 function renderShipMenu(){
   state.cannon=mountedCannonCount();const activeCannon=CANNONS[state.cannonType],kinds=Object.keys(CANNONS) as CannonKind[];
-  ui('shipSummary').innerHTML=`<b>${state.cannon} / ${cannonCapacity()}</b><small>SALVO HASARI ${Math.round(state.cannon*5*(1+upgrades.damage*.11)*activeCannon.damage*bonus.damage)}</small>`;
+  ui('shipSummary').innerHTML=`<b>${state.cannon} / ${cannonCapacity()}</b><small>SALVO HASARI ${Math.round(state.cannon*BALL_DAMAGE*(1+upgrades.damage*.11)*activeCannon.damage*bonus.damage)}</small>`;
   const tiles=(side:'depot'|'ship')=>{const list=kinds.filter(k=>(side==='ship'?mountedCannons[k]:cannonInventory[k])>0);
     return list.map(k=>`<button class="inv-tile ${invSelected===k?'selected':''} ${side==='ship'&&state.cannonType===k?'active':''}" data-inv="${k}" data-side="${side}" title="${CANNONS[k].name} Top">${cannonAsset(k)}<b>${side==='ship'?mountedCannons[k]:cannonInventory[k]}</b>${side==='ship'&&state.cannonType===k?'<i>AKTİF</i>':''}</button>`).join('')+'<span class="inv-empty"></span>'.repeat(Math.max(0,INV_CELLS-list.length));};
   ui('invDepot').innerHTML=tiles('depot');ui('invShip').innerHTML=tiles('ship');
@@ -583,13 +592,21 @@ function bindCannonDrag(){
   });
 }
 // Top dükkânı: toplar altınla alınır ve depoya gider.
-const CANNON_PRICES:Record<CannonKind,number>={cast:40,long:110,rapid:190,heavy:300};
+// Döküm top altınla; uzun, seri ve ağır toplar inciyle alınır (inci fiyatı sırasıyla artar).
+const CANNON_PRICES:Record<CannonKind,Price>={cast:{amount:40,currency:'gold'},long:{amount:1,currency:'pearls'},rapid:{amount:2,currency:'pearls'},heavy:{amount:3,currency:'pearls'}};
 function openCannonShop(){renderCannonShop();ui('cannonShopOverlay').classList.add('open');}
 function closeCannonShop(){ui('cannonShopOverlay').classList.remove('open');}
 function renderCannonShop(){
   renderBuyRows('cannonShopList',(Object.keys(CANNONS) as CannonKind[]).map(kind=>{const c=CANNONS[kind];return{id:kind,name:`${c.name} Top`,art:`<div class="ammo-icon cannon-shop-art">${cannonAsset(kind)}</div>`,
     desc:`Hasar ×${c.damage.toFixed(2)} · Menzil ${c.range} · Dolum ${c.reload.toFixed(2)} sn`,note:`Depoda ${cannonInventory[kind]} · Gemide ${mountedCannons[kind]} · Toplar depoya gider`,unit:CANNON_PRICES[kind],
     give:(n:number)=>{cannonInventory[kind]+=n;},after:renderCannonShop};}));
+}
+// Gemi değişince (ör. elitten başlangıç gemisine) yuva sayısı düşebilir; taşan toplar depoya iner.
+function fitCannonsToCapacity(){
+  let over=mountedCannonCount()-cannonCapacity();if(over<=0)return;
+  for(const kind of ['cast','long','rapid','heavy'] as CannonKind[]){if(kind===state.cannonType)continue;const n=Math.min(over,mountedCannons[kind]);mountedCannons[kind]-=n;cannonInventory[kind]+=n;over-=n;if(over<=0)break;}
+  if(over>0){const n=Math.min(over,mountedCannons[state.cannonType]-1);mountedCannons[state.cannonType]-=n;cannonInventory[state.cannonType]+=n;}
+  state.cannon=mountedCannonCount();toast('Yeni geminin top yuvası daha az — fazla toplar depoya indirildi');
 }
 function moveCannon(kind:CannonKind,toShip:boolean,amount=1){
   if(toShip){amount=Math.min(amount,cannonInventory[kind],cannonCapacity()-mountedCannonCount());if(amount<=0){toast(`Gemide yer yok (${cannonCapacity()} top sınırı)`);return;}cannonInventory[kind]-=amount;mountedCannons[kind]+=amount;}
@@ -599,7 +616,7 @@ function moveCannon(kind:CannonKind,toShip:boolean,amount=1){
 function openEliteShips(){previewShip=activeShip;renderEliteShips();ui('eliteShipOverlay').classList.add('open');}
 function closeEliteShips(){ui('eliteShipOverlay').classList.remove('open');}
 function equipStarterShip(){
-  const oldFactor=eliteMaxHpFactor();activeShip='starter';const newFactor=eliteMaxHpFactor();state.hp=Math.min(effectiveMaxHp(),Math.max(1,state.hp*newFactor/oldFactor));eliteAbility.active=0;eliteAbility.cooldown=0;saveAccount();renderEliteShips();updateUI();toast('Başlangıç gemisi seçildi');
+  const oldMax=effectiveMaxHp();activeShip='starter';state.hp=Math.min(effectiveMaxHp(),Math.max(1,state.hp*effectiveMaxHp()/oldMax));fitCannonsToCapacity();eliteAbility.active=0;eliteAbility.cooldown=0;saveAccount();renderEliteShips();updateUI();toast('Başlangıç gemisi seçildi');
 }
 function purchaseEliteOne(){
   if(elitePurchased)return;
@@ -614,12 +631,12 @@ function renderEliteShips(){
   ui('eliteShipGrid').querySelector<HTMLElement>('[data-starter]')!.onclick=()=>{previewShip='starter';renderEliteShips();};
   ui('eliteShipGrid').querySelectorAll<HTMLElement>('[data-elite]').forEach(el=>el.onclick=()=>{previewShip=el.dataset.elite as EliteShipId;renderEliteShips();});
   if(previewShip==='starter'){
-    ui('eliteShipDetail').innerHTML=`<span class="eyebrow">Başlangıç gemisi</span><div class="starter-preview" role="img" aria-label="Yedi Deniz başlangıç gemisi"></div><h3>Yedi Deniz</h3><em>Kaptanın ilk gemisi</em><b>Dengeli başlangıç sınıfı</b><dl><dt>Özellik</dt><dd>Elit pasifi veya özel yeteneği yoktur. Oyuna başlayan her kaptanda ücretsiz bulunur.</dd></dl><button id="equipStarter" ${activeShip==='starter'?'disabled':''}>${activeShip==='starter'?'AKTİF GEMİ':'GEMİYİ SEÇ'}</button>`;
+    ui('eliteShipDetail').innerHTML=`<span class="eyebrow">Başlangıç gemisi</span><div class="starter-preview" role="img" aria-label="Yedi Deniz başlangıç gemisi"></div><h3>Yedi Deniz</h3><em>Kaptanın ilk gemisi</em><b>Dengeli başlangıç sınıfı</b><dl><dt>Gemi</dt><dd>${BASE_HP.toLocaleString('tr-TR')} temel can · ${BASE_CANNONS} top yuvası</dd><dt>Özellik</dt><dd>Elit pasifi veya özel yeteneği yoktur. Oyuna başlayan her kaptanda ücretsiz bulunur.</dd></dl><button id="equipStarter" ${activeShip==='starter'?'disabled':''}>${activeShip==='starter'?'AKTİF GEMİ':'GEMİYİ SEÇ'}</button>`;
     const button=document.getElementById('equipStarter') as HTMLButtonElement|null;if(button&&!button.disabled)button.onclick=equipStarterShip;return;
   }
   const ship=eliteById(previewShip),locked=ship.level>unlocked;
-  ui('eliteShipDetail').innerHTML=`<span class="eyebrow">Elit ${ship.level}</span><img class="elite-art elite-preview" src="${eliteArtUrl(ship.id)}" alt="${ship.name}" draggable="false"/><h3>${ship.name}</h3><em>${ship.english}</em><b>${ship.role}</b><dl><dt>Pasif</dt><dd>${ship.passive}</dd><dt>${ship.ability}</dt><dd>${ship.abilityDescription}</dd></dl><button id="equipEliteShip" ${ship.level>1&&locked||activeShip===ship.id?'disabled':''}>${activeShip===ship.id?'AKTİF GEMİ':ELITE_TEST_MODE?'TEST ET':ship.level===1&&!elitePurchased?`SATIN AL · ${ELITE_ONE_PRICE} İNCİ`:locked?'KİLİTLİ':'GEMİYİ SEÇ'}</button>`;
-  const equip=document.getElementById('equipEliteShip') as HTMLButtonElement|null;if(equip&&!equip.disabled)equip.onclick=()=>{if(ship.level===1&&!elitePurchased&&!ELITE_TEST_MODE){purchaseEliteOne();return;}const oldFactor=eliteMaxHpFactor();activeEliteShip=ship.id;activeShip=ship.id;const newFactor=eliteMaxHpFactor();state.hp=Math.min(effectiveMaxHp(),Math.max(1,state.hp*newFactor/oldFactor));eliteAbility.active=0;eliteAbility.cooldown=0;shadowReady=true;saveAccount();renderEliteShips();updateUI();toast(`${ship.name} amiral gemisi seçildi`);};
+  ui('eliteShipDetail').innerHTML=`<span class="eyebrow">Elit ${ship.level}</span><img class="elite-art elite-preview" src="${eliteArtUrl(ship.id)}" alt="${ship.name}" draggable="false"/><h3>${ship.name}</h3><em>${ship.english}</em><b>${ship.role}</b><dl><dt>Gemi</dt><dd>${(BASE_HP+ship.level*HP_PER_ELITE).toLocaleString('tr-TR')} temel can · ${BASE_CANNONS+ship.level*CANNONS_PER_ELITE} top yuvası</dd><dt>Pasif</dt><dd>${ship.passive}</dd><dt>${ship.ability}</dt><dd>${ship.abilityDescription}</dd></dl><button id="equipEliteShip" ${ship.level>1&&locked||activeShip===ship.id?'disabled':''}>${activeShip===ship.id?'AKTİF GEMİ':ELITE_TEST_MODE?'TEST ET':ship.level===1&&!elitePurchased?`SATIN AL · ${ELITE_ONE_PRICE} İNCİ`:locked?'KİLİTLİ':'GEMİYİ SEÇ'}</button>`;
+  const equip=document.getElementById('equipEliteShip') as HTMLButtonElement|null;if(equip&&!equip.disabled)equip.onclick=()=>{if(ship.level===1&&!elitePurchased&&!ELITE_TEST_MODE){purchaseEliteOne();return;}const oldMax=effectiveMaxHp();activeEliteShip=ship.id;activeShip=ship.id;state.hp=Math.min(effectiveMaxHp(),Math.max(1,state.hp*effectiveMaxHp()/oldMax));fitCannonsToCapacity();eliteAbility.active=0;eliteAbility.cooldown=0;shadowReady=true;saveAccount();renderEliteShips();updateUI();toast(`${ship.name} amiral gemisi seçildi`);};
 }
 function openDevelopment(){pendingUpgrade=null;renderUpgrades();ui('developmentOverlay').classList.add('open');}
 function closeDevelopment(){pendingUpgrade=null;ui('developmentOverlay').classList.remove('open');}
@@ -649,32 +666,34 @@ function buyUpgrade(){
   if(!pendingUpgrade)return;const kind=pendingUpgrade,cost=upgradeCost(kind);
   if(state.pearls<cost){toast('Bu geliştirme için yeterli İncin yok');return;}
   state.pearls-=cost;upgrades[kind]++;
-  if(kind==='hull'){state.maxHp+=20;state.hp=Math.min(effectiveMaxHp(),state.hp+Math.round(20*eliteMaxHpFactor()));}
+  if(kind==='hull'){state.maxHp=baseMaxHp();state.hp=Math.min(effectiveMaxHp(),state.hp+Math.round(HP_PER_HULL*eliteMaxHpFactor()));}
   pendingUpgrade=null;saveAccount();renderUpgrades();updateUI();rewardNotice(`${UPGRADES[kind].name}   SEVİYE ${upgrades[kind]}`);
 }
 // Ortak satın alma satırı: adet kutusu + anlık toplam; SATIN AL onay penceresi açar, onaylanınca alınır.
-type BuyRow={id:string;name:string;art:string;desc:string;note?:string;unit:number;give:(n:number)=>void;after:()=>void};
+type BuyRow={id:string;name:string;art:string;desc:string;note?:string;unit:Price;give:(n:number)=>void;after:()=>void};
+const CURRENCY_NAME={gold:'altın',pearls:'inci'} as const;
+const wallet=(c:Price['currency'])=>c==='gold'?state.gold:state.pearls;
 const BUY_MAX=100000;
 const fmt=(n:number)=>n.toLocaleString('tr-TR');
 let pendingBuy:{row:BuyRow;qty:number}|null=null;
 function renderBuyRows(listId:string,rows:BuyRow[]){
   const list=ui(listId);
-  list.innerHTML=rows.map(r=>`<article class="market-item buy-row" data-row="${r.id}">${r.art}<div><h4>${r.name}</h4><p>${r.desc}</p>${r.note?`<small>${r.note}</small>`:''}<em>Birim fiyat: ${fmt(r.unit)} altın</em></div><div class="buy-box"><input type="number" inputmode="numeric" min="1" max="${BUY_MAX}" placeholder="Adet" aria-label="${r.name} adedi"/><span class="buy-total">Toplam: —</span><button disabled>SATIN AL</button></div></article>`).join('');
+  list.innerHTML=rows.map(r=>`<article class="market-item buy-row" data-row="${r.id}">${r.art}<div><h4>${r.name}</h4><p>${r.desc}</p>${r.note?`<small>${r.note}</small>`:''}<em class="${r.unit.currency}">Birim fiyat: ${fmt(r.unit.amount)} ${CURRENCY_NAME[r.unit.currency]}</em></div><div class="buy-box"><input type="number" inputmode="numeric" min="1" max="${BUY_MAX}" placeholder="Adet" aria-label="${r.name} adedi"/><span class="buy-total">Toplam: —</span><button disabled>SATIN AL</button></div></article>`).join('');
   list.querySelectorAll<HTMLElement>('.buy-row').forEach((el,i)=>{const r=rows[i],input=el.querySelector('input')!,total=el.querySelector<HTMLElement>('.buy-total')!,btn=el.querySelector('button')!;
     const qty=()=>{const n=Math.floor(Number(input.value));return Number.isFinite(n)&&n>0?Math.min(BUY_MAX,n):0;};
-    const sync=()=>{const n=qty(),cost=n*r.unit;total.textContent=n?`Toplam: ${fmt(cost)} altın`:'Toplam: —';total.classList.toggle('short',cost>state.gold);btn.disabled=!n;};
+    const sync=()=>{const n=qty(),cost=n*r.unit.amount;total.textContent=n?`Toplam: ${fmt(cost)} ${CURRENCY_NAME[r.unit.currency]}`:'Toplam: —';total.classList.toggle('short',cost>wallet(r.unit.currency));btn.disabled=!n;};
     input.oninput=sync;input.onkeydown=e=>{if(e.key==='Enter'&&qty())askBuy(r,qty());};btn.onclick=()=>askBuy(r,qty());});
 }
 function askBuy(row:BuyRow,qty:number){
-  if(!qty)return;const cost=qty*row.unit,box=ui('buyConfirm'),enough=state.gold>=cost;pendingBuy={row,qty};
-  box.innerHTML=`<section><h3>SATIN ALMAYI ONAYLA</h3><p><b>${fmt(qty)} × ${row.name}</b></p><dl><dt>Birim fiyat</dt><dd>${fmt(row.unit)} altın</dd><dt>Toplam</dt><dd class="total">${fmt(cost)} altın</dd><dt>Bakiyen</dt><dd>${fmt(state.gold)} altın</dd><dt>Kalan</dt><dd class="${enough?'':'short'}">${enough?fmt(state.gold-cost)+' altın':'Yetersiz altın'}</dd></dl><div><button id="buyOk" ${enough?'':'disabled'}>ONAYLA</button><button id="buyCancel">VAZGEÇ</button></div></section>`;
+  if(!qty)return;const cur=row.unit.currency,cn=CURRENCY_NAME[cur],have=wallet(cur),cost=qty*row.unit.amount,box=ui('buyConfirm'),enough=have>=cost;pendingBuy={row,qty};
+  box.innerHTML=`<section><h3>SATIN ALMAYI ONAYLA</h3><p><b>${fmt(qty)} × ${row.name}</b></p><dl><dt>Birim fiyat</dt><dd>${fmt(row.unit.amount)} ${cn}</dd><dt>Toplam</dt><dd class="total ${cur}">${fmt(cost)} ${cn}</dd><dt>Bakiyen</dt><dd>${fmt(have)} ${cn}</dd><dt>Kalan</dt><dd class="${enough?'':'short'}">${enough?`${fmt(have-cost)} ${cn}`:`Yetersiz ${cn}`}</dd></dl><div><button id="buyOk" ${enough?'':'disabled'}>ONAYLA</button><button id="buyCancel">VAZGEÇ</button></div></section>`;
   box.classList.add('open');ui('buyOk').onclick=confirmBuy;ui('buyCancel').onclick=closeBuy;
 }
 function closeBuy(){pendingBuy=null;ui('buyConfirm').classList.remove('open');}
 function confirmBuy(){
-  if(!pendingBuy)return;const {row,qty}=pendingBuy,cost=qty*row.unit;
-  if(state.gold<cost){toast('Yeterli altının yok');closeBuy();return;}
-  state.gold-=cost;row.give(qty);saveArsenal(arsenal);saveAccount();closeBuy();playCoins();renderQuickSlots();updateUI();row.after();rewardNotice(`+${fmt(qty)} ${row.name}   −${fmt(cost)} Altın`);
+  if(!pendingBuy)return;const {row,qty}=pendingBuy,cur=row.unit.currency,cost=qty*row.unit.amount;
+  if(wallet(cur)<cost){toast(`Yeterli ${CURRENCY_NAME[cur]} yok`);closeBuy();return;}
+  if(cur==='gold')state.gold-=cost;else state.pearls-=cost;row.give(qty);saveArsenal(arsenal);saveAccount();closeBuy();playCoins();renderQuickSlots();updateUI();row.after();rewardNotice(`+${fmt(qty)} ${row.name}   −${fmt(cost)} ${cur==='gold'?'Altın':'İnci'}`);
 }
 function openMarket(){renderMarket();ui('marketOverlay').classList.add('open');}
 function closeMarket(){ui('marketOverlay').classList.remove('open');}
@@ -857,9 +876,9 @@ function recordQuestProgress(kind:QuestDef['kind'],id:string){
 function updateUI(){
   ui('pearls').textContent=String(state.pearls).padStart(3,'0');ui('gold').textContent=String(state.gold).padStart(3,'0');
   document.querySelectorAll<HTMLElement>('#quickInventory [data-quick-item]').forEach(slot=>{const item=slot.dataset.quickItem as QuickItemId;const count=slot.querySelector('b');if(count)count.textContent=quickCount(item);slot.classList.toggle('active',item===state.ammo||((item==='powder'||item==='shield')&&consumableOn[item]));});
-  ui('hpText').textContent=`${Math.ceil(state.hp)} / ${effectiveMaxHp()}`; (ui('hpBar') as HTMLElement).style.width=`${state.hp/effectiveMaxHp()*100}%`;
+  ui('hpText').textContent=`${Math.ceil(state.hp).toLocaleString('tr-TR')} / ${effectiveMaxHp().toLocaleString('tr-TR')}`; (ui('hpBar') as HTMLElement).style.width=`${state.hp/effectiveMaxHp()*100}%`;
   const need=xpNeed(state.level),needText=Number.isFinite(need)?String(need):'AZAMİ';ui('xpText').textContent=`${state.fame} / ${needText}`;(ui('xpBar') as HTMLElement).style.width=`${Number.isFinite(need)?Math.min(100,state.fame/need*100):100}%`;ui('level').textContent=String(state.level);ui('captainLevel').textContent=String(state.level);ui('profileElite').textContent=`${state.elitePoints} / 1500`;ui('profileBattle').textContent=`${state.battlePoints} / 500`;(ui('profileEliteBar') as HTMLElement).style.width=`${Math.min(100,state.elitePoints/15)}%`;(ui('profileBattleBar') as HTMLElement).style.width=`${Math.min(100,state.battlePoints/5)}%`;
-  (ui('xpHudBar') as HTMLElement).style.width=`${Number.isFinite(need)?Math.min(100,state.fame/need*100):100}%`;ui('xpHudText').textContent=`${state.fame} / ${needText}`;(ui('hpHudBar') as HTMLElement).style.width=`${Math.max(0,state.hp/effectiveMaxHp()*100)}%`;ui('hpHudText').textContent=`${Math.ceil(state.hp)} / ${effectiveMaxHp()}`;(ui('eliteBar') as HTMLElement).style.width=`${Math.min(100,state.elitePoints/15)}%`;ui('eliteText').textContent=`${state.elitePoints} / 1500`;(ui('battleBar') as HTMLElement).style.width=`${Math.min(100,state.battlePoints/5)}%`;ui('battleText').textContent=`${state.battlePoints} / 500`;
+  (ui('xpHudBar') as HTMLElement).style.width=`${Number.isFinite(need)?Math.min(100,state.fame/need*100):100}%`;ui('xpHudText').textContent=`${state.fame} / ${needText}`;(ui('hpHudBar') as HTMLElement).style.width=`${Math.max(0,state.hp/effectiveMaxHp()*100)}%`;ui('hpHudText').textContent=`${Math.ceil(state.hp).toLocaleString('tr-TR')} / ${effectiveMaxHp().toLocaleString('tr-TR')}`;(ui('eliteBar') as HTMLElement).style.width=`${Math.min(100,state.elitePoints/15)}%`;ui('eliteText').textContent=`${state.elitePoints} / 1500`;(ui('battleBar') as HTMLElement).style.width=`${Math.min(100,state.battlePoints/5)}%`;ui('battleText').textContent=`${state.battlePoints} / 500`;
   const quest=state.activeQuest===null?null:questById(state.activeQuest);ui('questTitle').textContent=quest?.title||'Görev seçilmedi';ui('questDescription').textContent=quest?.description||'Kaptan, yapmak istediğin görevi görev defterinden seçebilirsin.';ui('quest').textContent=quest?`${questProgress[quest.id]??0} / ${quest.required} ${questUnit(quest)}`:'Hazır olduğunda bir görev başlat';ui('questBadge').textContent=quest?`${questProgress[quest.id]??0}/${quest.required}`:'';ui('openQuestTop').classList.toggle('has-quest',!!quest);
   ui('reloadText').textContent=player.cooldown>0?`${player.cooldown.toFixed(1)} sn`:'HAZIR';ui('attack').classList.toggle('reloading',player.cooldown>0);
   ui('attackLabel').textContent=state.attacking?'SALDIRIYI İPTAL ET':'SALDIR';ui('attack').classList.toggle('active',state.attacking);
@@ -978,7 +997,7 @@ function update(dt:number){
     if(p.vz!==undefined){p.z=(p.z??0)+p.vz*dt;p.vz-=340*dt;if(p.z<=0){p.z=0;p.vz=undefined;p.vx*=.25;p.vy*=.25;p.vr=(p.vr??0)*.1;if(p.kind==='splinter')particles.push({x:p.x,y:p.y,vx:0,vy:0,life:.4,maxLife:.4,kind:'foam',size:20,variant:0});}}
     if(p.life<=0)particles.splice(i,1);}
   for(let i=wrecks.length-1;i>=0;i--){const w=wrecks[i];w.t+=dt;w.bubble-=dt;if(w.bubble<=0){w.bubble=.09;const a=Math.random()*Math.PI*2,r=Math.random()*26;particles.push({x:w.x+Math.cos(a)*r,y:w.y+Math.sin(a)*r*.6,vx:0,vy:-6,life:.7,maxLife:.7,kind:Math.random()<.6?'bubble':'foam',size:10+Math.random()*10,variant:0});}if(w.t>=WRECK_TIME)wrecks.splice(i,1);}
-  let need=xpNeed(state.level);while(state.fame>=need){state.fame-=need;state.level++;state.maxHp+=20;state.hp=effectiveMaxHp();saveAccount();playLevelUp();rewardNotice(`SEVİYE ${state.level}   +20 Azami Gövde   +1 Yetenek Puanı   ${state.level}/1 AÇILDI`);toast(`Seviye ${state.level}! Yeni denizler açıldı`);need=xpNeed(state.level);}
+  let need=xpNeed(state.level);while(state.fame>=need){state.fame-=need;state.level++;state.maxHp=baseMaxHp();state.hp=effectiveMaxHp();saveAccount();playLevelUp();rewardNotice(`SEVİYE ${state.level}   +${HP_PER_LEVEL.toLocaleString('tr-TR')} Azami Gövde   +1 Yetenek Puanı   ${state.level}/1 AÇILDI`);toast(`Seviye ${state.level}! Yeni denizler açıldı`);need=xpNeed(state.level);}
   if(state.level>=MAX_LEVEL)state.fame=Math.min(state.fame,0);
   if(toastTimer>0){toastTimer-=dt;if(toastTimer<=0)ui('toast').classList.remove('show');}if(rewardTimer>0){rewardTimer-=dt;if(rewardTimer<=0){ui('rewardToast').classList.remove('show');const next=rewardQueue.shift();if(next)setTimeout(()=>showReward(next),220);}} updateUI();
 }
@@ -1076,7 +1095,7 @@ function activateEliteAbility(){
   const needsTarget=['glacial','kraken','crimson','tempest','jade','void'].includes(activeEliteShip);
   if(needsTarget&&(!selected||!targetExists(selected))){toast('Bu yetenek için önce hedef seç');return;}
   eliteAbility.cooldown=45*bonus.cooldown;eliteAbility.active=0;
-  const base=Math.max(30,state.cannon*4*(1+state.level*.04));
+  const base=Math.max(1500,state.cannon*BALL_DAMAGE*.8*(1+state.level*.04));
   if(activeEliteShip==='phantom'){eliteAbility.active=5;state.attacking=false;toast('Hayalet Formu: 5 saniye dokunulmazsın');}
   else if(activeEliteShip==='magma'){for(const t of [...enemies,...monsters])if(dist(t,player)<=360){t.hp-=base;t.burnTimer=3;t.aggro=true;t.combatTimer=12;damageText(t.x,t.y,base);burst(t.x,t.y,true);}toast('Lav Püskürtme!');}
   else if(activeEliteShip==='glacial'&&selected){selected.slowTimer=4;selected.aggro=true;selected.combatTimer=12;toast('Donma Dalgası: hedef %50 yavaşladı');}
@@ -1129,7 +1148,7 @@ function updateArsenal(dt:number){
   for(const t of Object.values(abilityTimers)){t.active=Math.max(0,t.active-dt);t.cooldown=Math.max(0,t.cooldown-dt);}
   for(let i=mines.length-1;i>=0;i--){const m=mines[i];m.life-=dt;m.arm=Math.max(0,m.arm-dt);if(m.life<=0){mines.splice(i,1);continue;}
     if(m.arm<=0&&(enemies.some(e=>dist(e,m)<MINE.triggerRadius)||monsters.some(x=>dist(x,m)<MINE.triggerRadius+x.radius*.6)))detonateMine(i);}
-  const burnDps=(SPECIAL_AMMO.fire.burnDps+state.level*.5)*bonus.burn;
+  const burnDps=(SPECIAL_AMMO.fire.burnDps+state.level*30)*bonus.burn;
   for(const e of [...enemies])if(e.burnTimer&&e.burnTimer>0){e.burnTimer-=dt;e.hp-=burnDps*dt;if(Math.random()<dt*14)particles.push({x:e.x+(Math.random()-.5)*26,y:e.y+(Math.random()-.5)*20,vx:0,vy:-22,life:.5,maxLife:.5,kind:'spark'});if(e.hp<=0)sinkEnemy(e);}
   for(const m of monsters)if(m.burnTimer&&m.burnTimer>0){m.burnTimer-=dt;m.hp-=burnDps*dt;if(Math.random()<dt*14)particles.push({x:m.x+(Math.random()-.5)*40,y:m.y+(Math.random()-.5)*30,vx:0,vy:-22,life:.5,maxLife:.5,kind:'spark'});if(m.hp<=0)defeatMonster(m);}
   for(const id of ['speed','mine'] as AbilityId[]){const t=abilityTimers[id],button=document.getElementById(`ability-${id}`);if(!button)continue;
