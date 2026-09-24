@@ -1,0 +1,44 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import vm from 'node:vm';
+import ts from 'typescript';
+
+const campaign=readFileSync(new URL('../src/campaign.ts',import.meta.url),'utf8');
+const code=ts.transpile(campaign,{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ES2022});
+const world=await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`);
+const {MAPS,MAP_KEYS,WORLD_WIDTH,WORLD_HEIGHT,FLEET,islandLayout,coordLabel,neighbor}=world;
+
+test('6000 × 4000 world retains all coordinate extremes and chart wrapping',()=>{
+  assert.equal(WORLD_WIDTH,6000);assert.equal(WORLD_HEIGHT,4000);
+  assert.equal(coordLabel({x:0,y:0}),'00AA');
+  assert.equal(coordLabel({x:5999,y:3999}),'60CZ');
+  assert.equal(neighbor('3/1','west'),'4/2');assert.equal(neighbor('2/1','south'),'8/1');
+});
+test('all sixteen maps follow the supplied sea names and retain safe maps',()=>{
+  const names=['Güvenli Harita','İnciyolu Denizi','Azurya Denizi','Hayalet Denizi','Buzmahzen Denizi','Fırtına Denizi','Karanlık Uçurum Denizi','Alev Denizi'];
+  assert.equal(MAP_KEYS.length,16);
+  for(const m of Object.values(MAPS)){assert.equal(m.name,names[m.tier-1]);assert.equal(m.safe,m.tier===1);}
+});
+test('map-specific island layouts are repeatable, separated and inside the rectangular sea',()=>{
+  const layouts=new Set();
+  for(const m of Object.values(MAPS)){
+    assert.deepEqual(m.islands,islandLayout(m.key,m.fleet));assert.ok(m.islands.length>=8);
+    layouts.add(JSON.stringify(m.islands.map(i=>[i.x,i.y])));
+    for(const i of m.islands){
+      assert.ok(i.x-i.r>0&&i.x+i.r<WORLD_WIDTH&&i.y-i.r>0&&i.y+i.r<WORLD_HEIGHT);
+      if(m.tier>=5)assert.ok(Math.hypot(i.x-m.fleet.x,i.y-m.fleet.y)>=FLEET.islandR+i.r+400);
+      for(const j of m.islands)if(i!==j)assert.ok(Math.hypot(i.x-j.x,i.y-j.y)>=i.r+j.r+230);
+    }
+  }
+  assert.equal(layouts.size,16);
+});
+test('actual edge detection uses width for east/west and height for north/south',()=>{
+  const source=ts.createSourceFile('main.ts',readFileSync(new URL('../src/main.ts',import.meta.url),'utf8'),ts.ScriptTarget.Latest,true);
+  const fn=source.statements.find(n=>ts.isFunctionDeclaration(n)&&n.name?.text==='edgeDir');
+  const c=vm.createContext({WORLD_WIDTH,WORLD_HEIGHT,EDGE:100,player:{x:3000,y:2000}});
+  vm.runInContext(ts.transpile(fn.getText(source)),c);
+  for(const [x,y,dir] of [[3000,50,'north'],[3000,3950,'south'],[50,2000,'west'],[5950,2000,'east'],[4000,2000,null]]){
+    c.player={x,y};assert.equal(vm.runInContext('edgeDir()',c),dir);
+  }
+});

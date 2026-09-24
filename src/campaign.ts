@@ -6,7 +6,7 @@ export type FleetTheme='verdant'|'coral'|'misty'|'crimson'|'ice'|'toxic'|'lava'|
 export type Weather='fog'|'snow'|'embers'|'spores'|'storm'|'motes'|'sparkle'|'dust'|null;
 export type WorldIsland={x:number;y:number;r:number;name:string;look:IslandLook;variant:0|1;flip?:boolean};
 
-export const WORLD=3200;
+export const WORLD_WIDTH=6000,WORLD_HEIGHT=4000;
 export const MAX_LEVEL=8;
 // Dünya haritası düzeni (üst sıradan alta): 4 × 4, her seviyenin iki denizi yan yana
 export const GRID:MapKey[][]=[
@@ -33,14 +33,14 @@ export const xpNeed=(level:number)=>level>=MAX_LEVEL?Infinity:LEVEL_XP[level];
 
 type Theme={name:string;sea:[string,string];tint:string;look:IslandLook;fleet:FleetTheme;weather:Weather;label:string};
 export const THEMES:Record<number,Theme>={
-  1:{name:'Zümrüt Sular',sea:['#12505a','#0a2f38'],tint:'#6fd6c4',look:'verdant',fleet:'verdant',weather:null,label:'#b7d9d1'},
-  2:{name:'Mercan Denizi',sea:['#0f6068','#063a44'],tint:'#8ff0dc',look:'coral',fleet:'coral',weather:'sparkle',label:'#c8f4ea'},
-  3:{name:'Sis Denizi',sea:['#2f4a52','#122229'],tint:'#9fb8b4',look:'misty',fleet:'misty',weather:'fog',label:'#c8d4ce'},
-  4:{name:'Kızıl Resifler',sea:['#3a2e38','#170c12'],tint:'#e0a58c',look:'crimson',fleet:'crimson',weather:'dust',label:'#e8c0a8'},
-  5:{name:'Buz Denizi',sea:['#3e6d86','#17304a'],tint:'#bfe6ff',look:'ice',fleet:'ice',weather:'snow',label:'#e8f6ff'},
-  6:{name:'Zehir Bataklığı',sea:['#2c4428','#0e1d0c'],tint:'#8adf5a',look:'toxic',fleet:'toxic',weather:'spores',label:'#c8e8a0'},
-  7:{name:'Alev Denizi',sea:['#3a1c14','#120605'],tint:'#ff8a3a',look:'lava',fleet:'lava',weather:'embers',label:'#ffc090'},
-  8:{name:'Fırtına Kuşağı',sea:['#1d2a3c','#070b14'],tint:'#9fb4e0',look:'storm',fleet:'storm',weather:'storm',label:'#c8d4f0'},
+  1:{name:'Güvenli Harita',sea:['#12505a','#0a2f38'],tint:'#6fd6c4',look:'haven',fleet:'verdant',weather:null,label:'#b7d9d1'},
+  2:{name:'İnciyolu Denizi',sea:['#0f6068','#063a44'],tint:'#8ff0dc',look:'coral',fleet:'coral',weather:'sparkle',label:'#c8f4ea'},
+  3:{name:'Azurya Denizi',sea:['#14566e','#083343'],tint:'#82cbdc',look:'verdant',fleet:'misty',weather:'sparkle',label:'#c8eaf0'},
+  4:{name:'Hayalet Denizi',sea:['#24443f','#0a2225'],tint:'#9fb8b4',look:'misty',fleet:'crimson',weather:'fog',label:'#c8d4ce'},
+  5:{name:'Buzmahzen Denizi',sea:['#3e6d86','#17304a'],tint:'#bfe6ff',look:'ice',fleet:'ice',weather:'snow',label:'#e8f6ff'},
+  6:{name:'Fırtına Denizi',sea:['#1d3546','#0a1c2b'],tint:'#9fb4e0',look:'storm',fleet:'toxic',weather:'storm',label:'#c8d4f0'},
+  7:{name:'Karanlık Uçurum Denizi',sea:['#202737','#090f1e'],tint:'#a79bdb',look:'abyss',fleet:'lava',weather:'motes',label:'#d8c0ff'},
+  8:{name:'Alev Denizi',sea:['#343d3e','#121e24'],tint:'#ff8a3a',look:'lava',fleet:'storm',weather:'embers',label:'#ffc090'},
   9:{name:'Karanlık Derinlikler',sea:['#1f1633','#06030e'],tint:'#b070ff',look:'abyss',fleet:'abyss',weather:'motes',label:'#d8c0ff'},
 };
 
@@ -96,7 +96,7 @@ export const PORTRAIT_ATLAS='/assets/portraits-v2.webp';
 
 // ---------------------------------------------------------------- Koordinat ızgarası
 // Seafight tarzı: üstte soldan sağa 00–60 sütun, solda yukarıdan aşağı AA–CZ satır. Konum "35AJ" gibi yazılır.
-export const GRID_COLS=61,GRID_ROWS=78,CELL_W=WORLD/GRID_COLS,CELL_H=WORLD/GRID_ROWS;
+export const GRID_COLS=61,GRID_ROWS=78,CELL_W=WORLD_WIDTH/GRID_COLS,CELL_H=WORLD_HEIGHT/GRID_ROWS;
 export const colName=(c:number)=>String(c).padStart(2,'0');
 export const rowName=(r:number)=>String.fromCharCode(65+Math.floor(r/26))+String.fromCharCode(65+r%26);
 export const gridCell=(p:{x:number;y:number})=>({c:Math.max(0,Math.min(GRID_COLS-1,Math.floor(p.x/CELL_W))),r:Math.max(0,Math.min(GRID_ROWS-1,Math.floor(p.y/CELL_H)))});
@@ -144,6 +144,37 @@ export const MAPS:Record<MapKey,MapDef>={
   '8/2':sea('8/2','Kasırga Gözü','Kasırganın ortasında sakin ama ölümcül bir göz.',{islands:[[2550,650,190,'Kasırga Burnu',1],[650,700,180,'Rüzgâr Kayası',0,true],[2550,2550,200,'Gürültü Adası',0]],fleet:[1150,2100,'Kasırga Filo Adası'],labels:[['KASIRGA GÖZÜ',1900,1000]]}),
 };
 export const MAP_KEYS=Object.keys(MAPS) as MapKey[];
+
+// User's world chart is authoritative for names; keys and wrap connections stay stable.
+const SEA_LORE:Record<number,string>={
+  1:'Kaptanların dinlendiği korunaklı kıyılar.',
+  2:'İnci gibi parlayan adalar, sakin meltemler ve denizkızlarının ezgileri.',
+  3:'Gökyüzünü yansıtan mavi sularda kadim uygarlıkların izleri saklıdır.',
+  4:'Gölgegeçit efsanesinin suları: sis içindeki görünmez kapılar ve kayıp gemiler.',
+  5:'Sonsuz kışın hüküm sürdüğü, buz altında kadim hazinelerin saklandığı deniz.',
+  6:'Fırtına Tahtı efsanesinin denizi; rüzgârların ve cesur kaptanların sınavı.',
+  7:'Karanlık derinliklerde unutulmuş güçlerin ve kayıp sırların denizi.',
+  8:'Alev Suları efsanesi: volkanların kızgın lavlarıyla çevrili kayalıklar.',
+};
+export function islandLayout(key:MapKey,fleet:{x:number;y:number}):WorldIsland[]{
+  let seed=2166136261;for(const c of `seven-seas-v1:${key}`)seed=Math.imul(seed^c.charCodeAt(0),16777619);
+  const random=()=>{seed^=seed<<13;seed^=seed>>>17;seed^=seed<<5;return(seed>>>0)/4294967296;};
+  const result:WorldIsland[]=[],tier=tierOf(key),count=8+Math.floor(random()*4);
+  for(let attempt=0;attempt<1000&&result.length<count;attempt++){
+    const r=90+Math.floor(random()*65),x=Math.round(300+random()*(WORLD_WIDTH-600)),y=Math.round(300+random()*(WORLD_HEIGHT-600));
+    if(tier>=5&&Math.hypot(x-fleet.x,y-fleet.y)<FLEET.islandR+r+400)continue;
+    if(result.some(i=>Math.hypot(x-i.x,y-i.y)<i.r+r+230))continue;
+    result.push(I(x,y,r,`${THEMES[tier].name} · Adacık ${result.length+1}`,THEMES[tier].look,random()<.5?0:1,random()<.5));
+  }
+  return result;
+}
+for(const key of MAP_KEYS){
+  const map=MAPS[key];map.name=THEMES[map.tier].name;map.description=SEA_LORE[map.tier];
+  map.fleet.x=Math.round(map.fleet.x*WORLD_WIDTH/3200);map.fleet.y=Math.round(map.fleet.y*WORLD_HEIGHT/3200);
+  map.islands=islandLayout(key,map.fleet);
+  map.labels=[{text:map.name.toLocaleUpperCase('tr'),x:WORLD_WIDTH/2,y:WORLD_HEIGHT/2}];
+  map.spawn={x:map.fleet.x,y:Math.min(WORLD_HEIGHT-200,map.fleet.y+900)};
+}
 
 // ---------------------------------------------------------------- Görevler (seviyeye göre)
 export type QuestDef={id:string;tier:number;title:string;description:string;kind:'npc'|'monster'|'chest';ids:string[];required:number;gold:number;wood:number;xp:number;pearls:number};

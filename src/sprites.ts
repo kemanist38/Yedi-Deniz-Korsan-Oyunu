@@ -44,11 +44,13 @@ export function drawBossSprite(ctx:CanvasRenderingContext2D,x:number,y:number,an
 }
 
 // Adalar: görünüm başına 2 varyantlı sayfa (512 px). Çizim boyu = 2.36 × ada yarıçapı.
-export function islandSheetUrl(look:string){return`/assets/islands-${look}-v1.webp`;}
+export function islandSheetUrl(_look:string){return'/assets/islands-seven-seas-v1.webp';}
 export function drawIslandSprite(ctx:CanvasRenderingContext2D,island:{look:string;variant:number;r:number;flip?:boolean},x:number,y:number){
   const sheet=load(islandSheetUrl(island.look));if(!ready(sheet))return false;
   const size=island.r*2.36;ctx.save();ctx.translate(x,y);if(island.flip)ctx.scale(-1,1);
-  ctx.drawImage(sheet,island.variant*512,0,512,512,-size/2,-size/2,size,size);ctx.restore();return true;
+  const themes=['haven','coral','verdant','misty','ice','storm','abyss','lava'];
+  const frame=Math.max(0,themes.indexOf(island.look))*2+island.variant,cw=sheet.naturalWidth/4,ch=sheet.naturalHeight/4;
+  ctx.drawImage(sheet,(frame%4)*cw,Math.floor(frame/4)*ch,cw,ch,-size/2,-size/2,size,size);ctx.restore();return true;
 }
 
 // Onaylı raster ada (1000 dünya birimi) ve bağımsız dört kule türü.

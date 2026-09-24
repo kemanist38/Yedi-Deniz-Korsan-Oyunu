@@ -64,17 +64,19 @@ Dünya haritası (`M` veya **DÜNYA**) Seafight tarzı parşömen tomarı üzeri
 
 |   |   |   |   |
 |---|---|---|---|
-| 7/1 Kül Adaları | 7/2 Magma Boğazı | 8/1 Şimşek Denizi | 8/2 Kasırga Gözü |
-| 5/1 Ayaz Boğazı | 5/2 Kristal Buzullar | 6/1 Zehirli Mangrov | 6/2 Çürük Lagün |
-| 3/1 Sis Kayalıkları | 3/2 Hayalet Boğazı | 4/1 Kan Körfezi | 4/2 Paslı Sığlık |
-| 1/1 Sığınak Koyu | 1/2 Martı Kıyıları | 2/1 Mercan Geçidi | 2/2 İnci Resifleri |
+| 7/1 Karanlık Uçurum Denizi | 7/2 Karanlık Uçurum Denizi | 8/1 Alev Denizi | 8/2 Alev Denizi |
+| 5/1 Buzmahzen Denizi | 5/2 Buzmahzen Denizi | 6/1 Fırtına Denizi | 6/2 Fırtına Denizi |
+| 3/1 Azurya Denizi | 3/2 Azurya Denizi | 4/1 Hayalet Denizi | 4/2 Hayalet Denizi |
+| 1/1 Güvenli Harita | 1/2 Güvenli Harita | 2/1 İnciyolu Denizi | 2/2 İnciyolu Denizi |
 
 - **Seviye kilidi:** X/Y denizine X. seviyede girilir.
 - **Kenardan geçiş:** Denizin kenarına yanaşınca **HARİTA ATLA** istemi çıkar (`J`); paftadaki komşu denize geçilir. Kenarlar sarmaldır: paftanın bir kenarından çıkan karşı kenardan girer (ör. 3/1 ↔ 4/2, 2/1 ↔ 8/1).
 - **Seviye = harita:** En yüksek seviye 8, en yüksek deniz de 8/x'tir.
-- **Temalar:** Her seviyenin kendi teması vardır: Zümrüt, Mercan, Sis, Kızıl, Buz, Zehir, Alev, Fırtına. Deniz rengi, adalar, hava efektleri (sis, kar, kor, spor, şimşek…) ve filo adası temaya göre değişir.
+- **Boyut:** Her deniz 6000 × 4000 dünya pikselidir. Zoom yalnızca görüntüyü ölçekler.
+- **Adacıklar:** Her haritada 8–11 küçük ada bulunur. Harita koduyla tohumlanan rastgele yerleşim, yeniden girişte aynı kalır; adalar ve filo adası arasında açık geçişler bırakılır. Şeffaf 3B görünümlü raster atlas hem denizde hem mini haritada kullanılır.
+- **Temalar:** Deniz renkleri ve adacıklar kullanıcının dünya paftası ile yedi deniz efsanesine göre düzenlenir. Onaylı filo adası ve kule görselleri korunur.
 - **NPC ve canavarlar:** Her denizin kendine özgü 2 NPC gemisi ve 1 canavarı vardır; toplam 32 gemi ve 16 canavar. Güçleri ve ödülleri seviyeyle artar.
-- **1/1 Sığınak Koyu ve 1/2 Martı Kıyıları korunaklıdır:** Buradaki gemiler sen saldırmadıkça ateş etmez; boss etkinliği çıkmaz, mayın bırakılamaz.
+- **1/1 ve 1/2 korunaklıdır:** Buradaki gemiler sen saldırmadıkça ateş etmez; boss etkinliği çıkmaz, mayın bırakılamaz.
 - **Batma ve yeniden doğma:** Batan gemi, hangi denizdeyse orada, düşmanlardan uzak rastgele bir noktada %10 gövdeyle yeniden doğar ve onarıma başlar.
 - **Koordinatlar:** Ekranın üstünde soldan sağa **00–60** sütunları, solda yukarıdan aşağı **AA–CZ** satırları vardır. Konumun harita rozetinde `1/1 - 35AJ` biçiminde görünür; oyuncular toplanma yerini bu koordinatla söyleyebilir.
 
