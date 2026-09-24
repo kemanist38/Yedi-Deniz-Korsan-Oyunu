@@ -1,4 +1,4 @@
-// Kara Yelken — ses tasarımı. Her ses OfflineAudioContext ile katman katman sentezlenir (44,1 kHz stereo),
+// Yedi Deniz Korsan Oyunu — ses tasarımı. Her ses OfflineAudioContext ile katman katman sentezlenir (44,1 kHz stereo),
 // açık deniz yankısı (üretilmiş dürtü yanıtı) eklenir, sıkıştırılır ve normalize edilir. Her sesten birkaç
 // varyant üretilir; oyun her çalışta rastgele birini seçer. sfx.mjs → public/assets/sfx/*.mp3
 export const SR=44100;

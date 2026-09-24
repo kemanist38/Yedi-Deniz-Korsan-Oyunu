@@ -1,4 +1,4 @@
-// Kara Yelken — düşman filosu, Derinlik Leviathanı ve ganimet sandıkları için 3B modeller.
+// Yedi Deniz Korsan Oyunu — düşman filosu, Derinlik Leviathanı ve ganimet sandıkları için 3B modeller.
 // Eksenler: +Z pruva, +Y yukarı, +X sancak. Güverte ortası (0,0,0).
 import * as THREE from 'three';
 import * as T from './textures.js';

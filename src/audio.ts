@@ -1,4 +1,4 @@
-// Kara Yelken ses efektleri. Asıl sesler asset atölyesinde (tools/asset-studio/sfx.js) katmanlı olarak tasarlanıp
+// Yedi Deniz Korsan Oyunu ses efektleri. Asıl sesler asset atölyesinde (tools/asset-studio/sfx.js) katmanlı olarak tasarlanıp
 // public/assets/sfx/*.mp3 olarak üretilir; her sesin birkaç varyantı vardır ve her çalışta rastgele biri, hafif perde
 // ve seviye farkıyla çalınır. Dosyalar yüklenene kadar (ilk saniyeler) aşağıdaki anlık sentez yedek olarak çalar.
 // Top türü gövde sesini (döküm, uzun namlu, seri, ağır), gülle türü üstüne binen katmanı belirler.

@@ -5,7 +5,7 @@ export const BOSS={name:'Hayalet Amiral',hp:(tier:number)=>900*(1+.7*(tier-1)),d
   reward:(tier:number)=>({gold:Math.round(320*(1+.6*(tier-1))),pearls:5+tier,xp:Math.round(900*Math.pow(tier,1.2)),elite:15,battle:40}),chests:3,hitRadius:40};
 
 export type FleetOwner='npc'|'player';
-const STORAGE='kara-yelken-fleet-v1';
+const STORAGE='yedi-deniz-fleet-v1';
 // Sığınak Koyu'nun filo adası başlangıçta oyuncunundur.
 export function loadFleetOwners():Partial<Record<MapKey,FleetOwner>>{
   try{const raw=JSON.parse(localStorage.getItem(STORAGE)||'null');if(raw&&typeof raw==='object')return{'1/1':'player',...raw};}catch{}

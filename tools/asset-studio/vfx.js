@@ -1,4 +1,4 @@
-// Kara Yelken — atış ve savaş efektleri atlası (raster). 8 sütun × 5 satır, kare 128 px.
+// Yedi Deniz Korsan Oyunu — atış ve savaş efektleri atlası (raster). 8 sütun × 5 satır, kare 128 px.
 // Sıra src/vfx.ts içindeki VFX sabitleriyle aynı tutulmalıdır.
 // satır 0: demir gülle, ateş güllesi, saçma tanesi, zincirli gülle, düşman güllesi, gölge, hedef halkası, namlu alevi
 // satır 1: patlama (8 kare)   satır 2: su sütunu (8 kare)

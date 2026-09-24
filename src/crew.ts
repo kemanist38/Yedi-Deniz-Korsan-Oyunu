@@ -31,7 +31,7 @@ export const officerSlots=(level:number)=>level>=6?3:level>=3?2:1;
 export const talentPoints=(level:number)=>Math.max(0,level-1);
 
 export type CrewState={talents:Partial<Record<TalentId,number>>;officers:Partial<Record<OfficerId,number>>;active:OfficerId[]};
-const STORAGE='kara-yelken-crew-v1';
+const STORAGE='yedi-deniz-crew-v1';
 export function loadCrew():CrewState{
   try{const raw=JSON.parse(localStorage.getItem(STORAGE)||'null');if(raw)return{talents:raw.talents||{},officers:raw.officers||{},active:Array.isArray(raw.active)?raw.active.filter((id:string)=>id in OFFICERS):[]};}catch{}
   return{talents:{},officers:{},active:[]};

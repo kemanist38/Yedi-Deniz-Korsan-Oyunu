@@ -1,4 +1,4 @@
-// Kara Yelken — deniz canavarları: yengeç, deniz yılanı, denizanası, kaplumbağa, hidra.
+// Yedi Deniz Korsan Oyunu — deniz canavarları: yengeç, deniz yılanı, denizanası, kaplumbağa, hidra.
 // Her biri 8 karelik döngü için phase (0..2π) alır; su hattı y=0'da kesilir.
 import * as THREE from 'three';
 import * as T from './textures.js';

@@ -1,4 +1,4 @@
-// Kara Yelken — yetenek ve mühimmat ikonları (256 px, 3/4 açı, dövme metal).
+// Yedi Deniz Korsan Oyunu — yetenek ve mühimmat ikonları (256 px, 3/4 açı, dövme metal).
 import * as THREE from 'three';
 import * as T from './textures.js';
 

@@ -1,8 +1,8 @@
 {
-  "name": "kara-yelken-asset-studio",
+  "name": "yedi-deniz-asset-studio",
   "private": true,
   "type": "module",
-  "description": "Kara Yelken raster assetlerini 3B modellerden üreten atölye",
+  "description": "Yedi Deniz Korsan Oyunu raster assetlerini 3B modellerden üreten atölye",
   "scripts": {
     "render": "node render.mjs"
   },
