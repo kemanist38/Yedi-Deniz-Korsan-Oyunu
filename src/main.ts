@@ -4,7 +4,7 @@ import {ACTIONS,loadSettings,saveSettings,keyLabel,normalizeKey,DEFAULT_BINDS,ty
 import {setAudio,unlockAudio,playCannon,playEnemyCannon,playHit,playExplosion,playCoins,playWind,playShield,playSplash,playLevelUp,playMapJump,playSink,playHeal,playClick} from './audio';
 import {drawSeaSparkle,drawNpcShip,drawMonsterSheet,drawChestSprite,drawIslandSprite,drawFleetBase,drawBastion,drawBuiltTower,drawMineSprite,seaTilePattern,islandSheetUrl,shipLabelOffset,portraitStyle,preload,fleetBaseUrl,fleetTowerUrl,TOWER_LABEL_OFFSET} from './sprites';
 import {MAPS,GRID,THEMES,NPCS,MONSTERS,QUESTS,QUEST_COOLDOWN_MS,FLEET,WORLD_WIDTH,WORLD_HEIGHT,MAX_LEVEL,xpNeed,neighbor,tierOf,fleetTower,fleetReward,PORTRAIT_COUNT,PORTRAIT_COLS,PORTRAIT_ATLAS,GRID_COLS,GRID_ROWS,CELL_W,CELL_H,colName,rowName,gridCell,coordLabel,type MapKey,type WorldIsland,type NpcDef,type MonsterDef,type Dir,type QuestDef} from './campaign';
-import {BALL_DAMAGE,CHAIN_FACTOR,ABILITIES,SPECIAL_AMMO,MINE,SPEED_BOOST,CONSUMABLES,AMMO_PRICES,SUPPLY_PRICES,loadArsenal,saveArsenal,type AbilityId,type SpecialAmmo,type ConsumableId,type SupplyId,type Price} from './arsenal';
+import {BALL_DAMAGE,CHAIN_FACTOR,ABILITIES,SPECIAL_AMMO,MINE,SPEED_BOOST,CONSUMABLES,AMMO_PRICES,SUPPLY_PRICES,loadArsenal,saveArsenal,type AbilityId,type SpecialAmmo,type ConsumableId,type SupplyId,type Price,priceOf} from './arsenal';
 import {loadFleetOwners,saveFleetOwners} from './conquest';
 import {TALENTS,OFFICERS,OFFICER_MAX_RANK,officerCost,officerSlots,talentPoints,loadCrew,saveCrew,spentPoints,computeBonus,type TalentId,type OfficerId} from './crew';
 import {FLEET_MASK} from './fleetMask';
@@ -124,7 +124,7 @@ const defaultCannonStock:CannonStock={cast:20,long:6,rapid:4,heavy:2};
 const defaultMountedCannons:CannonStock={cast:50,long:0,rapid:0,heavy:0};
 const cannonInventory:CannonStock={...defaultCannonStock,...storedAccount?.cannonInventory};
 const mountedCannons:CannonStock={...defaultMountedCannons,...storedAccount?.mountedCannons};
-const state = { pearls:storedAccount?.pearls??30, gold:storedAccount?.gold??40, wood:storedAccount?.wood??10, fame:storedAccount?.fame??0, level:Math.min(MAX_LEVEL,storedAccount?.level??1), hp:storedAccount?.hp??Infinity, maxHp:storedAccount?.maxHp??100, elitePoints:storedAccount?.elitePoints??0,battlePoints:storedAccount?.battlePoints??0,cannon:18, cannonType:storedAccount?.cannonType&&CANNONS[storedAccount.cannonType]?storedAccount.cannonType:'cast' as CannonKind, activeQuest:storedActive as string|null, ammo:'iron' as AmmoKind, chainAmmo:storedAccount?.chainAmmo??40, attacking:false, repairing:false, invulnerable:0 };
+const state = { pearls:storedAccount?.pearls??30, gold:storedAccount?.gold??40, wood:storedAccount?.wood??10, fame:storedAccount?.fame??0, level:Math.min(MAX_LEVEL,storedAccount?.level??1), hp:storedAccount?.hp??Infinity, maxHp:storedAccount?.maxHp??100, elitePoints:storedAccount?.elitePoints??0,battlePoints:storedAccount?.battlePoints??0,cannon:18, cannonType:storedAccount?.cannonType&&CANNONS[storedAccount.cannonType]?storedAccount.cannonType:'cast' as CannonKind, activeQuest:storedActive as string|null, ammo:'iron' as AmmoKind, chainAmmo:storedAccount?.chainAmmo??2000, attacking:false, repairing:false, invulnerable:0 };
 // Eski ölçekli kayıtlar (100 canlı, 18 toplu gemi) bir kez Seafight ölçeğine taşınır: can formülden hesaplanır,
 // gemiye en az 50 döküm top yerleştirilir.
 if(storedAccount&&storedAccount.maxHp<5000){const total=(Object.keys(mountedCannons) as CannonKind[]).reduce((sum,kind)=>sum+mountedCannons[kind],0);if(total<50)mountedCannons.cast+=50-total;state.hp=Infinity;}
@@ -139,6 +139,8 @@ const quickSlots:Array<QuickItemId|null>=Array(12).fill(null);
   const place=(id:QuickItemId)=>{if(quickSlots.includes(id))return;const row=QUICK_ITEMS[id].category==='ammo'?0:AMMO_ROW;for(let i=row;i<row+AMMO_ROW;i++)if(!quickSlots[i]){quickSlots[i]=id;return;}};
   stored.forEach(place);(['iron','chain','fire','grape','repairkit','speed','powder','shield','mine'] as QuickItemId[]).forEach(id=>{if(!storedAccount?.quickSlots)place(id);});}
 const arsenal=loadArsenal();
+// Eski kayıtlarda gülle stoğu salvo sayısıydı; artık her top 1 gülle harcar. Stoklar bir kez 50 topluk salvoya göre çevrilir.
+if(!arsenal.ballsV1){for(const k of ['fire','grape','explosive','breaker','leech'] as const)arsenal[k]*=50;state.chainAmmo*=50;arsenal.ballsV1=true;saveArsenal(arsenal);}
 // Kara Barut eski kayıtlarda da sarf sırasına bir kez yerleşir
 if(!quickSlots.includes('powder')){const free=quickSlots.findIndex((v,k)=>k>=AMMO_ROW&&!v);if(free>=0)quickSlots[free]='powder';}
 // Açık/kapalı sarf malzemeleri
@@ -474,11 +476,14 @@ function fireAtTarget(){
   if(!selected||player.cooldown>0||dist(player,selected)>effectiveRange()||(eliteEnabled()&&activeEliteShip==='phantom'&&eliteAbility.active>0))return;
   if(state.ammo==='chain'&&state.chainAmmo<=0){state.ammo='iron';toast('Zincir güllesi tükendi');}
   if(isSpecial(state.ammo)&&arsenal[state.ammo]<=0){toast(`${SPECIAL_AMMO[state.ammo].name} tükendi`);state.ammo='iron';renderQuickSlots();}
+  // Seafight mantığı: her top 1 gülle harcar. Stok top sayısından azsa kalan toplar demir gülle atar.
+  const stock=state.ammo==='chain'?state.chainAmmo:isSpecial(state.ammo)?arsenal[state.ammo]:Infinity,loaded=Math.min(state.cannon,stock);
+  const ammoMult=state.ammo==='chain'?CHAIN_FACTOR:isSpecial(state.ammo)?SPECIAL_AMMO[state.ammo].damage:1,mix=state.cannon>0?(loaded*ammoMult+(state.cannon-loaded))/state.cannon:1;
   const fx=Math.sin(player.angle),fy=-Math.cos(player.angle),tx=selected.x-player.x,ty=selected.y-player.y;
-  const side=fx*ty-fy*tx>0?-1:1,damage=state.cannon*BALL_DAMAGE*(1+upgrades.damage*.11)*cannon.damage*bonus.damage*eliteDamageFactor(selected)*eliteCritFactor()*(state.ammo==='chain'?CHAIN_FACTOR:1)*(isSpecial(state.ammo)?SPECIAL_AMMO[state.ammo].damage:1)*useConsumable('powder');
+  const side=fx*ty-fy*tx>0?-1:1,damage=state.cannon*BALL_DAMAGE*(1+upgrades.damage*.11)*cannon.damage*bonus.damage*eliteDamageFactor(selected)*eliteCritFactor()*mix*useConsumable('powder');
   salvoQueue.push({delay:0,target:selected,side,slot:0,damage,ammo:state.ammo});
-  if(state.ammo==='chain'){state.chainAmmo-=1;saveAccount();}
-  else if(isSpecial(state.ammo)){arsenal[state.ammo]-=1;saveArsenal(arsenal);renderQuickSlots();}
+  if(state.ammo==='chain'){state.chainAmmo-=loaded;saveAccount();}
+  else if(isSpecial(state.ammo)){arsenal[state.ammo]-=loaded;saveArsenal(arsenal);renderQuickSlots();}
   player.cooldown=eliteAbility.active>0&&activeEliteShip==='ironclad'?0:cannon.reload*Math.max(.6,1-upgrades.reload*.04)*bonus.reload*eliteReloadFactor()*(state.ammo==='chain'?1.18:1)*(isSpecial(state.ammo)?SPECIAL_AMMO[state.ammo].reload:1);
 }
 function releaseSalvo(round:SalvoRound){
@@ -678,20 +683,20 @@ const fmt=(n:number)=>n.toLocaleString('tr-TR');
 let pendingBuy:{row:BuyRow;qty:number}|null=null;
 function renderBuyRows(listId:string,rows:BuyRow[]){
   const list=ui(listId);
-  list.innerHTML=rows.map(r=>`<article class="market-item buy-row" data-row="${r.id}">${r.art}<div><h4>${r.name}</h4><p>${r.desc}</p>${r.note?`<small>${r.note}</small>`:''}<em class="${r.unit.currency}">Birim fiyat: ${fmt(r.unit.amount)} ${CURRENCY_NAME[r.unit.currency]}</em></div><div class="buy-box"><input type="number" inputmode="numeric" min="1" max="${BUY_MAX}" placeholder="Adet" aria-label="${r.name} adedi"/><span class="buy-total">Toplam: —</span><button disabled>SATIN AL</button></div></article>`).join('');
+  list.innerHTML=rows.map(r=>`<article class="market-item buy-row" data-row="${r.id}">${r.art}<div><h4>${r.name}</h4><p>${r.desc}</p>${r.note?`<small>${r.note}</small>`:''}<em class="${r.unit.currency}">Birim fiyat: ${r.unit.per&&r.unit.per>1?`${fmt(r.unit.per)} adet = `:''}${fmt(r.unit.amount)} ${CURRENCY_NAME[r.unit.currency]}</em></div><div class="buy-box"><input type="number" inputmode="numeric" min="1" max="${BUY_MAX}" placeholder="Adet" aria-label="${r.name} adedi"/><span class="buy-total">Toplam: —</span><button disabled>SATIN AL</button></div></article>`).join('');
   list.querySelectorAll<HTMLElement>('.buy-row').forEach((el,i)=>{const r=rows[i],input=el.querySelector('input')!,total=el.querySelector<HTMLElement>('.buy-total')!,btn=el.querySelector('button')!;
     const qty=()=>{const n=Math.floor(Number(input.value));return Number.isFinite(n)&&n>0?Math.min(BUY_MAX,n):0;};
-    const sync=()=>{const n=qty(),cost=n*r.unit.amount;total.textContent=n?`Toplam: ${fmt(cost)} ${CURRENCY_NAME[r.unit.currency]}`:'Toplam: —';total.classList.toggle('short',cost>wallet(r.unit.currency));btn.disabled=!n;};
+    const sync=()=>{const n=qty(),cost=priceOf(r.unit,n);total.textContent=n?`Toplam: ${fmt(cost)} ${CURRENCY_NAME[r.unit.currency]}`:'Toplam: —';total.classList.toggle('short',cost>wallet(r.unit.currency));btn.disabled=!n;};
     input.oninput=sync;input.onkeydown=e=>{if(e.key==='Enter'&&qty())askBuy(r,qty());};btn.onclick=()=>askBuy(r,qty());});
 }
 function askBuy(row:BuyRow,qty:number){
-  if(!qty)return;const cur=row.unit.currency,cn=CURRENCY_NAME[cur],have=wallet(cur),cost=qty*row.unit.amount,box=ui('buyConfirm'),enough=have>=cost;pendingBuy={row,qty};
-  box.innerHTML=`<section><h3>SATIN ALMAYI ONAYLA</h3><p><b>${fmt(qty)} × ${row.name}</b></p><dl><dt>Birim fiyat</dt><dd>${fmt(row.unit.amount)} ${cn}</dd><dt>Toplam</dt><dd class="total ${cur}">${fmt(cost)} ${cn}</dd><dt>Bakiyen</dt><dd>${fmt(have)} ${cn}</dd><dt>Kalan</dt><dd class="${enough?'':'short'}">${enough?`${fmt(have-cost)} ${cn}`:`Yetersiz ${cn}`}</dd></dl><div><button id="buyOk" ${enough?'':'disabled'}>ONAYLA</button><button id="buyCancel">VAZGEÇ</button></div></section>`;
+  if(!qty)return;const cur=row.unit.currency,cn=CURRENCY_NAME[cur],have=wallet(cur),cost=priceOf(row.unit,qty),box=ui('buyConfirm'),enough=have>=cost;pendingBuy={row,qty};
+  box.innerHTML=`<section><h3>SATIN ALMAYI ONAYLA</h3><p><b>${fmt(qty)} × ${row.name}</b></p><dl><dt>Birim fiyat</dt><dd>${row.unit.per&&row.unit.per>1?`${fmt(row.unit.per)} adet = `:''}${fmt(row.unit.amount)} ${cn}</dd><dt>Toplam</dt><dd class="total ${cur}">${fmt(cost)} ${cn}</dd><dt>Bakiyen</dt><dd>${fmt(have)} ${cn}</dd><dt>Kalan</dt><dd class="${enough?'':'short'}">${enough?`${fmt(have-cost)} ${cn}`:`Yetersiz ${cn}`}</dd></dl><div><button id="buyOk" ${enough?'':'disabled'}>ONAYLA</button><button id="buyCancel">VAZGEÇ</button></div></section>`;
   box.classList.add('open');ui('buyOk').onclick=confirmBuy;ui('buyCancel').onclick=closeBuy;
 }
 function closeBuy(){pendingBuy=null;ui('buyConfirm').classList.remove('open');}
 function confirmBuy(){
-  if(!pendingBuy)return;const {row,qty}=pendingBuy,cur=row.unit.currency,cost=qty*row.unit.amount;
+  if(!pendingBuy)return;const {row,qty}=pendingBuy,cur=row.unit.currency,cost=priceOf(row.unit,qty);
   if(wallet(cur)<cost){toast(`Yeterli ${CURRENCY_NAME[cur]} yok`);closeBuy();return;}
   if(cur==='gold')state.gold-=cost;else state.pearls-=cost;row.give(qty);saveArsenal(arsenal);saveAccount();closeBuy();playCoins();renderQuickSlots();updateUI();row.after();rewardNotice(`+${fmt(qty)} ${row.name}   −${fmt(cost)} ${cur==='gold'?'Altın':'İnci'}`);
 }
