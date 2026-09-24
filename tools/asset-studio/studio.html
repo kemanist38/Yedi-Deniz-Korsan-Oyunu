@@ -79,7 +79,7 @@ window.renderIslands=(list,{frame=512,span=236}={})=>{const frames=list.map(([lo
 window.renderPortal=({count=8,frame=256,span=150}={})=>{const cam=camera(span,6),frames=[];for(let i=0;i<count;i++){const scene=stage(),p=buildPortal(i,count);prepare(p);scene.add(p);frames.push(shot(scene,cam,frame));}return{...exportCanvas(sheet(frames,4)),frame,count,anchor:anchorOf(cam,frame)};};
 window.renderSeaTile=()=>exportCanvas(paintSeaTile());
 window.renderWorldChart=()=>exportCanvas(paintWorldChart());
-window.renderVfxAtlas=()=>({...exportCanvas(paintVfxAtlas()),cell:128,cols:8,rows:5});
+window.renderVfxAtlas=()=>({...exportCanvas(paintVfxAtlas()),cell:128,cols:8,rows:6});
 window.renderSeaSparkle=()=>({...exportCanvas(paintSeaSparkle()),frame:128,frames:8});
 let envMap=null;
 window.renderIcon=(name,{frame=256,margin=.8}={})=>{const scene=stage(),icon=buildIcon(name);scene.add(icon);icon.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});

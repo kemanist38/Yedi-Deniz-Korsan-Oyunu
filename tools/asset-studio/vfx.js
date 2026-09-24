@@ -3,9 +3,10 @@
 // satır 0: demir gülle, ateş güllesi, saçma tanesi, zincirli gülle, düşman güllesi, gölge, hedef halkası, namlu alevi
 // satır 1: patlama (8 kare)   satır 2: su sütunu (8 kare)
 // satır 3: duman ×4, kıymık ×3, kor   satır 4: köpük ×2, kabarcık, alev puf, canavar tükürüğü, enkaz tahtası, kıvılcım yıldızı, zehir puf
+// satır 5: patlayıcı bomba, kule kırıcı mermi (sağa bakar), can emici gülle, ruh ışığı, şok dalgası halkası
 import {canvas,rng,noise2} from './textures.js';
 
-const C=128,COLS=8,ROWS=5,TAU=Math.PI*2;
+const C=128,COLS=8,ROWS=6,TAU=Math.PI*2;
 const lerp=(a,b,t)=>a+(b-a)*t;
 const mix=(a,b,t)=>a.map((v,i)=>Math.round(lerp(v,b[i],t)));
 const rgba=(c,a)=>`rgba(${c[0]},${c[1]},${c[2]},${a})`;
@@ -94,6 +95,16 @@ function plank(x,cx,cy){x.save();x.translate(cx,cy);x.rotate(-.35);x.fillStyle='
 function sparkStar(x,cx,cy){blob(x,cx,cy,30,[255,230,140],[255,180,60],.5);x.fillStyle='rgba(255,250,220,1)';x.beginPath();for(let k=0;k<8;k++){const a=k/8*TAU,rr=k%2?6:30;x.lineTo(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr);}x.closePath();x.fill();}
 function poisonPuff(x,cx,cy){const R=rng(91);for(let i=0;i<8;i++){const a=R()*TAU,d=R()*16;blob(x,cx+Math.cos(a)*d,cy+Math.sin(a)*d,16+R()*10,[150,230,90],[60,120,30],.55);}}
 
+
+function bomb(x,cx,cy){ironBall(x,cx,cy,20,{seed:31});x.fillStyle='#b8843a';x.fillRect(cx-5,cy-25,10,7);x.strokeStyle='#8a6a3a';x.lineWidth=3;x.beginPath();x.moveTo(cx,cy-25);x.quadraticCurveTo(cx+8,cy-34,cx+12,cy-40);x.stroke();blob(x,cx+12,cy-41,14,[255,230,140],[255,120,30],.9);blob(x,cx+12,cy-41,5,[255,255,240],[255,220,140],1);}
+function breakerShell(x,cx,cy){x.save();x.translate(cx,cy);const g=x.createLinearGradient(0,-12,0,12);g.addColorStop(0,'#c8ccd0');g.addColorStop(.45,'#6a6e74');g.addColorStop(1,'#26282c');x.fillStyle=g;
+  x.beginPath();x.moveTo(-28,-11);x.lineTo(10,-11);x.quadraticCurveTo(26,-8,34,0);x.quadraticCurveTo(26,8,10,11);x.lineTo(-28,11);x.closePath();x.fill();
+  x.fillStyle='#c8943e';x.fillRect(-24,-12,5,24);x.fillRect(-8,-12,5,24);x.fillStyle='rgba(255,255,255,.55)';x.fillRect(-26,-8,40,2.5);x.restore();blob(x,cx-34,cy,14,[200,200,200],[120,120,120],.5);}
+function leechBall(x,cx,cy){blob(x,cx,cy,44,[90,255,150],[40,160,110],.5);ironBall(x,cx,cy,20,{tint:[20,60,40],seed:41});
+  const R=rng(42);x.save();x.beginPath();x.arc(cx,cy,20,0,TAU);x.clip();x.lineCap='round';for(let i=0;i<8;i++){let px=cx+(R()-.5)*34,py=cy+(R()-.5)*34;x.strokeStyle='rgba(110,255,170,.95)';x.lineWidth=1.2+R()*1.6;x.beginPath();x.moveTo(px,py);for(let k=0;k<3;k++){px+=(R()-.5)*14;py+=(R()-.5)*14;x.lineTo(px,py);}x.stroke();}x.restore();}
+function soulWisp(x,cx,cy){blob(x,cx,cy,34,[120,255,170],[60,200,140],.55);x.fillStyle='rgba(210,255,225,.95)';x.beginPath();x.moveTo(cx,cy-24);x.quadraticCurveTo(cx+14,cy-4,cx+4,cy+14);x.quadraticCurveTo(cx,cy+22,cx-4,cy+14);x.quadraticCurveTo(cx-14,cy-4,cx,cy-24);x.fill();blob(x,cx,cy+2,8,[255,255,255],[200,255,220],1);}
+function shockRing(x,cx,cy){x.save();x.translate(cx,cy);x.scale(1,.6);for(const [r,w,a] of [[54,10,.35],[50,4,.9],[42,2,.5]]){x.strokeStyle=`rgba(255,${200-r},120,${a})`;x.lineWidth=w;x.beginPath();x.arc(0,0,r,0,TAU);x.stroke();}x.restore();}
+
 export function paintVfxAtlas(){
   const [c,x]=canvas(C*COLS,C*ROWS),at=(col,row,fn)=>{x.save();x.beginPath();x.rect(col*C,row*C,C,C);x.clip();fn(col*C+C/2,row*C+C/2);x.restore();};
   at(0,0,(cx,cy)=>ironBall(x,cx,cy,22,{seed:1}));
@@ -110,5 +121,6 @@ export function paintVfxAtlas(){
   at(7,3,(cx,cy)=>ember(x,cx,cy));
   at(0,4,(cx,cy)=>foam(x,cx,cy,300));at(1,4,(cx,cy)=>foam(x,cx,cy,311));at(2,4,(cx,cy)=>bubble(x,cx,cy));at(3,4,(cx,cy)=>firePuff(x,cx,cy));
   at(4,4,(cx,cy)=>spit(x,cx,cy));at(5,4,(cx,cy)=>plank(x,cx,cy));at(6,4,(cx,cy)=>sparkStar(x,cx,cy));at(7,4,(cx,cy)=>poisonPuff(x,cx,cy));
+  at(0,5,(cx,cy)=>bomb(x,cx,cy+8));at(1,5,(cx,cy)=>breakerShell(x,cx,cy));at(2,5,(cx,cy)=>leechBall(x,cx,cy));at(3,5,(cx,cy)=>soulWisp(x,cx,cy));at(4,5,(cx,cy)=>shockRing(x,cx,cy));
   return c;
 }

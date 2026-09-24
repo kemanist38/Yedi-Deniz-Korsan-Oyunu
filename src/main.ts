@@ -3,7 +3,7 @@ import {ACTIONS,loadSettings,saveSettings,keyLabel,normalizeKey,DEFAULT_BINDS,ty
 import {setAudio,unlockAudio,playCannon,playEnemyCannon,playHit,playExplosion,playCoins,playWind,playShield,playSplash,playLevelUp,playMapJump,playClick} from './audio';
 import {drawSeaSparkle,drawNpcShip,drawMonsterSheet,drawBossSprite,drawChestSprite,drawIslandSprite,drawFleetBase,drawBastion,drawBuiltTower,drawMineSprite,seaTilePattern,islandSheetUrl,shipLabelOffset,portraitStyle,preload,fleetBaseUrl,fleetTowerUrl,BOSS_LABEL_OFFSET,TOWER_LABEL_OFFSET,WORLD_CHART} from './sprites';
 import {MAPS,GRID,THEMES,NPCS,MONSTERS,QUESTS,QUEST_COOLDOWN_MS,FLEET,WORLD,MAX_LEVEL,xpNeed,neighbor,tierOf,fleetTower,fleetReward,BOSS_PORTRAIT,PORTRAIT_COUNT,PORTRAIT_COLS,PORTRAIT_ATLAS,GRID_COLS,GRID_ROWS,CELL_W,CELL_H,colName,rowName,gridCell,coordLabel,type MapKey,type WorldIsland,type NpcDef,type MonsterDef,type Dir,type QuestDef} from './campaign';
-import {ABILITIES,SPECIAL_AMMO,MINE,SPEED_BOOST,SHIELD_FACTOR,ARSENAL_MARKET,loadArsenal,saveArsenal,type AbilityId} from './arsenal';
+import {ABILITIES,SPECIAL_AMMO,MINE,SPEED_BOOST,SHIELD_FACTOR,ARSENAL_MARKET,loadArsenal,saveArsenal,type AbilityId,type SpecialAmmo} from './arsenal';
 import {BOSS,loadFleetOwners,saveFleetOwners} from './conquest';
 import {TALENTS,OFFICERS,OFFICER_MAX_RANK,officerCost,officerSlots,talentPoints,loadCrew,saveCrew,spentPoints,computeBonus,type TalentId,type OfficerId} from './crew';
 import {FLEET_MASK} from './fleetMask';
@@ -15,21 +15,22 @@ import {createChest,chestRewardText,CHEST_PICKUP_RADIUS,CHEST_CLICK_RADIUS,DRIFT
 import {ELITE_SHIPS,eliteById,type EliteShipId} from './elite-ships';
 
 type Vec = { x: number; y: number };
-type AmmoKind = 'iron'|'chain'|'fire'|'grape';
+type AmmoKind = 'iron'|'chain'|SpecialAmmo;
+const isSpecial=(a:string):a is SpecialAmmo=>a in SPECIAL_AMMO;
 type CannonKind = 'cast'|'long'|'rapid'|'heavy';
 type CannonStock=Record<CannonKind,number>;
 type Shot = Vec & { vx:number; vy:number; life:number; owner:'player'|'enemy'; damage:number; hit:boolean; ammo:AmmoKind; target?:Target; slow?:number; splash?:number; visual?:'spit'; age?:number; flight?:number; arc?:number; trail?:number };
 type SalvoRound = { delay:number; target:Target; side:number; slot:number; damage:number; ammo:AmmoKind };
 type EnemyRole='light'|'heavy';
 type Enemy = Vec & { kind:'ship'; def?:NpcDef; burnTimer?:number; tower?:boolean; towerIndex?:number; boss?:boolean; summoned?:boolean; hitRadius?:number; fireRange?:number; rewardXp?:number; role:EnemyRole; angle:number; hp:number; maxHp:number; cooldown:number; speed:number; damage:number; reload:number; rewardGold:number; rewardWood:number; rewardFame:number; color:string; name:string; tier:number; aggro:boolean; wander:number; slowTimer:number; homeX:number; homeY:number; combatTimer:number };
-type ParticleKind='foam'|'smoke'|'spark'|'damage'|'flash'|'explosion'|'splash'|'splinter'|'bubble'|'plank'|'firePuff'|'target'|'poison';
+type ParticleKind='foam'|'smoke'|'spark'|'damage'|'flash'|'explosion'|'splash'|'splinter'|'bubble'|'plank'|'firePuff'|'target'|'poison'|'soul'|'shock';
 // z: su üstünden yükseklik (ekranda yukarı kayar); vz ile savrulan parçalar suya düşer
 type Particle = Vec & { vx:number; vy:number; life:number; maxLife:number; kind:ParticleKind; text?:string; z?:number; vz?:number; rot?:number; vr?:number; size?:number; variant?:number };
 type Wreck = Vec & { angle:number; sprite:string; span:number; t:number; bubble:number };
 type Monster = Vec & { kind:'monster'; def:MonsterDef; burnTimer?:number; phase:number; radius:number; name:string; hp:number; maxHp:number; cooldown:number; aggro:boolean; slowTimer:number; homeX:number; homeY:number; combatTimer:number };
 type Target = Enemy|Monster;
 type UpgradeKind = 'hull'|'damage'|'range'|'reload'|'speed'|'repair';
-type QuickItemId = 'iron'|'chain'|'fire'|'grape'|'mine'|'shield'|'repairkit'|'speed';
+type QuickItemId = 'iron'|'chain'|SpecialAmmo|'mine'|'shield'|'repairkit'|'speed';
 type ShipSelection='starter'|EliteShipId;
 const ELITE_ONE_PRICE=250;
 const ELITE_TEST_MODE=true;
@@ -50,6 +51,7 @@ const UPGRADES:Record<UpgradeKind,{name:string;description:string;effect:string;
 const QUICK_ITEMS:Record<QuickItemId,{name:string;icon:string;category:'ammo'|'consumable';description:string}>={
   iron:{name:'Demir Gülle',icon:'iron',category:'ammo',description:'Standart ve sınırsız top güllesi.'},chain:{name:'Zincir Güllesi',icon:'chain',category:'ammo',description:'Hedefi 3 saniye yavaşlatır.'},
   fire:{name:'Ateş Güllesi',icon:'damage',category:'ammo',description:'Hedefi 4 saniye yakar.'},grape:{name:'Saçma',icon:'iron',category:'ammo',description:'Kısa menzil, çok yüksek hasar.'},
+  explosive:{name:'Patlayıcı Gülle',icon:'damage',category:'ammo',description:'Alan hasarı: çevredeki düşmanlara %50.'},breaker:{name:'Kule Kırıcı',icon:'iron',category:'ammo',description:'Kulelere 2,6 kat hasar.'},leech:{name:'Can Emici',icon:'damage',category:'ammo',description:'Hasarın %25\'i kadar onarır.'},
   repairkit:{name:'Tamir Sandığı',icon:'repairkit',category:'consumable',description:'Açık deniz tamirini başlatır.'},speed:{name:'Rüzgâr İksiri',icon:'speed',category:'consumable',description:'Rüzgâr Hamlesi: 7 sn boyunca %55 hız.'},
   shield:{name:'Demir Kalkan',icon:'hull',category:'consumable',description:'6 sn boyunca %65 hasar azaltma.'},mine:{name:'Deniz Mayını',icon:'hull',category:'consumable',description:'Kıçtan mayın bırakır.'}
 };
@@ -101,7 +103,7 @@ Promise.all(['00','01','02','03'].map(part=>fetch(`/assets/pirate-ui-icons-v1.b6
 const cannonAssetSources:Record<CannonKind,string>={cast:'',long:'',rapid:'',heavy:''};
 (Object.keys(cannonAssetSources) as CannonKind[]).forEach(kind=>fetch(`/assets/cannon-${kind}-v1.b64`).then(r=>r.text()).then(data=>{cannonAssetSources[kind]=`data:image/webp;base64,${data}`;if(document.getElementById('shipOverlay')?.classList.contains('open'))renderShipMenu();}));
 const rasterItemAssets:Partial<Record<QuickItemId,string>>={};
-rasterItemAssets.fire=SPECIAL_AMMO.fire.icon;rasterItemAssets.grape=SPECIAL_AMMO.grape.icon;rasterItemAssets.mine=ABILITIES.mine.icon;rasterItemAssets.shield=ABILITIES.shield.icon;rasterItemAssets.speed=ABILITIES.speed.icon;rasterItemAssets.repairkit='/assets/icon-repair-v1.webp';
+(Object.keys(SPECIAL_AMMO) as SpecialAmmo[]).forEach(k=>{rasterItemAssets[k]=SPECIAL_AMMO[k].icon;});rasterItemAssets.mine=ABILITIES.mine.icon;rasterItemAssets.shield=ABILITIES.shield.icon;rasterItemAssets.speed=ABILITIES.speed.icon;rasterItemAssets.repairkit='/assets/icon-repair-v1.webp';
 (['iron','chain'] as QuickItemId[]).forEach(id=>fetch(`/assets/ammo-${id}-v1.b64`).then(r=>r.text()).then(data=>{rasterItemAssets[id]=`data:image/webp;base64,${data}`;renderQuickSlots();}));
 // Elit gemiler: tersane kartındaki tasarımın birebir aynısı, gemi başına temiz raster (384 px, pruva sol-aşağı).
 const eliteArtUrl=(id:string)=>`/assets/elite-${id}-art-v2.webp`;
@@ -136,6 +138,8 @@ const arsenal=loadArsenal();
 const crew=loadCrew();
 let bonus=computeBonus(crew);
 if(!arsenal.seeded){for(const item of ['fire','grape','shield','mine'] as QuickItemId[]){const row=QUICK_ITEMS[item].category==='ammo'?0:AMMO_ROW;if(quickSlots.includes(item))continue;for(let i=row;i<row+AMMO_ROW;i++)if(!quickSlots[i]){quickSlots[i]=item;break;}}arsenal.seeded=true;saveArsenal(arsenal);}
+// Yeni gülleler (patlayıcı, kule kırıcı, can emici) bir kez hızlı yuvalara yerleşir; yer yoksa MALZEMELER'den eklenir
+if(!arsenal.seededV2){for(const item of ['explosive','breaker','leech'] as QuickItemId[]){if(quickSlots.includes(item))continue;const free=quickSlots.findIndex((v,k)=>k<AMMO_ROW&&!v);if(free>=0)quickSlots[free]=item;}arsenal.seededV2=true;saveArsenal(arsenal);}
 const questProgress:Record<string,number>={...storedQuests?.progress};
 const questCooldownUntil:Record<string,number>={...storedQuests?.cooldowns};
 if(state.activeQuest!==null&&(questCooldownUntil[state.activeQuest]??0)>Date.now())state.activeQuest=null;
@@ -457,13 +461,13 @@ function fireAtTarget(){
   const cannon=CANNONS[state.cannonType];
   if(!selected||player.cooldown>0||dist(player,selected)>effectiveRange()||(eliteEnabled()&&activeEliteShip==='phantom'&&eliteAbility.active>0))return;
   if(state.ammo==='chain'&&state.chainAmmo<=0){state.ammo='iron';toast('Zincir güllesi tükendi');}
-  if((state.ammo==='fire'||state.ammo==='grape')&&arsenal[state.ammo]<=0){toast(`${SPECIAL_AMMO[state.ammo].name} tükendi`);state.ammo='iron';renderQuickSlots();}
+  if(isSpecial(state.ammo)&&arsenal[state.ammo]<=0){toast(`${SPECIAL_AMMO[state.ammo].name} tükendi`);state.ammo='iron';renderQuickSlots();}
   const fx=Math.sin(player.angle),fy=-Math.cos(player.angle),tx=selected.x-player.x,ty=selected.y-player.y;
-  const side=fx*ty-fy*tx>0?-1:1,damage=state.cannon*5*(1+upgrades.damage*.11)*cannon.damage*bonus.damage*eliteDamageFactor(selected)*eliteCritFactor()*(state.ammo==='chain'?1.45:1)*(state.ammo==='fire'||state.ammo==='grape'?SPECIAL_AMMO[state.ammo].damage:1);
+  const side=fx*ty-fy*tx>0?-1:1,damage=state.cannon*5*(1+upgrades.damage*.11)*cannon.damage*bonus.damage*eliteDamageFactor(selected)*eliteCritFactor()*(state.ammo==='chain'?1.45:1)*(isSpecial(state.ammo)?SPECIAL_AMMO[state.ammo].damage:1);
   salvoQueue.push({delay:0,target:selected,side,slot:0,damage,ammo:state.ammo});
   if(state.ammo==='chain'){state.chainAmmo-=1;saveAccount();}
-  else if(state.ammo==='fire'||state.ammo==='grape'){arsenal[state.ammo]-=1;saveArsenal(arsenal);renderQuickSlots();}
-  player.cooldown=eliteAbility.active>0&&activeEliteShip==='ironclad'?0:cannon.reload*Math.max(.6,1-upgrades.reload*.04)*bonus.reload*eliteReloadFactor()*(state.ammo==='chain'?1.18:1)*(state.ammo==='fire'||state.ammo==='grape'?SPECIAL_AMMO[state.ammo].reload:1);
+  else if(isSpecial(state.ammo)){arsenal[state.ammo]-=1;saveArsenal(arsenal);renderQuickSlots();}
+  player.cooldown=eliteAbility.active>0&&activeEliteShip==='ironclad'?0:cannon.reload*Math.max(.6,1-upgrades.reload*.04)*bonus.reload*eliteReloadFactor()*(state.ammo==='chain'?1.18:1)*(isSpecial(state.ammo)?SPECIAL_AMMO[state.ammo].reload:1);
 }
 function releaseSalvo(round:SalvoRound){
   if(!targetExists(round.target))return;
@@ -474,7 +478,7 @@ function releaseSalvo(round:SalvoRound){
   const muzzle=forwardDot>.55?{x:fx*24,y:fy*24}:forwardDot<-.55?{x:-fx*20,y:-fy*20}:{x:rx*round.side*18,y:ry*round.side*18};
   const x=player.x+muzzle.x,y=player.y+muzzle.y;
   shots.push({x,y,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,life:Math.max(1.1,d/speed+.5),owner:'player',damage:round.damage,hit:false,ammo:round.ammo,target:round.target});
-  playCannon(state.cannonType,round.ammo);
+  playCannon(state.cannonType,round.ammo==='explosive'?'fire':round.ammo==='breaker'||round.ammo==='leech'?'iron':round.ammo);
   muzzleFlash(x,y,Math.atan2(muzzle.y,muzzle.x));
 }
 function enemyFire(e:Enemy){
@@ -505,6 +509,15 @@ function burst(x:number,y:number,large=false){
 }
 // Iska: suya düşen güllenin su sütunu ve köpük halkası
 function splashAt(x:number,y:number,size=110){particles.push({x,y,vx:0,vy:0,life:.75,maxLife:.75,kind:'splash',size});for(let n=0;n<3;n++)particles.push({x:x+(Math.random()-.5)*18,y:y+(Math.random()-.5)*10,vx:(Math.random()-.5)*16,vy:(Math.random()-.5)*10,life:.9,maxLife:.9,kind:'foam',size:34,variant:n%2});}
+// Özel güllelerin isabet etkisi: patlayıcı çevreye alan hasarı, can emici oyuncuyu onarır
+function ammoImpact(s:Shot,target:Target,hit:number){
+  if(s.owner!=='player')return;
+  if(s.ammo==='explosive'){const def=SPECIAL_AMMO.explosive,R=def.blastRadius;particles.push({x:target.x,y:target.y,vx:0,vy:0,life:.5,maxLife:.5,kind:'shock',size:R*2});burst(target.x,target.y,true);
+    const victims=([...enemies,...monsters] as Target[]).filter(o=>o!==target&&dist(o,target)<R);
+    for(const o of victims){const dmg=Math.round(hit*def.blastFactor);o.hp-=dmg;o.aggro=true;damageText(o.x,o.y,dmg);if(o.hp<=0){if(o.kind==='ship')sinkEnemy(o);else defeatMonster(o);}}}
+  if(s.ammo==='leech'){const heal=hit*SPECIAL_AMMO.leech.leech;state.hp=Math.min(effectiveMaxHp(),state.hp+heal);
+    for(let n=0;n<4;n++){const a=Math.atan2(player.y-target.y,player.x-target.x)+(Math.random()-.5)*.8,sp=dist(player,target)/.7;particles.push({x:target.x,y:target.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:.7,maxLife:.7,kind:'soul',z:18,size:26});}}
+}
 // Namlu alevi ve top dumanı
 function muzzleFlash(x:number,y:number,angle:number,size=64){particles.push({x,y,vx:0,vy:0,life:.13,maxLife:.13,kind:'flash',rot:angle,size,z:6});for(let n=0;n<2;n++)particles.push({x,y,vx:Math.cos(angle)*(30+n*25)+(Math.random()-.5)*10,vy:Math.sin(angle)*(30+n*25)+(Math.random()-.5)*10,life:.9+Math.random()*.4,maxLife:1.3,kind:'smoke',z:6,size:36+n*10,variant:(n+Math.floor(Math.random()*4))%4,rot:Math.random()*6});}
 const wrecks:Wreck[]=[];
@@ -616,7 +629,7 @@ let pendingMarket:number|null=null;
 function openMarket(){pendingMarket=null;renderMarket();ui('marketOverlay').classList.add('open');}
 function closeMarket(){pendingMarket=null;ui('marketOverlay').classList.remove('open');}
 function renderMarket(){
-  ui('inventoryStrip').innerHTML=`<div><span>DEMİR GÜLLE</span><b>∞</b><small>Sınırsız standart mühimmat</small></div><div><span>ZİNCİR GÜLLESİ</span><b>${state.chainAmmo}</b><small>Her atış 1 gülle tüketir</small></div><div><span>ATEŞ / SAÇMA</span><b>${arsenal.fire} / ${arsenal.grape}</b><small>Özel gülleler</small></div><div><span>DENİZ MAYINI</span><b>${arsenal.mine}</b><small>C tuşu ile bırakılır</small></div><div><span>ALTIN BAKİYESİ</span><b>${state.gold}</b><small>Market alışverişlerinde kullanılır</small></div>`;
+  ui('inventoryStrip').innerHTML=`<div><span>DEMİR GÜLLE</span><b>∞</b><small>Sınırsız standart mühimmat</small></div><div><span>ZİNCİR GÜLLESİ</span><b>${state.chainAmmo}</b><small>Her atış 1 gülle tüketir</small></div><div><span>ATEŞ / SAÇMA</span><b>${arsenal.fire} / ${arsenal.grape}</b><small>Özel gülleler</small></div><div><span>PATLAYICI · KIRICI · EMİCİ</span><b>${arsenal.explosive} · ${arsenal.breaker} · ${arsenal.leech}</b><small>Alan, kule ve can emme gülleleri</small></div><div><span>DENİZ MAYINI</span><b>${arsenal.mine}</b><small>C tuşu ile bırakılır</small></div><div><span>ALTIN BAKİYESİ</span><b>${state.gold}</b><small>Market alışverişlerinde kullanılır</small></div>`;
   ui('marketList').innerHTML=MARKET_ITEMS.map((item,index)=>`<article class="market-item"><div class="ammo-icon">${itemAsset('chain')}<b>${item.amount}</b></div><div><h4>${item.name}</h4><p>${item.description}</p></div><button data-market="${index}">${item.price} ALTIN</button></article>`).join('')+ARSENAL_MARKET.map((item,index)=>`<article class="market-item"><div class="ammo-icon">${itemAsset(item.kind)}<b>${item.amount}</b></div><div><h4>${item.name}</h4><p>${item.description}</p></div><button data-market="${MARKET_ITEMS.length+index}">${item.price} ALTIN</button></article>`).join('');
   document.querySelectorAll<HTMLButtonElement>('[data-market]').forEach(button=>button.onclick=()=>{pendingMarket=Number(button.dataset.market);renderMarket();});
   if(pendingMarket===null){ui('marketConfirm').classList.remove('visible');ui('marketConfirm').innerHTML='';return;}
@@ -632,7 +645,7 @@ function buyMarketItem(){
 }
 let loadoutTab:'ammo'|'consumable'='ammo';
 let pendingQuickItem:QuickItemId|null=null;
-function quickCount(item:QuickItemId){if(item==='iron')return'∞';if(item==='chain')return String(state.chainAmmo);if(item==='fire'||item==='grape'||item==='mine')return String(arsenal[item]);return'';}
+function quickCount(item:QuickItemId){if(item==='iron')return'∞';if(item==='chain')return String(state.chainAmmo);if(isSpecial(item)||item==='mine')return String(arsenal[item]);return'';}
 function slotKey(index:number){return keyLabel(settings.binds[(index<AMMO_ROW?`ammo${index+1}`:`item${index-AMMO_ROW+1}`) as ActionId]);}
 function itemAsset(item:QuickItemId){return rasterItemAssets[item]?`<img class="raster-item" src="${rasterItemAssets[item]}" alt="${QUICK_ITEMS[item].name}" draggable="false"/>`:`<i class="sprite icon-${QUICK_ITEMS[item].icon}"></i>`;}
 function renderQuickSlots(){
@@ -643,7 +656,7 @@ function useQuickSlot(index:number){
   if(pendingQuickItem){assignQuickSlot(index,pendingQuickItem);return;}
   const item=quickSlots[index];if(!item){openLoadout(index<AMMO_ROW?'ammo':'consumable');return;}
   if(item==='iron'||item==='chain'){state.ammo=item;toast(`${QUICK_ITEMS[item].name} seçildi`);}
-  else if(item==='fire'||item==='grape'){if(arsenal[item]<=0){toast(`${QUICK_ITEMS[item].name} kalmadı — marketten alabilirsin`);}else{state.ammo=item;toast(`${QUICK_ITEMS[item].name} seçildi`);}}
+  else if(isSpecial(item)){if(arsenal[item]<=0){toast(`${QUICK_ITEMS[item].name} kalmadı — marketten alabilirsin`);}else{state.ammo=item;toast(`${QUICK_ITEMS[item].name} seçildi`);}}
   else if(item==='repairkit')toggleRepair();else if(item==='speed'||item==='shield')activateAbility(item);else if(item==='mine')dropMine();
   renderQuickSlots();
 }
@@ -872,18 +885,20 @@ function update(dt:number){
     if(s.trail<=0){s.trail=s.ammo==='fire'?.03:.05;const z=shotHeight(s);
       if(s.visual==='spit')particles.push({x:s.x,y:s.y,vx:(Math.random()-.5)*10,vy:(Math.random()-.5)*10,life:.4,maxLife:.4,kind:'bubble',z,size:14});
       else if(s.ammo==='fire')particles.push({x:s.x,y:s.y,vx:(Math.random()-.5)*12,vy:(Math.random()-.5)*12,life:.4,maxLife:.4,kind:'firePuff',z,size:30});
+      else if(s.ammo==='explosive')particles.push({x:s.x,y:s.y,vx:(Math.random()-.5)*30,vy:(Math.random()-.5)*30,life:.3,maxLife:.3,kind:'spark',z:z+10,size:14});
+      else if(s.ammo==='leech')particles.push({x:s.x,y:s.y,vx:(Math.random()-.5)*10,vy:(Math.random()-.5)*10,life:.45,maxLife:.45,kind:'soul',z,size:16});
       else if(s.ammo!=='grape')particles.push({x:s.x,y:s.y,vx:0,vy:0,life:.35,maxLife:.35,kind:'smoke',z,size:16,variant:Math.floor(Math.random()*4)});}
     s.x+=s.vx*dt;s.y+=s.vy*dt;s.life-=dt;
     if(s.owner==='player'){
       for(let j=enemies.length-1;j>=0&&s.life>0;j--){
         const e=enemies[j];
-        if(dist(s,e)<(e.hitRadius??25)){const hit=s.damage;s.hit=true;if(s.slow)e.slowTimer=Math.max(e.slowTimer,s.slow);if(s.splash)towerSplash(s,e);if(eliteEnabled()&&activeEliteShip==='crimson')state.hp=Math.min(effectiveMaxHp(),state.hp+hit*.07);if(eliteEnabled()&&activeEliteShip==='magma'&&Math.random()<.2)e.burnTimer=3;e.aggro=true;e.combatTimer=12;if(s.ammo==='chain')e.slowTimer=3;if(s.ammo==='fire')e.burnTimer=SPECIAL_AMMO.fire.burnSeconds;e.hp-=hit;damageText(e.x,e.y,hit);burst(e.x,e.y);playHit();s.life=0;
+        if(dist(s,e)<(e.hitRadius??25)){const hit=s.damage*(s.ammo==='breaker'&&e.tower?SPECIAL_AMMO.breaker.towerFactor:1);s.hit=true;if(s.slow)e.slowTimer=Math.max(e.slowTimer,s.slow);if(s.splash)towerSplash(s,e);if(eliteEnabled()&&activeEliteShip==='crimson')state.hp=Math.min(effectiveMaxHp(),state.hp+hit*.07);if(eliteEnabled()&&activeEliteShip==='magma'&&Math.random()<.2)e.burnTimer=3;e.aggro=true;e.combatTimer=12;if(s.ammo==='chain')e.slowTimer=3;if(s.ammo==='fire')e.burnTimer=SPECIAL_AMMO.fire.burnSeconds;e.hp-=hit;damageText(e.x,e.y,hit);burst(e.x,e.y);playHit();ammoImpact(s,e,hit);s.life=0;
           if(e.hp<=0)sinkEnemy(e);
         }
       }
       for(let j=monsters.length-1;j>=0&&s.life>0;j--){
         const m=monsters[j];
-        if(dist(s,m)<m.radius){const hit=s.damage;s.hit=true;if(s.slow)m.slowTimer=Math.max(m.slowTimer,s.slow);if(s.splash)towerSplash(s,m);if(eliteEnabled()&&activeEliteShip==='crimson')state.hp=Math.min(effectiveMaxHp(),state.hp+hit*.07);if(eliteEnabled()&&activeEliteShip==='magma'&&Math.random()<.2)m.burnTimer=3;m.aggro=true;m.combatTimer=12;if(s.ammo==='chain')m.slowTimer=3;if(s.ammo==='fire')m.burnTimer=SPECIAL_AMMO.fire.burnSeconds;m.hp-=hit;damageText(m.x,m.y,hit);burst(m.x,m.y);playHit();s.life=0;
+        if(dist(s,m)<m.radius){const hit=s.damage;s.hit=true;if(s.slow)m.slowTimer=Math.max(m.slowTimer,s.slow);if(s.splash)towerSplash(s,m);if(eliteEnabled()&&activeEliteShip==='crimson')state.hp=Math.min(effectiveMaxHp(),state.hp+hit*.07);if(eliteEnabled()&&activeEliteShip==='magma'&&Math.random()<.2)m.burnTimer=3;m.aggro=true;m.combatTimer=12;if(s.ammo==='chain')m.slowTimer=3;if(s.ammo==='fire')m.burnTimer=SPECIAL_AMMO.fire.burnSeconds;m.hp-=hit;damageText(m.x,m.y,hit);burst(m.x,m.y);playHit();ammoImpact(s,m,hit);s.life=0;
           if(m.hp<=0)defeatMonster(m);
         }
       }
@@ -1170,6 +1185,9 @@ function drawShotBall(s:Shot){const p=worldToScreen(s),y=p.y-shotHeight(s),spin=
   if(s.owner==='enemy'){if(s.ammo==='fire')drawVfx(ctx,'fire',p.x,y,52,{rot:spin*.3});else drawVfx(ctx,'enemy',p.x,y,40);return;}
   if(s.ammo==='fire')drawVfx(ctx,'fire',p.x,y,54,{rot:spin*.3});
   else if(s.ammo==='chain')drawVfx(ctx,'chain',p.x,y,62,{rot:spin});
+  else if(s.ammo==='explosive')drawVfx(ctx,'bomb',p.x,y,46,{rot:Math.sin(spin*.3)*.4});
+  else if(s.ammo==='breaker')drawVfx(ctx,'breaker',p.x,y,48,{rot:Math.atan2(s.vy,s.vx)});
+  else if(s.ammo==='leech')drawVfx(ctx,'leech',p.x,y,48);
   else if(s.ammo==='grape'){const a=Math.atan2(s.vy,s.vx);for(let k=0;k<5;k++){const off=(k-2)*7,back=(k%2)*8;drawVfx(ctx,'pellet',p.x-Math.cos(a)*back-Math.sin(a)*off,y-Math.sin(a)*back+Math.cos(a)*off,34);}}
   else drawVfx(ctx,'iron',p.x,y,40);}
 function drawParticle(p:Particle){const s=worldToScreen(p),a=Math.max(0,Math.min(1,p.life/p.maxLife)),y=s.y-(p.z??0),size=p.size;
@@ -1182,6 +1200,8 @@ function drawParticle(p:Particle){const s=worldToScreen(p),a=Math.max(0,Math.min
     case 'spark':drawVfx(ctx,'ember',s.x,y,size??12,{alpha:a});return;
     case 'foam':drawVfx(ctx,'foam',s.x,y,(size??18)*(1+(1-a)*.8),{alpha:a*.85,variant:p.variant??0});return;
     case 'target':drawVfx(ctx,'target',s.x,y,(size??100)*(1.15-.15*(1-a)),{alpha:.55+.35*Math.sin(performance.now()/90)});return;
+    case 'shock':drawVfx(ctx,'shock',s.x,y,(size??200)*(.4+.6*(1-a)),{alpha:a});return;
+    case 'soul':drawVfx(ctx,'soul',s.x,y,size??24,{alpha:Math.min(1,a*1.8)});return;
     case 'splinter':drawVfx(ctx,'splinter',s.x,y,size??24,{rot:p.rot,alpha:Math.min(1,a*2),variant:p.variant??0});return;
     default:drawVfx(ctx,p.kind as 'bubble'|'plank'|'firePuff'|'poison',s.x,y,(size??18)*(p.kind==='firePuff'?.6+a*.6:1),{rot:p.rot,alpha:Math.min(1,a*1.6)});}}
 // Batan gemi: yan yatar, suya gömülür, kabarcıklar çıkarır
