@@ -4,6 +4,7 @@ import {ACTIONS,loadSettings,saveSettings,keyLabel,normalizeKey,DEFAULT_BINDS,ty
 import {playBossMusic,stopBossMusic,playBossHorn,setAudio,unlockAudio,playCannon,playEnemyCannon,playHit,playExplosion,playCoins,playWind,playShield,playSplash,playLevelUp,playMapJump,playSink,playHeal,playClick} from './audio';
 import {drawSeaSparkle,drawNpcShip,drawMonsterSheet,drawChestSprite,drawIslandSprite,drawFleetBase,drawBastion,drawBuiltTower,drawMineSprite,seaTilePattern,islandSheetUrl,shipLabelOffset,portraitStyle,preload,fleetBaseUrl,fleetTowerUrl,TOWER_LABEL_OFFSET} from './sprites';
 import {MAPS,GRID,THEMES,NPCS,MONSTERS,QUESTS,QUEST_COOLDOWN_MS,FLEET,WORLD_WIDTH,WORLD_HEIGHT,MAX_LEVEL,xpNeed,neighbor,bossFor,BOSS_KILLS,BOSS_ATLAS,BOSS_ATLAS_COLS,MAP_KEYS,type BossDef,tierOf,fleetTower,fleetReward,PORTRAIT_COUNT,PORTRAIT_COLS,PORTRAIT_ATLAS,GRID_COLS,GRID_ROWS,CELL_W,CELL_H,colName,rowName,gridCell,coordLabel,type MapKey,type WorldIsland,type NpcDef,type MonsterDef,type Dir,type QuestDef} from './campaign';
+import {EQUIPMENT,EQUIP_SLOTS,RARITY_NAMES,equipById,equipStatText,equipTotals,equipIconStyle,type EquipSlot} from './equipment';
 import {BALL_DAMAGE,CHAIN_FACTOR,FIRE_DOT_SHARE,ELITE_POINTS_PER_BALL,ELITE_MAX_LEVEL,eliteLevelEp,eliteLevelFromEp,ABILITIES,SPECIAL_AMMO,MINE,SPEED_BOOST,CONSUMABLES,AMMO_PRICES,SUPPLY_PRICES,loadArsenal,saveArsenal,type AbilityId,type SpecialAmmo,type ConsumableId,type SupplyId,type Price,priceOf} from './arsenal';
 import {loadFleetOwners,saveFleetOwners} from './conquest';
 import {TALENTS,OFFICERS,OFFICER_MAX_RANK,officerCost,officerSlots,talentPoints,loadCrew,saveCrew,spentPoints,computeBonus,type TalentId,type OfficerId} from './crew';
@@ -64,7 +65,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     <section class="hud">
       <div class="top-status"><div class="status-pair"><div class="status-line xp-line"><span>TP</span><i><em id="xpHudBar"></em></i><b id="xpHudText">0 / 100</b></div><div class="status-line elite-line"><span>EP</span><i><em id="eliteBar"></em></i><b id="eliteText">0 / 100</b></div></div><div class="level-medal" title="Kaptan seviyesi"><img src="/assets/icon-hat-v1.webp" alt="" draggable="false"/><b id="level">1</b></div><div class="status-pair"><div class="status-line hp-line"><span>CP</span><i><em id="hpHudBar"></em></i><b id="hpHudText">100 / 100</b></div><div class="status-line battle-line"><span>SP</span><i><em id="battleBar"></em></i><b id="battleText">0 / 100</b></div></div></div>
       <div class="corner-buttons"><button class="round-button" id="openShop" aria-label="Market"><img src="/assets/icon-market-v1.webp" alt="" draggable="false"/></button><button class="round-button" id="openMenu" aria-label="Menü"><img src="/assets/icon-menu-v1.webp" alt="" draggable="false"/></button></div>
-      <nav class="shop-tabs" id="shopTabs"><button id="openEliteShips" data-shop="eliteShipOverlay"><img class="nav-img" id="shipNavIcon" alt="" draggable="false"/><span>TERSANE</span></button><button id="openCannonShop" data-shop="cannonShopOverlay"><img class="nav-img" src="/assets/gunner-vignette-v1.webp" alt="" draggable="false"/><span>TOPLAR</span></button><button id="openShip" data-shop="shipOverlay"><img class="nav-img" src="/assets/icon-inventory-v1.webp" alt="" draggable="false"/><span>ENVANTER</span></button><button id="openMarket" data-shop="marketOverlay"><img class="nav-img" src="/assets/ammo-fire-v1.webp" alt="" draggable="false"/><span>GÜLLELER</span></button><button id="openLoadoutTab" data-shop="supplyOverlay"><img class="nav-img" src="/assets/icon-chest-v1.webp" alt="" draggable="false"/><span>MALZEMELER</span></button><button class="shop-close" id="closeShopTabs" aria-label="Marketi kapat">×</button></nav>
+      <nav class="shop-tabs" id="shopTabs"><button id="openEliteShips" data-shop="eliteShipOverlay"><img class="nav-img" id="shipNavIcon" alt="" draggable="false"/><span>TERSANE</span></button><button id="openEquipShop" data-shop="equipShopOverlay"><i class="nav-img equip-nav"></i><span>DONANIM</span></button><button id="openCannonShop" data-shop="cannonShopOverlay"><img class="nav-img" src="/assets/gunner-vignette-v1.webp" alt="" draggable="false"/><span>TOPLAR</span></button><button id="openShip" data-shop="shipOverlay"><img class="nav-img" src="/assets/icon-inventory-v1.webp" alt="" draggable="false"/><span>ENVANTER</span></button><button id="openMarket" data-shop="marketOverlay"><img class="nav-img" src="/assets/ammo-fire-v1.webp" alt="" draggable="false"/><span>GÜLLELER</span></button><button id="openLoadoutTab" data-shop="supplyOverlay"><img class="nav-img" src="/assets/icon-chest-v1.webp" alt="" draggable="false"/><span>MALZEMELER</span></button><button class="shop-close" id="closeShopTabs" aria-label="Marketi kapat">×</button></nav>
       <div class="captain-overlay menu-overlay" id="menuOverlay"><section class="captain-profile menu-window"><header><div><span class="eyebrow">Kaptan köşkü</span><h2>MENÜ</h2></div><button id="closeMenu" aria-label="Menüyü kapat">×</button></header><div class="menu-grid"><button id="openCaptain"><img src="/assets/captain-bust-v1.webp" alt="" draggable="false"/><span>KAPTAN PROFİLİ</span></button><button id="openGuild"><i class="nav-img guild-nav"></i><span>FİLO</span></button><button id="openDevelopment"><img src="/assets/icon-anvil-v1.webp" alt="" draggable="false"/><span>GELİŞTİRME</span></button><button id="openCrew"><img src="/assets/officer-helmsman-v1.webp" alt="" draggable="false"/><span>TAYFA</span></button><button id="openMenuQuests"><img src="/assets/icon-scroll-v1.webp" alt="" draggable="false"/><span>GÖREVLER</span></button><button id="openMenuWorld"><img id="menuWorldIcon" alt="" draggable="false"/><span>DÜNYA HARİTASI</span></button><button id="openSettings"><img src="/assets/icon-gear-v1.webp" alt="" draggable="false"/><span>AYARLAR</span></button></div></section></div>
       <div class="resources"><div class="resource compact"><i class="sprite icon-gold"></i><span>ALTIN</span><b id="gold">000</b></div><div class="resource compact pearl"><i class="sprite icon-pearl"></i><span>İNCİ</span><b id="pearls">000</b></div></div>
       <div class="panel quest" hidden><span class="eyebrow">Aktif görev</span><h3 id="questTitle">Görev seçilmedi</h3><p id="questDescription">Kaptan, yapmak istediğin görevi görev defterinden seçebilirsin.</p><div class="progress" id="quest">Hazır olduğunda bir görev başlat</div><button class="quest-open" id="openQuests">GÖREVLERİ AÇ</button></div>
@@ -76,7 +77,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <div class="toast" id="toast"></div>
       <div class="portal-prompt" id="portalPrompt"></div><div class="event-panel" id="eventPanel"></div><div class="quest-overlay world-overlay" id="worldMapOverlay"><section class="world-scroll" aria-label="Dünya haritası"><button class="scroll-close" id="closeWorldMap" aria-label="Dünya haritasını kapat">×</button><div class="world-chart" id="worldChart"></div><div id="worldInfo" hidden></div></section></div><div class="quest-overlay" id="questOverlay"><section class="quest-log"><header><div><span class="eyebrow">Kaptanın görev defteri</span><h2>DENİZ GÖREVLERİ</h2></div><button id="closeQuests" aria-label="Görevleri kapat">×</button></header><p class="quest-intro">Aynı anda yalnızca bir görev yürütülebilir. İptal edilen veya tamamlanan görev 8 saat sonra yeniden açılır.</p><div class="quest-list" id="questList"></div></section></div>
       <div class="captain-overlay" id="captainOverlay"><section class="captain-profile"><header><div><span class="eyebrow">Oyuncu profili</span><h2 id="captainName">KAPTAN</h2></div><button id="closeCaptain" aria-label="Kaptan profilini kapat">×</button></header><div class="captain-tab" id="captainTab-profile"><div class="captain-identity"><div class="captain-portrait"><img src="/assets/icon-hat-v1.webp" alt="" draggable="false"/><b id="captainLevel">1</b></div><div><span>AMİRAL GEMİSİ</span><strong>Yedi Deniz</strong><small>Gölgeler Denizi Kaptanı</small></div></div><div class="captain-nick" id="captainNick"></div><div class="captain-stat-grid"><article><span>TECRÜBE PUANI</span><b id="xpText">0 / 100</b><i class="xp"><em id="xpBar"></em></i></article><article><span>CAN PUANI</span><b id="hpText">100 / 100</b><i class="hp"><em id="hpBar" style="width:100%"></em></i></article><article><span>ELİT PUAN</span><b id="profileElite">0 / 100</b><i class="elite"><em id="profileEliteBar"></em></i></article><article><span>SAVAŞ PUANI</span><b id="profileBattle">0 / 500</b><i class="battle"><em id="profileBattleBar"></em></i></article></div><div class="bonus-summary" id="bonusSummary"></div></div></section></div><div class="captain-overlay" id="guildOverlay"><section class="captain-profile crew-window guild-window"><header><div><span class="eyebrow">Filo hazinesi ve ada kuleleri</span><h2>FİLO</h2></div><button id="closeGuild" aria-label="Filo penceresini kapat">×</button></header><div id="guildPanel"></div></section></div><div class="captain-overlay" id="crewOverlay"><section class="captain-profile crew-window"><header><div><span class="eyebrow">Geminin subayları</span><h2>TAYFA</h2></div><button id="closeCrew" aria-label="Tayfayı kapat">×</button></header><div id="crewPanel"></div></section></div><div class="quest-overlay" id="settingsOverlay"><section class="quest-log settings-log"><header><div><span class="eyebrow">Oyun tercihleri</span><h2>AYARLAR</h2></div><button id="closeSettings" aria-label="Ayarları kapat">×</button></header><div id="settingsPanel"></div></section></div>
-      <div class="ship-overlay" id="eliteShipOverlay"><section class="ship-menu elite-ship-window"><header><div><span class="eyebrow">Elit filo tersanesi</span><h2>ELİT GEMİLER</h2><p>Elit puanınla açılan gemiyi incele ve amiral gemin olarak seç.</p></div><button id="closeEliteShips" aria-label="Elit gemileri kapat">×</button></header><div class="elite-ship-layout"><div class="elite-ship-grid" id="eliteShipGrid"></div><aside class="elite-ship-detail" id="eliteShipDetail"></aside></div></section></div><div class="ship-overlay" id="shipOverlay"><section class="ship-menu inv-window"><header><div class="inv-top"><img src="/assets/gunner-vignette-v1.webp" alt="" draggable="false"/><span id="shipSummary"></span></div><h2>ENVANTER</h2><button id="closeShip" aria-label="Envanteri kapat">×</button></header><div class="inv-body"><aside class="inv-captain"><img src="/assets/captain-bust-v1.webp" alt="" draggable="false"/></aside><section class="inv-panel"><header><span>Depo</span><button class="inv-arrow to-depot" id="invToDepot" title="Seçili topu depoya al">⬅</button></header><div class="inv-grid" id="invDepot" data-side="depot"></div></section><section class="inv-panel"><header><button class="inv-arrow to-ship" id="invToShip" title="Seçili topu gemiye al">➡</button><span>Gemi</span></header><div class="inv-grid" id="invShip" data-side="ship"></div></section><aside class="inv-info"><header>Bilgi</header><div id="cannonRows"></div></aside></div></section></div><div class="market-overlay" id="cannonShopOverlay"><section class="market-menu cannon-shop"><header><div><span class="eyebrow">Topçu dökümhanesi</span><h2>TOPLAR</h2></div><button id="closeCannonShop" aria-label="Top dükkânını kapat">×</button></header><div class="market-list" id="cannonShopList"></div></section></div>
+      <div class="ship-overlay" id="eliteShipOverlay"><section class="ship-menu elite-ship-window"><header><div><span class="eyebrow">Elit filo tersanesi</span><h2>ELİT GEMİLER</h2><p>Elit puanınla açılan gemiyi incele ve amiral gemin olarak seç.</p></div><button id="closeEliteShips" aria-label="Elit gemileri kapat">×</button></header><div class="elite-ship-layout"><div class="elite-ship-grid" id="eliteShipGrid"></div><aside class="elite-ship-detail" id="eliteShipDetail"></aside></div></section></div><div class="ship-overlay" id="shipOverlay"><section class="ship-menu inv-window"><header><div class="inv-top"><img src="/assets/gunner-vignette-v1.webp" alt="" draggable="false"/><span id="shipSummary"></span></div><h2>ENVANTER</h2><button id="closeShip" aria-label="Envanteri kapat">×</button></header><div class="inv-modes"><button data-inv-mode="cannon">TOPLAR</button><button data-inv-mode="equip">DONANIM</button></div><div class="inv-body"><aside class="inv-captain"><img src="/assets/captain-bust-v1.webp" alt="" draggable="false"/></aside><section class="inv-panel"><header><span>Depo</span><button class="inv-arrow to-depot" id="invToDepot" title="Seçili topu depoya al">⬅</button></header><div class="inv-grid" id="invDepot" data-side="depot"></div></section><section class="inv-panel"><header><button class="inv-arrow to-ship" id="invToShip" title="Seçili topu gemiye al">➡</button><span>Gemi</span></header><div class="inv-grid" id="invShip" data-side="ship"></div></section><aside class="inv-info"><header>Bilgi</header><div id="cannonRows"></div></aside></div></section></div><div class="market-overlay" id="equipShopOverlay"><section class="market-menu"><header><div><span class="eyebrow">Gemi ustası</span><h2>DONANIM</h2></div><button id="closeEquipShop" aria-label="Kapat">×</button></header><div class="market-list" id="equipShopList"></div></section></div><div class="market-overlay" id="cannonShopOverlay"><section class="market-menu cannon-shop"><header><div><span class="eyebrow">Topçu dökümhanesi</span><h2>TOPLAR</h2></div><button id="closeCannonShop" aria-label="Top dükkânını kapat">×</button></header><div class="market-list" id="cannonShopList"></div></section></div>
       <div class="development-overlay" id="developmentOverlay"><section class="development-menu"><header><div><span class="eyebrow">Kaptanın gelişim planı</span><h2>GELİŞTİRME</h2></div><button id="closeDevelopment" aria-label="Geliştirmeyi kapat">×</button></header><div id="talentPanel"><div class="dev-tree" id="upgradeList"></div><div class="upgrade-confirm" id="upgradeConfirm"></div></div></section></div>
       <div class="market-overlay" id="marketOverlay"><section class="market-menu"><header><div><span class="eyebrow">Tüccar loncası</span><h2>GÜLLELER</h2></div><button id="closeMarket" aria-label="Kapat">×</button></header><div class="market-list" id="marketList"></div></section></div><div class="market-overlay" id="supplyOverlay"><section class="market-menu"><header><div><span class="eyebrow">Sarf malzemeleri</span><h2>MALZEMELER</h2></div><button id="closeSupply" aria-label="Kapat">×</button></header><div class="market-list" id="supplyList"></div></section></div><div class="buy-confirm" id="buyConfirm"></div><div class="loadout-overlay" id="loadoutOverlay"><section class="loadout-menu"><header><div><span class="eyebrow">Sarf malzemeleri</span><h2 id="loadoutTitle">MALZEMELER</h2></div><button id="closeLoadout">×</button></header><p id="loadoutHint">Sarf malzemeleri alt sıraya yerleşir. Sürükleyip bırak ya da önce eşyaya, sonra yuvaya dokun. Kara Barut ve Kalkan yuvaya dokununca açılır/kapanır.</p><div class="loadout-items" id="loadoutItems"></div><div class="loadout-slots" id="loadoutSlots"></div></section></div>
     </section>
@@ -114,7 +115,7 @@ const keys = new Set<string>();
 const QUEST_STORAGE='yedi-deniz-quests-v2';
 const ACCOUNT_STORAGE='yedi-deniz-account-v1';
 let storedQuests:{active:string|null;progress:Record<string,number>;cooldowns:Record<string,number>}|null=null;
-let storedAccount:{pearls?:number;gold:number;wood?:number;fame:number;level:number;maxHp:number;hp:number;chainAmmo:number;elitePoints?:number;battlePoints?:number;cannonType?:CannonKind;cannonInventory?:CannonStock;mountedCannons?:CannonStock;quickSlots?:Array<QuickItemId|null>;upgrades:Record<UpgradeKind,number>;eliteShip?:EliteShipId;activeShip?:ShipSelection;elitePurchased?:boolean;currentMap?:MapKey}|null=null;
+let storedAccount:{pearls?:number;gold:number;wood?:number;fame:number;level:number;maxHp:number;hp:number;chainAmmo:number;elitePoints?:number;battlePoints?:number;cannonType?:CannonKind;cannonInventory?:CannonStock;mountedCannons?:CannonStock;equipOwned?:Record<string,number>;equipped?:Partial<Record<EquipSlot,string|null>>;quickSlots?:Array<QuickItemId|null>;upgrades:Record<UpgradeKind,number>;eliteShip?:EliteShipId;activeShip?:ShipSelection;elitePurchased?:boolean;currentMap?:MapKey}|null=null;
 try{storedQuests=JSON.parse(localStorage.getItem(QUEST_STORAGE)||'null');}catch{storedQuests=null;}
 try{storedAccount=JSON.parse(localStorage.getItem(ACCOUNT_STORAGE)||'null');}catch{storedAccount=null;}
 const storedActive=storedQuests?.active&&QUESTS.some(q=>q.id===storedQuests!.active)?storedQuests.active:null;
@@ -124,6 +125,10 @@ const defaultCannonStock:CannonStock={cast:20,long:6,rapid:4,heavy:2};
 const defaultMountedCannons:CannonStock={cast:50,long:0,rapid:0,heavy:0};
 const cannonInventory:CannonStock={...defaultCannonStock,...storedAccount?.cannonInventory};
 const mountedCannons:CannonStock={...defaultMountedCannons,...storedAccount?.mountedCannons};
+// Donanım: depodaki parça sayıları ve gemideki yuvalar
+const equipOwned:Record<string,number>={...storedAccount?.equipOwned};
+const equipped:Partial<Record<EquipSlot,string|null>>={...storedAccount?.equipped};
+const equipBonus=()=>equipTotals(equipped);
 const state = { pearls:storedAccount?.pearls??30, gold:storedAccount?.gold??40, fame:storedAccount?.fame??0, level:Math.min(MAX_LEVEL,storedAccount?.level??1), hp:storedAccount?.hp??Infinity, maxHp:storedAccount?.maxHp??100, elitePoints:storedAccount?.elitePoints??0,battlePoints:storedAccount?.battlePoints??0,cannon:18, cannonType:storedAccount?.cannonType&&CANNONS[storedAccount.cannonType]?storedAccount.cannonType:'cast' as CannonKind, activeQuest:storedActive as string|null, ammo:'iron' as AmmoKind, chainAmmo:storedAccount?.chainAmmo??2000, attacking:false, repairing:false, invulnerable:0 };
 // Eski ölçekli kayıtlar (100 canlı, 18 toplu gemi) bir kez Seafight ölçeğine taşınır: can formülden hesaplanır,
 // gemiye en az 50 döküm top yerleştirilir.
@@ -183,7 +188,7 @@ const eliteMaxHpFactor=()=>!eliteEnabled()?1:activeEliteShip==='glacial'?1.2:act
 // Seafight ölçeği: başlangıç gemisi 75.000 can ve 100 top yuvası. Elit seviyesi başına +5.000 can ve +25 yuva
 // (Seafight: Elit 1 75.000 can/100 top, Elit 2 80.000/105). Kaptan seviyesi ve Güçlendirilmiş Gövde +2.500 can verir.
 const baseMaxHp=()=>BASE_HP+(state.level-1)*HP_PER_LEVEL+upgrades.hull*HP_PER_HULL;
-const effectiveMaxHp=()=>Math.round((state.maxHp+(eliteEnabled()?eliteShip().level*HP_PER_ELITE:0))*eliteMaxHpFactor());
+const effectiveMaxHp=()=>Math.round((state.maxHp+(eliteEnabled()?eliteShip().level*HP_PER_ELITE:0))*eliteMaxHpFactor()*(1+equipBonus().hp));
 if(!Number.isFinite(state.hp)||state.hp>effectiveMaxHp())state.hp=effectiveMaxHp();
 const eliteIncomingFactor=()=>!eliteEnabled()?1:activeEliteShip==='ironclad'?.75:activeEliteShip==='void'?.87:1;
 function eliteSpeedFactor(){
@@ -291,7 +296,7 @@ ui('closeQuests').onclick=closeQuestLog;
 ui('questOverlay').addEventListener('pointerdown',e=>{if(e.target===ui('questOverlay'))closeQuestLog();});
 ui('openEliteShips').onclick=openEliteShips;ui('closeEliteShips').onclick=closeEliteShips;ui('openShip').onclick=openShipMenu;
 ui('closeShip').onclick=closeShipMenu;
-ui('closeCannonShop').onclick=closeCannonShop;ui('cannonShopOverlay').addEventListener('pointerdown',e=>{if(e.target===ui('cannonShopOverlay'))closeCannonShop();});
+ui('closeCannonShop').onclick=closeCannonShop;ui('closeEquipShop').onclick=closeEquipShop;ui('equipShopOverlay').addEventListener('pointerdown',e=>{if(e.target===ui('equipShopOverlay'))closeEquipShop();});ui('cannonShopOverlay').addEventListener('pointerdown',e=>{if(e.target===ui('cannonShopOverlay'))closeCannonShop();});
 ui('shipOverlay').addEventListener('pointerdown',e=>{if(e.target===ui('shipOverlay'))closeShipMenu();});
 ui('openDevelopment').onclick=openDevelopment;
 ui('closeDevelopment').onclick=closeDevelopment;
@@ -304,10 +309,10 @@ canvas.addEventListener('wheel',e=>{e.preventDefault();setZoom(camera.targetZoom
 ui('closeLoadout').onclick=closeLoadout;
 ui('loadoutOverlay').addEventListener('pointerdown',e=>{if(e.target===ui('loadoutOverlay'))closeLoadout();});
 // Sağ üst: market (sekmeli gemi/top/mühimmat pencereleri) ve menü (profil, filo, geliştirme, tayfa, ayarlar)
-const SHOP_OVERLAYS=['eliteShipOverlay','cannonShopOverlay','shipOverlay','marketOverlay','supplyOverlay'];
-const SHOP_OPEN:Record<string,()=>void>={eliteShipOverlay:openEliteShips,cannonShopOverlay:openCannonShop,shipOverlay:openShipMenu,marketOverlay:openMarket,supplyOverlay:openSupply};
+const SHOP_OVERLAYS=['eliteShipOverlay','equipShopOverlay','cannonShopOverlay','shipOverlay','marketOverlay','supplyOverlay'];
+const SHOP_OPEN:Record<string,()=>void>={eliteShipOverlay:openEliteShips,equipShopOverlay:openEquipShop,cannonShopOverlay:openCannonShop,shipOverlay:openShipMenu,marketOverlay:openMarket,supplyOverlay:openSupply};
 let lastShop='marketOverlay';
-function closeShops(){closeEliteShips();closeCannonShop();closeShipMenu();closeMarket();closeSupply();closeLoadout();closeBuy();}
+function closeShops(){closeEliteShips();closeEquipShop();closeCannonShop();closeShipMenu();closeMarket();closeSupply();closeLoadout();closeBuy();}
 function showShop(id:string){closeShops();closeMenu();lastShop=id;SHOP_OPEN[id]();}
 function syncShopTabs(){const open=SHOP_OVERLAYS.find(id=>ui(id).classList.contains('open'));ui('shopTabs').classList.toggle('open',!!open);document.body.classList.toggle('shop-open',!!open);
   document.querySelectorAll<HTMLButtonElement>('#shopTabs [data-shop]').forEach(b=>b.classList.toggle('active',b.dataset.shop===open));}
@@ -512,11 +517,11 @@ function fireAtTarget(){
   const stock=state.ammo==='chain'?state.chainAmmo:isSpecial(state.ammo)?arsenal[state.ammo]:Infinity,loaded=Math.min(state.cannon,stock);
   const ammoMult=state.ammo==='chain'?CHAIN_FACTOR:isSpecial(state.ammo)?SPECIAL_AMMO[state.ammo].damage:1,mix=state.cannon>0?(loaded*ammoMult+(state.cannon-loaded))/state.cannon:1;
   const fx=Math.sin(player.angle),fy=-Math.cos(player.angle),tx=selected.x-player.x,ty=selected.y-player.y;
-  const side=fx*ty-fy*tx>0?-1:1,damage=state.cannon*BALL_DAMAGE*(1+upgrades.damage*.11)*cannon.damage*bonus.damage*eliteDamageFactor(selected)*eliteCritFactor()*mix*useConsumable('powder');
+  const side=fx*ty-fy*tx>0?-1:1,damage=state.cannon*BALL_DAMAGE*(1+upgrades.damage*.11)*cannon.damage*bonus.damage*eliteDamageFactor(selected)*eliteCritFactor()*mix*(1+equipBonus().damage)*useConsumable('powder');
   salvoQueue.push({delay:0,target:selected,side,slot:0,damage,ammo:state.ammo});
   if(state.ammo==='chain'){state.chainAmmo-=loaded;saveAccount();}
   else if(isSpecial(state.ammo)){arsenal[state.ammo]-=loaded;saveArsenal(arsenal);renderQuickSlots();gainElitePoints(loaded*ELITE_POINTS_PER_BALL[state.ammo]);}
-  player.cooldown=eliteAbility.active>0&&activeEliteShip==='ironclad'?0:cannon.reload*Math.max(.6,1-upgrades.reload*.04)*bonus.reload*eliteReloadFactor()*(state.ammo==='chain'?1.18:1)*(isSpecial(state.ammo)?SPECIAL_AMMO[state.ammo].reload:1);
+  player.cooldown=eliteAbility.active>0&&activeEliteShip==='ironclad'?0:(1-equipBonus().reload)*cannon.reload*Math.max(.6,1-upgrades.reload*.04)*bonus.reload*eliteReloadFactor()*(state.ammo==='chain'?1.18:1)*(isSpecial(state.ammo)?SPECIAL_AMMO[state.ammo].reload:1);
 }
 function gainElitePoints(ep:number){
   if(ep<=0)return;const before=eliteLevelFromEp(state.elitePoints);state.elitePoints+=ep;const after=eliteLevelFromEp(state.elitePoints);saveAccount();
@@ -588,9 +593,9 @@ const rewardQueue:string[]=[];
 function showReward(msg:string){ui('rewardToast').textContent=msg;ui('rewardToast').classList.remove('show');void ui('rewardToast').offsetWidth;ui('rewardToast').classList.add('show');rewardTimer=2.6;}
 function rewardNotice(msg:string){if(rewardTimer>0){rewardQueue.push(msg);return;}showReward(msg);}
 function saveQuestState(){localStorage.setItem(QUEST_STORAGE,JSON.stringify({active:state.activeQuest,progress:questProgress,cooldowns:questCooldownUntil}));}
-function saveAccount(){localStorage.setItem(ACCOUNT_STORAGE,JSON.stringify({pearls:state.pearls,gold:state.gold,fame:state.fame,level:state.level,maxHp:state.maxHp,hp:state.hp,chainAmmo:state.chainAmmo,elitePoints:state.elitePoints,battlePoints:state.battlePoints,cannonType:state.cannonType,cannonInventory,mountedCannons,quickSlots,upgrades,eliteShip:activeEliteShip,activeShip,elitePurchased,currentMap}));try{localStorage.setItem(WORLD_STORAGE,currentMap);}catch{}}
-function effectiveRange(){return(CANNONS[state.cannonType].range+upgrades.range*18+bonus.range)*(state.ammo==='grape'?SPECIAL_AMMO.grape.rangeFactor:1);}
-function effectiveSpeed(){return(104+upgrades.speed*5)*bonus.speed*eliteSpeedFactor()*(abilityActive('speed')?SPEED_BOOST:1);}
+function saveAccount(){localStorage.setItem(ACCOUNT_STORAGE,JSON.stringify({pearls:state.pearls,gold:state.gold,fame:state.fame,level:state.level,maxHp:state.maxHp,hp:state.hp,chainAmmo:state.chainAmmo,elitePoints:state.elitePoints,battlePoints:state.battlePoints,cannonType:state.cannonType,cannonInventory,mountedCannons,equipOwned,equipped,quickSlots,upgrades,eliteShip:activeEliteShip,activeShip,elitePurchased,currentMap}));try{localStorage.setItem(WORLD_STORAGE,currentMap);}catch{}}
+function effectiveRange(){return(CANNONS[state.cannonType].range+upgrades.range*18+bonus.range+equipBonus().range)*(state.ammo==='grape'?SPECIAL_AMMO.grape.rangeFactor:1);}
+function effectiveSpeed(){return(104+upgrades.speed*5)*bonus.speed*(1+equipBonus().speed)*eliteSpeedFactor()*(abilityActive('speed')?SPEED_BOOST:1);}
 function cannonCapacity(){return BASE_CANNONS+upgrades.hull*CANNONS_PER_HULL+(eliteEnabled()?eliteShip().level*CANNONS_PER_ELITE:0);}
 function mountedCannonCount(){return (Object.keys(mountedCannons) as CannonKind[]).reduce((sum,kind)=>sum+mountedCannons[kind],0);}
 function cannonAsset(kind:CannonKind){
@@ -604,11 +609,13 @@ function openShipMenu(){pendingUpgrade=null;renderShipMenu();ui('shipOverlay').c
 function closeShipMenu(){pendingUpgrade=null;ui('shipOverlay').classList.remove('open');}
 // Envanter (Seafight tarzı): solda depo, sağda gemi ızgarası; küçük top simgeleri adetleriyle durur.
 // Simgeye dokunup adet yazılır, oklarla taşınır; ya da simge öteki tarafa sürüklenir (sağa: gemiye, sola: depoya).
-let invSelected:CannonKind='cast';
+let invSelected:CannonKind='cast',invMode:'cannon'|'equip'='cannon',invEquipSel:string|null=null;
 const INV_CELLS=9;
 function renderShipMenu(){
+  document.querySelectorAll<HTMLButtonElement>('[data-inv-mode]').forEach(b=>{b.classList.toggle('active',b.dataset.invMode===invMode);b.onclick=()=>{invMode=b.dataset.invMode as typeof invMode;renderShipMenu();};});
+  if(invMode==='equip'){renderEquipInventory();return;}
   state.cannon=mountedCannonCount();const activeCannon=CANNONS[state.cannonType],kinds=Object.keys(CANNONS) as CannonKind[];
-  ui('shipSummary').innerHTML=`<b>${state.cannon} / ${cannonCapacity()}</b><small>SALVO HASARI ${Math.round(state.cannon*BALL_DAMAGE*(1+upgrades.damage*.11)*activeCannon.damage*bonus.damage)}</small>`;
+  ui('shipSummary').innerHTML=`<b>${state.cannon} / ${cannonCapacity()}</b><small>SALVO HASARI ${Math.round(state.cannon*BALL_DAMAGE*(1+equipBonus().damage)*(1+upgrades.damage*.11)*activeCannon.damage*bonus.damage)}</small>`;
   const tiles=(side:'depot'|'ship')=>{const list=kinds.filter(k=>(side==='ship'?mountedCannons[k]:cannonInventory[k])>0);
     return list.map(k=>`<button class="inv-tile ${invSelected===k?'selected':''} ${side==='ship'&&state.cannonType===k?'active':''}" data-inv="${k}" data-side="${side}" title="${CANNONS[k].name} Top">${cannonAsset(k)}<b>${side==='ship'?mountedCannons[k]:cannonInventory[k]}</b>${side==='ship'&&state.cannonType===k?'<i>AKTİF</i>':''}</button>`).join('')+'<span class="inv-empty"></span>'.repeat(Math.max(0,INV_CELLS-list.length));};
   ui('invDepot').innerHTML=tiles('depot');ui('invShip').innerHTML=tiles('ship');
@@ -624,21 +631,53 @@ function renderShipMenu(){
   ui('invEquip').onclick=()=>equipCannon(invSelected);
   bindCannonDrag();
 }
+// Donanım bölümü: depoda sahip olunan parçalar, gemide 4 yuva (yelken, pruva heykeli, gövde zırhı, top kundağı)
+function renderEquipInventory(){
+  const b=equipBonus();ui('shipSummary').innerHTML=`<b>${EQUIP_SLOTS.filter(s=>equipped[s.id]).length} / ${EQUIP_SLOTS.length}</b><small>TAKILI DONANIM</small>`;
+  const owned=EQUIPMENT.filter(e=>(equipOwned[e.id]??0)>0);
+  ui('invDepot').innerHTML=owned.map(e=>`<button class="inv-tile equip-tile rarity-${e.rarity} ${invEquipSel===e.id?'selected':''}" data-inv="${e.id}" data-side="depot" title="${e.name}">${equipIcon(e.id)}<b>${equipOwned[e.id]}</b></button>`).join('')+'<span class="inv-empty"></span>'.repeat(Math.max(0,INV_CELLS-owned.length));
+  ui('invShip').innerHTML=EQUIP_SLOTS.map(sl=>{const id=equipped[sl.id],e=id?equipById(id):undefined;
+    return e?`<button class="inv-tile equip-tile rarity-${e.rarity} ${invEquipSel===e.id?'selected':''}" data-inv="${e.id}" data-side="ship" title="${e.name}">${equipIcon(e.id)}<small class="slot-name">${sl.name}</small></button>`:`<span class="inv-empty equip-slot"><small>${sl.name}</small></span>`;}).join('');
+  const e=invEquipSel?equipById(invEquipSel):undefined;
+  ui('cannonRows').innerHTML=e?`<div class="inv-info-art">${equipIcon(e.id,'equip-icon big')}</div><h3>${e.name}</h3><dl><dt>Yuva</dt><dd>${EQUIP_SLOTS.find(s=>s.id===e.slot)!.name}</dd><dt>Nadirlik</dt><dd class="rarity-text-${e.rarity}">${RARITY_NAMES[e.rarity]}</dd><dt>Etki</dt><dd>${equipStatText(e.stats)}</dd><dt>Depoda</dt><dd>${equipOwned[e.id]??0}</dd><dt>Gemide</dt><dd>${equipped[e.slot]===e.id?'Takılı':'—'}</dd></dl>
+    <button class="inv-equip" id="invEquipToggle">${equipped[e.slot]===e.id?'YUVADAN ÇIKAR':'GEMİYE TAK'}</button>`
+    :`<h3>Donanım</h3><p class="inv-hint">Bir parçaya dokun. Sağa sürükle ya da ➡ ile gemiye tak; ⬅ ile depoya al.</p><dl><dt>Hız</dt><dd>+%${Math.round(b.speed*100)}</dd><dt>Top hasarı</dt><dd>+%${Math.round(b.damage*100)}</dd><dt>Can</dt><dd>+%${Math.round(b.hp*100)}</dd><dt>Dolum</dt><dd>−%${Math.round(b.reload*100)}</dd><dt>Menzil</dt><dd>+${b.range}</dd></dl>`;
+  const toggle=document.getElementById('invEquipToggle');if(toggle&&e)toggle.onclick=()=>equipped[e.slot]===e.id?unequipSlot(e.slot):equipItem(e.id);
+  ui('invToShip').onclick=()=>{if(!e)return;equipItem(e.id);};ui('invToDepot').onclick=()=>{if(!e)return;if(equipped[e.slot]===e.id)unequipSlot(e.slot);else toast('Bu parça gemide takılı değil');};
+  bindCannonDrag();
+}
+function equipItem(id:string){
+  const e=equipById(id);if(!e)return;if((equipOwned[id]??0)<=0){toast('Depoda bu parçadan yok — DONANIM sekmesinden alabilirsin');return;}
+  const prev=equipped[e.slot];if(prev===id)return;const oldMax=effectiveMaxHp();if(prev)equipOwned[prev]=(equipOwned[prev]??0)+1;equipOwned[id]-=1;equipped[e.slot]=id;
+  state.hp=Math.min(effectiveMaxHp(),state.hp*effectiveMaxHp()/oldMax);saveAccount();renderShipMenu();updateUI();toast(`${e.name} takıldı`);
+}
+function unequipSlot(slot:EquipSlot){
+  const id=equipped[slot];if(!id)return;const oldMax=effectiveMaxHp();equipped[slot]=null;equipOwned[id]=(equipOwned[id]??0)+1;
+  state.hp=Math.min(effectiveMaxHp(),state.hp*effectiveMaxHp()/oldMax);saveAccount();renderShipMenu();updateUI();toast(`${equipById(id)?.name} depoya alındı`);
+}
 function bindCannonDrag(){
   document.querySelectorAll<HTMLElement>('.inv-tile').forEach(tile=>tile.onpointerdown=ev=>{
-    if(ev.button>0)return;const kind=tile.dataset.inv as CannonKind,fromShip=tile.dataset.side==='ship';ev.preventDefault();
-    if(invSelected!==kind){invSelected=kind;renderShipMenu();}
-    const target=ui(fromShip?'invDepot':'invShip'),ghost=document.createElement('div');let moved=false;ghost.className='cannon-drag-ghost';ghost.innerHTML=cannonAsset(kind);
+    if(ev.button>0)return;const kind=tile.dataset.inv as CannonKind,fromShip=tile.dataset.side==='ship',equipMode=invMode==='equip';ev.preventDefault();
+    if(equipMode){if(invEquipSel!==tile.dataset.inv){invEquipSel=tile.dataset.inv!;renderShipMenu();}}else if(invSelected!==kind){invSelected=kind;renderShipMenu();}
+    const target=ui(fromShip?'invDepot':'invShip'),ghost=document.createElement('div');let moved=false;ghost.className='cannon-drag-ghost';ghost.innerHTML=equipMode?equipIcon(tile.dataset.inv!):cannonAsset(kind);
     const over=(e:PointerEvent)=>{const r=target.getBoundingClientRect(),dx=e.clientX-ev.clientX;return(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom)||(fromShip?dx<-70:dx>70);};
     const move=(e:PointerEvent)=>{if(!moved&&Math.hypot(e.clientX-ev.clientX,e.clientY-ev.clientY)>6){moved=true;document.body.append(ghost);}if(!moved)return;ghost.style.transform=`translate(${e.clientX-32}px,${e.clientY-28}px)`;target.classList.toggle('drop-target',over(e));};
     const up=(e:PointerEvent)=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',up);ghost.remove();target.classList.remove('drop-target');
-      if(moved&&e.type!=='pointercancel'&&over(e)){const input=document.getElementById('invAmount') as HTMLInputElement|null;moveCannon(kind,!fromShip,Math.max(1,Math.floor(Number(input?.value)||1)));}};
+      if(moved&&e.type!=='pointercancel'&&over(e)){if(equipMode){const it=equipById(tile.dataset.inv!);if(it){if(fromShip)unequipSlot(it.slot);else equipItem(it.id);}return;}const input=document.getElementById('invAmount') as HTMLInputElement|null;moveCannon(kind,!fromShip,Math.max(1,Math.floor(Number(input?.value)||1)));}};
     window.addEventListener('pointermove',move);window.addEventListener('pointerup',up);window.addEventListener('pointercancel',up);
   });
 }
 // Top dükkânı: toplar altınla alınır ve depoya gider.
 // Döküm top altınla; uzun, seri ve ağır toplar inciyle alınır (inci fiyatı sırasıyla artar).
 const CANNON_PRICES:Record<CannonKind,Price>={cast:{amount:40,currency:'gold'},long:{amount:1,currency:'pearls'},rapid:{amount:2,currency:'pearls'},heavy:{amount:3,currency:'pearls'}};
+function equipIcon(id:string,cls='equip-icon'){const e=equipById(id);return e?`<i class="${cls} rarity-${e.rarity}" style="${equipIconStyle(e)}"></i>`:'';}
+function openEquipShop(){renderEquipShop();ui('equipShopOverlay').classList.add('open');}
+function closeEquipShop(){ui('equipShopOverlay').classList.remove('open');}
+function renderEquipShop(){
+  renderBuyRows('equipShopList',EQUIPMENT.map(e=>({id:e.id,name:e.name,art:`<div class="ammo-icon equip-shop-art rarity-${e.rarity}">${equipIcon(e.id)}<b>${equipOwned[e.id]??0}</b></div>`,
+    desc:`${EQUIP_SLOTS.find(s=>s.id===e.slot)!.name} · ${RARITY_NAMES[e.rarity]} · ${equipStatText(e.stats)}`,note:`Depoda ${equipOwned[e.id]??0}${equipped[e.slot]===e.id?' · Gemide takılı':''} · ENVANTER → DONANIM'dan gemiye tak`,unit:e.price,
+    give:(n:number)=>{equipOwned[e.id]=(equipOwned[e.id]??0)+n;},after:renderEquipShop})));
+}
 function openCannonShop(){renderCannonShop();ui('cannonShopOverlay').classList.add('open');}
 function closeCannonShop(){ui('cannonShopOverlay').classList.remove('open');}
 function renderCannonShop(){
