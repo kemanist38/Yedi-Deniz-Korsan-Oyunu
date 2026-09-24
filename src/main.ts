@@ -1175,8 +1175,9 @@ function drawPlayerShip(){
   const bob=Math.sin(performance.now()/420)*1.8;
   ctx.save();ctx.translate(s.x,s.y+bob);ctx.shadowColor='#000b';ctx.shadowBlur=13;ctx.globalAlpha=state.invulnerable&&Math.floor(performance.now()/120)%2?.55:1;
   if(directionalShipImage.complete&&directionalShipImage.naturalWidth){
-    const frame=shipDirectionFrame(player.angle);
-    const sx=(frame%4)*256,sy=Math.floor(frame/4)*256;
+    // Kara Yelken sayfasında kuzeybatı karesi (7) yanlışlıkla güneydoğuya bakar; kuzeybatıda kuzeydoğu karesi (3) aynalanır.
+    const nw=shipCompass(player.angle)===7,frame=nw?3:shipDirectionFrame(player.angle);
+    const sx=(frame%4)*256,sy=Math.floor(frame/4)*256;if(nw)ctx.scale(-1,1);
     ctx.drawImage(directionalShipImage,sx,sy,256,256,-58,-58,116,116);
   }else ctx.drawImage(playerShipImage,-49,-49,98,98);
   ctx.restore();

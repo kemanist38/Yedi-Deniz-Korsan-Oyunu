@@ -509,3 +509,7 @@ body.shop-open .market-overlay,body.shop-open .ship-overlay,body.shop-open .load
 .world-overlay .world-tile.locked{filter:saturate(.55) brightness(.82)}
 .world-overlay .world-tile.selected{outline:0}
 .world-overlay .world-tile i,.world-overlay .world-tile small,.world-overlay .world-tile em{display:none}
+/* Mini harita: yalnızca alt ortada "harita - koordinat" */
+.map-badge{left:0;right:0;top:92px;bottom:auto;align-items:center;padding:0;border:0;background:none}
+.map-badge strong,.map-badge small{display:none}
+.map-badge .map-coord{margin:0;padding:1px 8px;border-radius:8px;background:#030d11b3;font-size:11px}

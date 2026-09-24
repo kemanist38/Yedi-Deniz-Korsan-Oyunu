@@ -83,16 +83,15 @@ Dünya haritası (`M` veya **DÜNYA**) Seafight tarzı parşömen tomarı üzeri
 ### Filo adaları
 
 Filo adaları 5. seviye ve üstü denizlerde bulunur: sur halkasıyla çevrili, 8 kuleli bir lagün kalesi. Lagüne güneydeki dar kanaldan girilir.
-- **Seyir:** Adanın hangi bölümünün kara, hangisinin su olduğu görselden üretilen maskeyle belirlenir (`src/fleetMask.ts`, `tools/asset-studio/fleet-mask.mjs`). Adaya ya da lagüne tıklayınca rota adanın çevresinden dolaşıp kanaldan içeri çizilir; gemi kıyı boyunca kayar, karaya çıkmaz.
+- **Seyir:** Adanın hangi bölümünün kara, hangisinin su olduğu görselden üretilen maskeyle belirlenir (`src/fleetMask.ts`, `tools/asset-studio/fleet-raster-mask.py`). Adaya ya da lagüne tıklayınca rota adanın çevresinden dolaşıp kanaldan içeri çizilir; gemi kıyı boyunca kayar, karaya çıkmaz.
 - **Kendi filonun adası:** Lagünde gövde kendiliğinden onarılır ve kuleler düşmanlara ateş eder.
 - **Rakip ada:** Kuleleri yaklaşan gemiye ateş eder ve filo savaşı ölçeğinde dayanıklıdır; tek gemi yıkamaz. **Test modu (`FLEET_TEST_ENTRY`) açıkken rakip adaların lagününe de girilebilir.**
 
 ### Filo (FİLO sekmesi)
 - **Filo kur:** Filo kurarken 2–4 karakterlik bir kısaltma (tag, ör. `TC★`) ve filo adı seçilir. Filoyu kuran oyuncu filo başkanı olur. Kısaltma gemi adının önünde görünür: `[TC★]__kemanist__`. Çok oyunculu mod gelene kadar filoda yalnızca sen varsın.
 - **İnci bağışı:** Oyuncular filo hazinesine inci bağışlar (+10, +50, +100 ya da istenen miktar).
-- **Kuleler adadan bağımsızdır:** Ada görselinde kulelerin yeri boştur; surda 8 taş dikme kaidesi vardır (`fleet-base-v4`). Filo başkanı, hazinedeki inciyle kaideye kule diker; bedeli `20 + 10 × seviye` incidir. Dikilen kule, ada görselindeki burcun birebir aynısıdır (`fleet-bastions-v1`) ve adaya yaklaşan düşmanlara ateş eder. Rakip adalarda NPC filosunun burçları durur.
-- Görseller `tools/asset-studio/fleet-bastions.mjs` ile üretilir: burçlar ada görselinden kesilir, yerleri çevre dokusuyla doldurulur ve kaideler çizilir.
-- **Kule tipleri** (taş kaideye oturan tam kule, `tools/asset-studio/fleet-towers.js` → `fleet-towers-built-v1`; taş, ahşap ve sancak dokuları ada görselinden örneklenen paletle boyanır, render ada görselinin bakış açısına ve renk ortalamasına eşlenir):
+- **Kuleler adadan bağımsızdır:** Ada görselinde kulelerin yeri boştur; surda 8 kule yeri vardır (`fleet-base-approved-v1`). Filo başkanı, hazinedeki inciyle kule diker; bedeli `20 + 10 × seviye` incidir. Dikilen kule (`fleet-towers-approved-v1`) adaya yaklaşan düşmanlara ateş eder. Rakip adalarda NPC filosunun burçları durur.
+- **Kule tipleri:**
   - **Top Kulesi:** çift namlulu ağır top; dengeli hasar ve menzil (bedel ×1).
   - **Havan Kulesi:** uzun menzil, isabet noktasında 90 birimlik alan hasarı, yavaş dolum (×1,5).
   - **Zincir Kulesi:** zincirli zıpkın; az hasar, vurduğu gemiyi 3 sn %45 yavaşlatır (×1,2).
