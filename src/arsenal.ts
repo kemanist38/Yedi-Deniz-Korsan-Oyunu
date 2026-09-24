@@ -15,22 +15,27 @@ export const CONSUMABLES={
 } as const;
 export type ConsumableId=keyof typeof CONSUMABLES;
 
-// Yeni gülle türleri: çarpanlar mevcut demir/zincir hesabının üzerine uygulanır.
+// Tek gülle hasarı (Seafight: ateş topu 50, patlayıcı 75). Salvo hasarı = gemideki top sayısı × gülle hasarı × top çarpanı.
+export const BALL_DAMAGE=20;
+export const CHAIN_FACTOR=1.25;
+// Özel gülleler: damage, demir gülleye (20) göre çarpandır.
 export const SPECIAL_AMMO={
-  fire:{name:'Ateş Güllesi',damage:1.2,reload:1.1,rangeFactor:1,burnSeconds:4,burnDps:6,blastRadius:0,blastFactor:0,towerFactor:1,leech:0,icon:'/assets/ammo-fire-v1.webp',description:'Hedefi 4 saniye yakar; saniyede ek hasar verir.'},
-  grape:{name:'Saçma',damage:1.6,reload:1,rangeFactor:.65,burnSeconds:0,burnDps:0,blastRadius:0,blastFactor:0,towerFactor:1,leech:0,icon:'/assets/ammo-grape-v1.webp',description:'Kısa menzilde çok yüksek hasar; menzil %35 azalır.'},
+  fire:{name:'Ateş Güllesi',damage:2.5,reload:1.1,rangeFactor:1,burnSeconds:4,burnDps:250,blastRadius:0,blastFactor:0,towerFactor:1,leech:0,icon:'/assets/ammo-fire-v1.webp',description:'Hedefi 4 saniye yakar; saniyede ek hasar verir.'},
+  grape:{name:'Saçma',damage:1.75,reload:1,rangeFactor:.65,burnSeconds:0,burnDps:0,blastRadius:0,blastFactor:0,towerFactor:1,leech:0,icon:'/assets/ammo-grape-v1.webp',description:'Kısa menzilde çok yüksek hasar; menzil %35 azalır.'},
   // Seafight'taki patlayıcı / Shellshock / Soul Eater güllelerinden uyarlandı
-  explosive:{name:'Patlayıcı Gülle',damage:.9,reload:1.2,rangeFactor:1,burnSeconds:0,burnDps:0,blastRadius:120,blastFactor:.5,towerFactor:1,leech:0,icon:'/assets/ammo-explosive-v1.webp',description:'Çarptığı yerde patlar; 120 birim içindeki diğer düşmanlara %50 hasar verir.'},
-  breaker:{name:'Kule Kırıcı',damage:.85,reload:1.15,rangeFactor:1,burnSeconds:0,burnDps:0,blastRadius:0,blastFactor:0,towerFactor:2.6,leech:0,icon:'/assets/ammo-breaker-v1.webp',description:'Kulelere ve ada tahkimatına 2,6 kat hasar; gemilere biraz daha az işler.'},
-  leech:{name:'Can Emici',damage:.9,reload:1.1,rangeFactor:1,burnSeconds:0,burnDps:0,blastRadius:0,blastFactor:0,towerFactor:1,leech:.25,icon:'/assets/ammo-leech-v1.webp',description:'Verdiği hasarın %25\'i kadar gemini onarır.'}
+  explosive:{name:'Patlayıcı Gülle',damage:3.75,reload:1.2,rangeFactor:1,burnSeconds:0,burnDps:0,blastRadius:120,blastFactor:.5,towerFactor:1,leech:0,icon:'/assets/ammo-explosive-v1.webp',description:'Çarptığı yerde patlar; 120 birim içindeki diğer düşmanlara %50 hasar verir.'},
+  breaker:{name:'Kule Kırıcı',damage:2.25,reload:1.15,rangeFactor:1,burnSeconds:0,burnDps:0,blastRadius:0,blastFactor:0,towerFactor:2.6,leech:0,icon:'/assets/ammo-breaker-v1.webp',description:'Kulelere ve ada tahkimatına 2,6 kat hasar; gemilere biraz daha az işler.'},
+  leech:{name:'Can Emici',damage:3,reload:1.1,rangeFactor:1,burnSeconds:0,burnDps:0,blastRadius:0,blastFactor:0,towerFactor:1,leech:.25,icon:'/assets/ammo-leech-v1.webp',description:'Verdiği hasarın %25\'i kadar gemini onarır.'}
 } as const;
 export type SpecialAmmo=keyof typeof SPECIAL_AMMO;
 
-export const MINE={armSeconds:1,triggerRadius:46,blastRadius:95,baseDamage:90,damagePerLevel:8,maxActive:5,icon:'/assets/icon-mine-v1.webp'};
+export const MINE={armSeconds:1,triggerRadius:46,blastRadius:95,baseDamage:4000,damagePerLevel:400,maxActive:5,icon:'/assets/icon-mine-v1.webp'};
 
 // Dükkân birim fiyatları (altın). Oyuncu istediği adedi yazar; toplam = adet × birim fiyat.
-export const AMMO_PRICES={chain:3,fire:5,grape:3,explosive:9,breaker:10,leech:9} as const;
-export const SUPPLY_PRICES={powder:3,shield:3,mine:24} as const;
+// Temel gülle (zincir) altınla, güçlü gülleler inciyle alınır; inci fiyatı sırasıyla artar.
+export type Price={amount:number;currency:'gold'|'pearls'};
+export const AMMO_PRICES={chain:{amount:3,currency:'gold'},grape:{amount:1,currency:'pearls'},fire:{amount:2,currency:'pearls'},breaker:{amount:3,currency:'pearls'},explosive:{amount:4,currency:'pearls'},leech:{amount:5,currency:'pearls'}} as const satisfies Record<string,Price>;
+export const SUPPLY_PRICES={powder:{amount:3,currency:'gold'},shield:{amount:3,currency:'gold'},mine:{amount:5,currency:'pearls'}} as const satisfies Record<string,Price>;
 export type SupplyId=keyof typeof SUPPLY_PRICES;
 
 const STORAGE='yedi-deniz-arsenal-v1';

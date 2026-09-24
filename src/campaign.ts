@@ -48,13 +48,16 @@ export const THEMES:Record<number,Theme>={
 export type NpcDef={id:string;name:string;sprite:string;span:number;role:'light'|'heavy';tier:number;hp:number;damage:number;reload:number;speed:number;gold:number;xp:number;portrait:number};
 // Seafight'taki gibi ödül canla orantılıdır: aynı denizde can başına tecrübe ve altın NPC ile canavarda aynıdır.
 // NPC ve canavar yalnızca tecrübe puanı (TP) ve altın verir; savaş puanı sadece rakip oyuncu batırınca kazanılır.
-export const XP_PER_HP=(tier:number)=>.5*Math.pow(tier,.6);
-export const GOLD_PER_HP=.65;
+// Seafight ölçeği: başlangıç gemisi 75.000 can, 50–100 top; tek gülle (demir) 20 hasar. Bu yüzden NPC canları binlerle başlar
+// (Seafight 1. harita NPC'leri 1.500–4.000 can) ve her denizde ×1,6 büyür. Ödül yine canla orantılıdır.
+export const XP_PER_HP=(_tier:number)=>1/120;
+export const GOLD_PER_HP=.65/60;
 export const killReward=(hp:number,tier:number)=>({xp:Math.round(hp*XP_PER_HP(tier)),gold:Math.round(hp*GOLD_PER_HP)});
-const hpScale=(tier:number)=>1+.55*(tier-1);
+export const hpScale=(tier:number)=>Math.pow(1.6,tier-1);
+export const dmgScale=(tier:number)=>1+.5*(tier-1);
 const npc=(id:string,name:string,role:'light'|'heavy',tier:number,sprite=`/assets/ship-${id}.webp`,span=role==='light'?104:112):Omit<NpcDef,'portrait'>=>{
-  const dmg=role==='light'?5:11,t=tier-1,hp=Math.round((role==='light'?42:95)*hpScale(tier)),r=killReward(hp,tier);
-  return{id,name,sprite,span,role,tier,hp,damage:Math.round(dmg*(1+.35*t)),reload:role==='light'?2.6:2.7,speed:(role==='light'?50:34)+t*1.5,gold:r.gold,xp:r.xp};
+  const dmg=role==='light'?750:1650,t=tier-1,hp=Math.round((role==='light'?2500:6000)*hpScale(tier)),r=killReward(hp,tier);
+  return{id,name,sprite,span,role,tier,hp,damage:Math.round(dmg*dmgScale(tier)),reload:role==='light'?2.6:2.7,speed:(role==='light'?50:34)+t*1.5,gold:r.gold,xp:r.xp};
 };
 const NPC_LIST:Omit<NpcDef,'portrait'>[]=[
   npc('n1-1-light','Kaçak Balıkçı','light',1),npc('n1-1-heavy','Kıyı Yağmacısı','heavy',1,undefined,104),
@@ -81,8 +84,8 @@ export const NPCS:Record<string,NpcDef>=Object.fromEntries(NPC_LIST.map((n,i)=>[
 // ---------------------------------------------------------------- Canavarlar
 export type MonsterDef={id:string;name:string;sprite:string;span:number;frame:number;anchorY:number;radius:number;tier:number;hp:number;damage:number;reload:number;gold:number;xp:number;portrait:number};
 // Canavar, aynı denizin ağır NPC'sinden yaklaşık 2,2 kat daha dayanıklıdır (Seafight'ta canavarlar ağır NPC'lerin 1,5–2 katı).
-const mon=(id:string,name:string,tier:number,radius=54,sprite=`/assets/monster-${id}.webp`,span=140,anchorY=133.4):Omit<MonsterDef,'portrait'>=>{const t=tier-1,hp=Math.round(210*hpScale(tier)),r=killReward(hp,tier);
-  return{id,name,sprite,span,frame:256,anchorY,radius,tier,hp,damage:Math.round(10*(1+.35*t)),reload:2.8-t*.08,gold:r.gold,xp:r.xp};};
+const mon=(id:string,name:string,tier:number,radius=54,sprite=`/assets/monster-${id}.webp`,span=140,anchorY=133.4):Omit<MonsterDef,'portrait'>=>{const t=tier-1,hp=Math.round(13000*hpScale(tier)),r=killReward(hp,tier);
+  return{id,name,sprite,span,frame:256,anchorY,radius,tier,hp,damage:Math.round(1500*dmgScale(tier)),reload:2.8-t*.08,gold:r.gold,xp:r.xp};};
 const MONSTER_LIST:Omit<MonsterDef,'portrait'>[]=[
   mon('m1-1','Yosun Yengeci',1,50),mon('m1-2','Kıyı Yılanı',1,56),
   mon('m2-1','Derinlik Leviathanı',2,54,'/assets/leviathan-v1.webp',132,130.9),mon('m2-2','İnci Denizanası',2,50),
@@ -120,7 +123,7 @@ export const FLEET={islandR:500,wallR:370,gap:.56,lagoon:{x:0,y:60,r:150},channe
   towers:[[-230,-360],[-364,-189],[-328,70],[-121,214],[146,214],[337,70],[361,-193],[242,-360]] as [number,number][],
   base:{frame:1024,span:1000},tower:{frame:256,span:120,anchorY:0}};
 // Kuleler filo savaşı ölçeğinde: tek gemi yıkamaz, saldırı kesilince hızla onarılır.
-export const fleetTower=(tier:number)=>{const t=tier-1;return{hp:Math.round(40000*(1+.6*t)),damage:Math.round(7*(1+.35*t)),reload:2.2,range:460,ownDamage:Math.round(24*(1+.5*t))};};
+export const fleetTower=(tier:number)=>{return{hp:Math.round(150000*hpScale(tier)),damage:Math.round(1050*dmgScale(tier)),reload:2.2,range:460,ownDamage:Math.round(1500*hpScale(tier))};};
 export const fleetReward=(tier:number)=>({gold:300*tier,xp:Math.round(500*Math.pow(tier,1.2))});
 
 // ---------------------------------------------------------------- Denizler

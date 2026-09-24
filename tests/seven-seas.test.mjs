@@ -48,4 +48,6 @@ test('NPC and monster rewards scale with hitpoints and give only XP and gold',()
     assert.equal(d.xp,Math.round(d.hp*XP_PER_HP(d.tier)));assert.equal(d.gold,Math.round(d.hp*GOLD_PER_HP));
     assert.ok(!('wood' in d)&&!('pearls' in d),`${d.id} gives only XP and gold`);}
   const heavy=NPCS['n3-1-heavy'],monster=MONSTERS['m3-1'];assert.ok(monster.hp>heavy.hp*2&&monster.hp<heavy.hp*2.5);
+  // Seafight ölçeği: 1. deniz NPC canları binlerle başlar (Seafight 1.500–4.000)
+  assert.equal(NPCS['n1-1-light'].hp,2500);assert.equal(NPCS['n1-1-heavy'].hp,6000);
 });
