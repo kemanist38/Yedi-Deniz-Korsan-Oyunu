@@ -51,3 +51,12 @@ test('NPC and monster rewards scale with hitpoints and give only XP and gold',()
   // Seafight ölçeği: 1. deniz NPC canları binlerle başlar (Seafight 1.500–4.000)
   assert.equal(NPCS['n1-1-light'].hp,2500);assert.equal(NPCS['n1-1-heavy'].hp,6000);
 });
+test('every map has its own boss, summoned by 200 of the map\'s strongest NPC',()=>{
+  const {bossFor,BOSS_KILLS,MAP_KEYS:keys,MAPS:maps,NPCS}=world;assert.equal(BOSS_KILLS,200);
+  const names=new Set();
+  keys.forEach((key,i)=>{const b=bossFor(key),heavy=NPCS[maps[key].npcs[1]];
+    assert.equal(b.trigger,heavy.id);assert.equal(b.hp,heavy.hp*30);assert.equal(b.gold,0);
+    assert.equal(b.pearls,50*maps[key].tier);assert.ok(b.xp>0);assert.equal(b.portrait,i);names.add(b.name);
+    assert.equal(b.sprite,`/assets/boss-${key.replace('/','-')}.webp`);});
+  assert.equal(names.size,keys.length,'unique boss names');
+});

@@ -9,7 +9,8 @@ import {paintSeaTile,paintWorldChart,paintSeaSparkle} from './paint.js';
 import {paintVfxAtlas} from './vfx.js';
 import {paintWorldScroll} from './ui-paint.js';
 import {buildIcon} from './icons.js';
-import {SHIPS,MONSTERS} from './catalog.js';
+import {SHIPS,MONSTERS,BOSSES} from './catalog.js';
+const ALL_SHIPS=[...SHIPS,...BOSSES];
 import {buildCrab,buildSerpent,buildJelly,buildTurtle,buildHydra} from './monsters.js';
 import * as T from './textures.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
@@ -91,7 +92,7 @@ window.renderMineSprite=({frame=128,span=18}={})=>{const scene=stage(),m=buildIc
   const foam=new THREE.Mesh(new THREE.PlaneGeometry(16,16),new THREE.MeshBasicMaterial({map:T.foamTexture({seed:12,color:'220,245,240',strength:.7,inner:.3}),transparent:true,depthWrite:false}));foam.rotation.x=-Math.PI/2;foam.position.y=2.65;scene.add(foam);
   const cam=camera(span,3.5);return{...exportCanvas(shot(scene,cam,frame)),frame,anchor:anchorOf(cam,frame,new THREE.Vector3(0,2.6,0))};};
 window.renderFort=({frame=320,span=150}={})=>{const cam=camera(span,10),frames=['npc','player'].map(o=>{const scene=stage(),f=buildFort(o);prepare(f);scene.add(f);return shot(scene,cam,frame);});return{...exportCanvas(sheet(frames,2)),frame,anchor:anchorOf(cam,frame)};};
-window.renderCatalogShip=(id,{dirs=16,frame=192}={})=>{const spec=SHIPS.find(x=>x.id===id),span=spec.span,cam=camera(span,span*.087),frames=[];
+window.renderCatalogShip=(id,{dirs=16,frame=192}={})=>{const spec=ALL_SHIPS.find(x=>x.id===id),span=spec.span,cam=camera(span,span*.087),frames=[];
   for(let i=0;i<dirs;i++){const h=i*Math.PI*2/dirs,scene=stage(),ship=buildShip(spec.def,{heading:h});prepare(ship);ship.rotation.y=Math.PI-h;scene.add(ship);frames.push(shot(scene,cam,frame));}
   return{...exportCanvas(sheet(frames,dirs/2)),frame,dirs,span,anchor:anchorOf(cam,frame)};};
 const MONSTER_BUILDERS={crab:buildCrab,serpent:buildSerpent,jelly:buildJelly,turtle:buildTurtle,hydra:buildHydra,kraken:(pal,phase)=>buildLeviathan(phase,pal.look)};
@@ -102,7 +103,7 @@ window.renderCatalogMonster=(id,{count=8,frame=256,span=140}={})=>{const spec=MO
 window.renderPortraitsV2=(order,{cell=96,cols=10}={})=>{const legacy={'n1-2-light':'scout','n1-2-heavy':'raider','n2-1-heavy':'warship',boss:'ghost'},legacyMon={'m2-1':'deep','m8-1':'storm'};
   const frames=order.map(id=>{const scene=stage();let cam;
     if(id.startsWith('m')){let m;if(legacyMon[id])m=buildLeviathan(.6,legacyMon[id]);else{const spec=MONSTERS.find(x=>x.id===id);m=MONSTER_BUILDERS[spec.kind](spec.pal,.6);}prepare(m);scene.add(m);cam=camera(92,10);}
-    else{const def=legacy[id]?FLEET[legacy[id]]:SHIPS.find(x=>x.id===id).def,ship=buildShip(def,{heading:Math.PI*1.25});prepare(ship);ship.rotation.y=Math.PI-Math.PI*1.25;scene.add(ship);const L=def.hull.L;cam=camera(L*1.12,L*.19);}
+    else{const def=legacy[id]?FLEET[legacy[id]]:ALL_SHIPS.find(x=>x.id===id).def,ship=buildShip(def,{heading:Math.PI*1.25});prepare(ship);ship.rotation.y=Math.PI-Math.PI*1.25;scene.add(ship);const L=def.hull.L;cam=camera(L*1.12,L*.19);}
     return shot(scene,cam,cell);});
   return{...exportCanvas(sheet(frames,cols)),cell,cols};};
 
