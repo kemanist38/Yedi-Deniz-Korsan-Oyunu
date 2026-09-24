@@ -29,6 +29,8 @@ const jobs={
   'sea-sparkle-v1':()=>page.evaluate(()=>renderSeaSparkle()),
 };
 for(const name of ['ammo-fire','ammo-grape','ammo-explosive','ammo-breaker','ammo-leech','icon-mine','icon-attack','icon-repair','icon-speed','icon-shield','icon-hat','icon-chest','officer-gunner','officer-helmsman','officer-carpenter','officer-lookout','officer-quartermaster','officer-surgeon','ui-ring','ui-ring-attack','ui-slot','icon-scroll','icon-gear','icon-anvil','gunner-vignette','icon-market','icon-menu','captain-bust','icon-flag'])jobs[`${name}-v1`]=()=>page.evaluate(n=>renderIcon(n),name);
+// Başarım madalyaları (src/achievements.ts ACHIEVEMENTS sırası)
+jobs['badge-atlas-v2']=()=>page.evaluate(l=>renderMedalAtlas(l),[['skull',0],['skull',1],['skull',2],['anchor',1],['trident',0],['trident',2],['crown',1],['crown',2],['coin',0],['xmap',0],['xmap',2],['scroll',0],['scroll',2],['flame',1],['star',1],['star',2],['sun',1]]);
 jobs['sea-mine-v1']=()=>page.evaluate(()=>renderMineSprite());
 const {SHIPS,MONSTERS,BOSSES}=await import('./catalog.js');
 for(const b of BOSSES)jobs[b.id]=()=>page.evaluate(id=>renderCatalogShip(id,{frame:224}),b.id);
