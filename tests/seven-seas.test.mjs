@@ -60,3 +60,11 @@ test('every map has its own boss, summoned by 200 of the map\'s strongest NPC',(
     assert.equal(b.sprite,`/assets/boss-${key.replace('/','-')}.webp`);});
   assert.equal(names.size,keys.length,'unique boss names');
 });
+test('each map offers its own four quests whose rewards grow with the map level',()=>{
+  const {QUESTS,MAP_KEYS:keys,MAPS:maps,NPCS}=world;
+  for(const key of keys){const qs=QUESTS.filter(q=>q.map===key);assert.equal(qs.length,4);
+    const light=qs.find(q=>q.id.endsWith('-light'));assert.deepEqual(light.ids,[maps[key].npcs[0]]);
+    assert.equal(light.gold,Math.round(light.required*NPCS[maps[key].npcs[0]].gold*1.5));assert.ok(!('wood' in light));}
+  const g=k=>QUESTS.find(q=>q.id===`q${k}-heavy`);
+  for(let t=2;t<=8;t++){assert.ok(g(`${t}/1`).gold>g(`${t-1}/1`).gold);assert.ok(g(`${t}/1`).xp>g(`${t-1}/1`).xp);assert.ok(g(`${t}/1`).pearls>g(`${t-1}/1`).pearls);}
+});
