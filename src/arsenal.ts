@@ -28,19 +28,10 @@ export type SpecialAmmo=keyof typeof SPECIAL_AMMO;
 
 export const MINE={armSeconds:1,triggerRadius:46,blastRadius:95,baseDamage:90,damagePerLevel:8,maxActive:5,icon:'/assets/icon-mine-v1.webp'};
 
-// MALZEMELER sekmesinde satılan sarf paketleri
-export const SUPPLY_MARKET=[
-  {kind:'powder' as const,name:'Kara Barut Fıçısı',amount:50,price:120,description:'50 salvo boyunca %10 fazla top hasarı.'},
-  {kind:'shield' as const,name:'Kalkan Levhaları',amount:50,price:120,description:'50 isabet boyunca %10 az hasar.'},
-  {kind:'mine' as const,name:'Deniz Mayını Sandığı',amount:5,price:120,description:'Kıçtan bırakılan 5 deniz mayını.'}
-];
-export const ARSENAL_MARKET=[
-  {kind:'fire' as const,name:'Ateş Güllesi Kesesi',amount:20,price:95,description:'Hedefi tutuşturan 20 ateş güllesi.'},
-  {kind:'grape' as const,name:'Saçma Torbası',amount:25,price:80,description:'Yakın dövüş için 25 saçma atışı.'},
-  {kind:'explosive' as const,name:'Patlayıcı Gülle Sandığı',amount:15,price:130,description:'Sürülere karşı alan hasarı veren 15 fitilli bomba.'},
-  {kind:'breaker' as const,name:'Kule Kırıcı Kasası',amount:15,price:150,description:'Kule ve ada kuşatması için 15 çelik uçlu mermi.'},
-  {kind:'leech' as const,name:'Can Emici Kesesi',amount:15,price:140,description:'Vurdukça gemini onaran 15 ruh güllesi.'}
-];
+// Dükkân birim fiyatları (altın). Oyuncu istediği adedi yazar; toplam = adet × birim fiyat.
+export const AMMO_PRICES={chain:3,fire:5,grape:3,explosive:9,breaker:10,leech:9} as const;
+export const SUPPLY_PRICES={powder:3,shield:3,mine:24} as const;
+export type SupplyId=keyof typeof SUPPLY_PRICES;
 
 const STORAGE='yedi-deniz-arsenal-v1';
 export function loadArsenal():ArsenalStock{
