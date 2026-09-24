@@ -11,8 +11,8 @@ import {paintWorldScroll} from './ui-paint.js';
 import {buildIcon} from './icons.js';
 import {buildMedal} from './medals.js';
 import {buildEquip,buildPowderKeg,buildTreasureMap,buildInventoryPlaque} from './items3d.js';
-import {SHIPS,MONSTERS,BOSSES} from './catalog.js';
-const ALL_SHIPS=[...SHIPS,...BOSSES];
+import {SHIPS,MONSTERS,BOSSES,LIGHT_V2} from './catalog.js';
+const ALL_SHIPS=[...SHIPS,...BOSSES,...LIGHT_V2];
 import {buildCrab,buildSerpent,buildJelly,buildTurtle,buildHydra} from './monsters.js';
 import * as T from './textures.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
@@ -100,6 +100,9 @@ function iconShot(icon,frame,margin=.8){const scene=stage();scene.add(icon);icon
 // Donanım atlası: 4 sütun (yelken, pruva, zırh, kundak) × 3 satır (sıradan, nadir, destansı)
 window.renderEquipAtlas=({cell=192}={})=>{const frames=[];for(let r=0;r<3;r++)for(const sl of ['sail','figure','armor','carriage'])frames.push(iconShot(buildEquip(sl,r),cell,.84));return{...exportCanvas(sheet(frames,4)),cell};};
 window.renderItem=(name,{frame=256}={})=>({...exportCanvas(iconShot(({powder:buildPowderKeg,treasure:buildTreasureMap,inventory:buildInventoryPlaque})[name](),frame,.82)),frame});
+// Önizleme: seçili gemileri tek açıdan (güneybatıya bakış) büyük karede, deniz zeminli çeker
+window.renderShipPreview=(ids,{frame=256,cols=4}={})=>{const frames=ids.map(id=>{const spec=ALL_SHIPS.find(x=>x.id===id),cam=camera(spec.span,spec.span*.087),scene=stage(),ship=buildShip(spec.def,{heading:Math.PI*1.25});prepare(ship);ship.rotation.y=Math.PI-Math.PI*1.25;scene.add(ship);
+  const c=shot(scene,cam,frame),o=document.createElement('canvas');o.width=o.height=frame;const x=o.getContext('2d');x.fillStyle='#14566e';x.fillRect(0,0,frame,frame);x.drawImage(c,0,0);return o;});return{...exportCanvas(sheet(frames,cols)),frame};};
 // Başarım madalyaları atlası: list = [[amblem, 0|1|2], …]
 window.renderMedalAtlas=(list,{cell=192,cols=6}={})=>({...exportCanvas(sheet(list.map(([n,t])=>iconShot(buildMedal(n,t),cell,.86)),cols)),cell,cols});
 window.renderMineSprite=({frame=128,span=18}={})=>{const scene=stage(),m=buildIcon('icon-mine');m.userData.waterline=2.6;prepare(m);scene.add(m);

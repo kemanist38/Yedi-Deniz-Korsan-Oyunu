@@ -862,10 +862,10 @@ function renderNick(){
 }
 // Gemi altındaki ad: [FİLO TAG] nick, altında rütbe
 function drawPlayerLabel(){
-  const p=worldToScreen(player),y=p.y+62,tag=guild?`[${guild.tag}]`:'',nick=profile.nick;
-  ctx.save();ctx.font='700 16px Inter';ctx.textBaseline='middle';const tw=tag?ctx.measureText(tag).width+3:0,nw=ctx.measureText(nick).width,x0=p.x-(tw+nw)/2;
+  const p=worldToScreen(player),y=p.y+58,tag=guild?`[${guild.tag}]`:'',nick=profile.nick;
+  ctx.save();ctx.font='700 14px Inter';ctx.textBaseline='middle';const tw=tag?ctx.measureText(tag).width+3:0,nw=ctx.measureText(nick).width,x0=p.x-(tw+nw)/2;
   ctx.shadowColor='#000';ctx.shadowBlur=4;if(tag){ctx.fillStyle='#ffd24a';ctx.textAlign='left';ctx.fillText(tag,x0,y);}ctx.fillStyle='#f4f1ea';ctx.textAlign='left';ctx.fillText(nick,x0+tw,y);
-  ctx.font='600 12px Inter';ctx.fillStyle='#5fd8e0';ctx.textAlign='center';ctx.fillText(`${rankOf(state.level)} · Sv ${state.level}`,p.x,y+17);ctx.restore();
+  ctx.restore();
 }
 // ---------------------------------------------------------------- Filo: hazine, bağış ve kule dikme
 function openGuild(){renderGuild();ui('guildOverlay').classList.add('open');}
@@ -1081,7 +1081,7 @@ function update(dt:number){
     }
     if(s.life<=0){if(!s.hit)splashAt(s.x,s.y,s.splash?160:110);shots.splice(i,1);}
   }
-  updateLootChests(dt);updateTreasure(dt);updateSparkles(dt);updateArsenal(dt);updateEvents(dt);
+  updateLootChests(dt);updateTreasure(dt);updateWakes(dt);updateSparkles(dt);updateArsenal(dt);updateEvents(dt);
   if(insideOwnLagoon(player)&&state.hp<effectiveMaxHp()){state.hp=Math.min(effectiveMaxHp(),state.hp+effectiveMaxHp()*.06*dt);if(state.hp>=effectiveMaxHp())saveAccount();}
   updateJumpPrompt();updateCoordBadge();mapFade=Math.max(0,mapFade-dt*1.6);updateWeather(dt);
   for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.97;p.vy*=.97;p.life-=dt;if(p.vr)p.rot=(p.rot??0)+p.vr*dt;
@@ -1442,16 +1442,80 @@ function drawParticle(p:Particle){const s=worldToScreen(p),a=Math.max(0,Math.min
     default:drawVfx(ctx,p.kind as 'bubble'|'plank'|'firePuff'|'poison',s.x,y,(size??18)*(p.kind==='firePuff'?.6+a*.6:1),{rot:p.rot,alpha:Math.min(1,a*1.6)});}}
 // Batan gemi: yan yatar, suya gömülür, kabarcıklar çıkarır
 function drawWreck(w:Wreck){const s=worldToScreen(w),k=Math.min(1,w.t/WRECK_TIME);ctx.save();ctx.globalAlpha=Math.max(0,1-k*k);ctx.translate(s.x,s.y+k*12);ctx.rotate(Math.sin(w.t*3)*.05+k*.35);ctx.scale(1-k*.2,1-k*.5);drawNpcShip(ctx,w.sprite,w.span,0,0,w.angle,performance.now());ctx.restore();}
+// ---------------------------------------------------------------- Gemi–su etkileşimi
+// Her geminin altında yumuşak su gölgesi ve bordasında köpük halkası; hareket ederken kıçtan V biçiminde açılan
+// dümen suyu izi ve pruvada su sıçraması. Görünüm 42° yukarıdan bakış: zemindeki izler dikeyde ~0,67 basıktır.
+const FLAT=.67;
+type WakePt={x:number;y:number;a:number;t:number;w:number};
+const wakes=new Map<object,{pts:WakePt[];px:number;py:number;acc:number}>();
+const hullLength=(o:object)=>o===player?100:(o as Enemy).boss?165:(o as Enemy).def?(o as Enemy).def!.span*.6:60;
+function updateWakes(dt:number){
+  const now=performance.now()/1000,ships:object[]=[player,...enemies.filter(e=>!e.tower)];
+  for(const [o] of wakes)if(!ships.includes(o))wakes.delete(o);
+  for(const o of ships){const sh=o as {x:number;y:number;angle:number},w=wakes.get(o)??{pts:[],px:sh.x,py:sh.y,acc:0};wakes.set(o,w);
+    const v=Math.hypot(sh.x-w.px,sh.y-w.py)/Math.max(dt,1e-3);w.px=sh.x;w.py=sh.y;w.acc+=dt;
+    while(w.pts.length&&now-w.pts[0].t>2.6)w.pts.shift();
+    if(v>12&&w.acc>.06){w.acc=0;const L=hullLength(o),fx=Math.sin(sh.angle),fy=-Math.cos(sh.angle);if(w.pts.length>40)w.pts.shift();
+      w.pts.push({x:sh.x-fx*L*.42,y:sh.y-fy*L*.42*FLAT,a:sh.angle,t:now,w:Math.min(1,v/110)});
+      if(Math.random()<Math.min(.9,v/120))particles.push({x:sh.x+fx*L*.46+(Math.random()-.5)*8,y:sh.y+fy*L*.46*FLAT,vx:-fy*(Math.random()<.5?-1:1)*(18+Math.random()*24)+fx*v*.3,vy:fx*(Math.random()<.5?-1:1)*12+fy*v*.3*FLAT,life:.45,maxLife:.45,kind:'foam'});}}
+}
+function drawWake(o:object){const w=wakes.get(o);if(!w||!w.pts.length)return;const now=performance.now()/1000,L=hullLength(o);
+  ctx.save();ctx.lineCap='round';
+  for(const side of [-1,1]){ctx.beginPath();let first=true;
+    for(let i=w.pts.length-1;i>=0;i--){const p=w.pts[i],age=now-p.t,lx=Math.cos(p.a),ly=Math.sin(p.a)*FLAT,spread=L*.16+age*L*.32*p.w,s=worldToScreen({x:p.x+lx*side*spread,y:p.y+ly*side*spread});
+      if(first){ctx.moveTo(s.x,s.y);first=false;}else ctx.lineTo(s.x,s.y);}
+    ctx.strokeStyle='rgba(235,250,248,.16)';ctx.lineWidth=2.6;ctx.stroke();ctx.strokeStyle='rgba(255,255,255,.3)';ctx.lineWidth=1;ctx.stroke();}
+  for(let i=0;i<w.pts.length;i+=2){const p=w.pts[i],age=now-p.t,a=Math.max(0,1-age/2.6)*.07*p.w,s=worldToScreen(p),r=L*.06+age*L*.05;
+    ctx.fillStyle=`rgba(225,245,242,${a})`;ctx.beginPath();ctx.ellipse(s.x,s.y,r,r*FLAT*.7,0,0,Math.PI*2);ctx.fill();}
+  ctx.restore();}
+function drawHullWater(o:{x:number;y:number;angle:number},L:number,moving:number){
+  const s=worldToScreen(o),fx=Math.sin(o.angle),fy=-Math.cos(o.angle)*FLAT,rot=Math.atan2(fy,fx),len=L*.5*Math.hypot(fx,fy)+L*.14,wid=L*.19,t=performance.now()/1000;
+  ctx.save();ctx.translate(s.x,s.y+4);ctx.rotate(rot);
+  const g=ctx.createRadialGradient(0,0,wid*.3,0,0,len*1.05);g.addColorStop(0,'rgba(2,14,20,.34)');g.addColorStop(1,'rgba(2,14,20,0)');ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(0,0,len*1.05,wid*1.6,0,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle=`rgba(230,248,245,${.18+.1*Math.sin(t*2.4)+moving*.18})`;ctx.lineWidth=1.6+moving*1.4;ctx.setLineDash([10,7]);ctx.lineDashOffset=-t*18;ctx.beginPath();ctx.ellipse(0,0,len,wid,0,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+  ctx.restore();}
+const shipMoving=(o:object)=>{const w=wakes.get(o),p=w?.pts[w.pts.length-1];return p&&performance.now()/1000-p.t<.15?p.w:0;};
+// Can çubuğu: çerçeveli, türüne göre renkli ve genişlikte
+function drawHealthBar(x:number,y:number,width:number,frac:number,color:string){
+  ctx.fillStyle='rgba(3,12,16,.85)';ctx.fillRect(x-width/2-2,y-2,width+4,10);ctx.fillStyle='rgba(255,255,255,.06)';ctx.fillRect(x-width/2,y,width,6);ctx.strokeStyle='rgba(232,200,130,.55)';ctx.lineWidth=1;ctx.strokeRect(x-width/2-2.5,y-2.5,width+5,11);
+  const g=ctx.createLinearGradient(0,y,0,y+6);g.addColorStop(0,'#ffffff55');g.addColorStop(.5,'#ffffff00');g.addColorStop(1,'#00000040');ctx.fillStyle=color;ctx.fillRect(x-width/2,y,width*Math.max(0,Math.min(1,frac)),6);ctx.fillStyle=g;ctx.fillRect(x-width/2,y,width*Math.max(0,Math.min(1,frac)),6);}
+// Boss: tema renkli nabız halesi, kara amiral sancağı ve geniş adlı can plakası
+function drawBossAura(e:Enemy,s:{x:number;y:number}){const t=performance.now()/1000,tint=theme().tint,g=ctx.createRadialGradient(s.x,s.y,30,s.x,s.y,170);
+  g.addColorStop(0,tint+'00');g.addColorStop(.62,tint+Math.round((.09+Math.sin(t*2.6)*.04)*255).toString(16).padStart(2,'0'));g.addColorStop(1,tint+'00');ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(s.x,s.y+8,170,170*FLAT,0,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle=tint+'88';ctx.lineWidth=2;ctx.setLineDash([14,10]);ctx.lineDashOffset=t*30;ctx.beginPath();ctx.ellipse(s.x,s.y+8,150,150*FLAT,0,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+  if(Math.random()<.25)particles.push({x:e.x+(Math.random()-.5)*60,y:e.y-20-Math.random()*30,vx:(Math.random()-.5)*8,vy:-22,life:1.6,maxLife:1.6,kind:'smoke',variant:Math.floor(Math.random()*4)} as Particle);}
+function drawBossFlag(s:{x:number;y:number},top:number){const t=performance.now()/1000,x=s.x+6,y=s.y+top-78;
+  ctx.save();ctx.strokeStyle='#2a1a0e';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x,y+54);ctx.lineTo(x,y-4);ctx.stroke();
+  ctx.fillStyle='#0c0c0e';ctx.beginPath();ctx.moveTo(x,y);for(let i=0;i<=10;i++){const u=i/10;ctx.lineTo(x+u*46,y+Math.sin(t*5+u*4)*3*u);}for(let i=10;i>=0;i--){const u=i/10;ctx.lineTo(x+u*46,y+28+Math.sin(t*5+u*4)*3*u);}ctx.closePath();ctx.fill();
+  ctx.fillStyle='#e8dcc0';const cx=x+20,cy=y+12+Math.sin(t*5+1.7)*1.5;ctx.beginPath();ctx.arc(cx,cy,5.5,0,Math.PI*2);ctx.fill();ctx.fillRect(cx-3.5,cy+3,7,4);ctx.fillStyle='#0c0c0e';ctx.beginPath();ctx.arc(cx-2,cy,1.5,0,7);ctx.arc(cx+2,cy,1.5,0,7);ctx.fill();
+  ctx.strokeStyle='#e8dcc0';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(cx-8,cy+6);ctx.lineTo(cx+8,cy+12);ctx.moveTo(cx+8,cy+6);ctx.lineTo(cx-8,cy+12);ctx.stroke();ctx.restore();}
+function drawBossPlate(e:Enemy,s:{x:number;y:number},top:number){const W=190,x=s.x,y=s.y+top-10;
+  ctx.save();ctx.fillStyle='rgba(8,10,12,.82)';ctx.strokeStyle='#f1c662';ctx.lineWidth=1.5;ctx.beginPath();ctx.roundRect(x-W/2,y-24,W,34,6);ctx.fill();ctx.stroke();
+  ctx.fillStyle='#f1c662';ctx.font='700 12px Cinzel';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(e.name,x,y-13);
+  drawHealthBar(x,y-3,W-24,e.hp/e.maxHp,'#e0463a');ctx.fillStyle='#fff';ctx.font='700 8px Inter';ctx.fillText(`${Math.ceil(e.hp).toLocaleString('tr-TR')} / ${e.maxHp.toLocaleString('tr-TR')}`,x,y);ctx.restore();}
+// Güneş parıltıları: dünya ızgarasına bağlı rastgele noktalarda kısa süreli yanıp sönen ışık kırpıntıları
+function drawSeaGlints(w:number,h:number){const t=performance.now()/1000,C=70,vw=w/camera.zoom,vh=h/camera.zoom,x0=camera.x-vw/2,y0=camera.y-vh/2,dark=theme().weather==='fog'||theme().weather==='motes'||theme().weather==='storm';
+  ctx.save();ctx.globalCompositeOperation='lighter';
+  for(let gx=Math.floor(x0/C);gx<=Math.ceil((x0+vw)/C);gx++)for(let gy=Math.floor(y0/C);gy<=Math.ceil((y0+vh)/C);gy++){
+    const hsh=Math.sin(gx*127.1+gy*311.7)*43758.5453,f=hsh-Math.floor(hsh);if(f>.42)continue;
+    const ph=f*50,b=Math.pow(Math.max(0,Math.sin(t*(1.2+f*2)+ph)),14);if(b<.05)continue;
+    const s=worldToScreen({x:gx*C+f*C*2.1%C,y:gy*C+(f*7.3%1)*C}),len=5+f*10,a=b*(dark?.25:.55);
+    ctx.fillStyle=`rgba(255,250,225,${a})`;ctx.beginPath();ctx.ellipse(s.x,s.y,len,1.2,0,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.ellipse(s.x,s.y,1.1,len*.35,0,0,Math.PI*2);ctx.fill();}
+  ctx.restore();}
 function draw(){
   const w=innerWidth,h=innerHeight,map=mapDef(),th=theme();const sea=ctx.createLinearGradient(0,0,0,h);sea.addColorStop(0,th.sea[0]);sea.addColorStop(1,th.sea[1]);ctx.fillStyle=sea;ctx.fillRect(0,0,w,h);
   ctx.save();ctx.translate(w/2,h/2);ctx.scale(camera.zoom,camera.zoom);ctx.translate(-w/2,-h/2);
-  const pattern=seaTilePattern(ctx);if(pattern){const vw=w/camera.zoom,vh=h/camera.zoom;pattern.setTransform(new DOMMatrix().translateSelf(-camera.x+w/2+Math.sin(performance.now()/5200)*14,-camera.y+h/2+performance.now()/260%1024).scaleSelf(2,2));ctx.globalAlpha=.2;ctx.fillStyle=pattern;ctx.fillRect(w/2-vw/2,h/2-vh/2,vw,vh);ctx.globalAlpha=1;}
+  const pattern=seaTilePattern(ctx);if(pattern){const vw=w/camera.zoom,vh=h/camera.zoom;pattern.setTransform(new DOMMatrix().translateSelf(-camera.x+w/2+Math.sin(performance.now()/5200)*14,-camera.y+h/2+performance.now()/260%1024).scaleSelf(2,2));ctx.globalAlpha=.2;ctx.fillStyle=pattern;ctx.fillRect(w/2-vw/2,h/2-vh/2,vw,vh);
+    // İkinci dalga katmanı: farklı ölçek ve ters yönde akış; iki katmanın girişimi denize canlı bir kıpırtı verir
+    const t=performance.now();pattern.setTransform(new DOMMatrix().translateSelf(-camera.x*1.04+w/2-t/190%1536,-camera.y*1.04+h/2+Math.cos(t/4100)*20).scaleSelf(3.1,3.1).rotateSelf(24));ctx.globalAlpha=.12;ctx.fillRect(w/2-vw/2,h/2-vh/2,vw,vh);ctx.globalAlpha=1;}
+  drawSeaGlints(w,h);
   ctx.globalAlpha=.12;ctx.fillStyle=th.label;ctx.font='700 42px Cinzel';ctx.textAlign='center';for(const label of map.labels){const p=worldToScreen(label);ctx.fillText(label.text,p.x,p.y);}ctx.globalAlpha=1;
   drawCoordGrid();drawMapEdges();islands.forEach(drawIsland);drawFleetIsland();lootChests.forEach(drawLootChest);drawTreasureMark();sparkles.forEach(drawSparkle);mines.forEach(m=>{const p=worldToScreen(m);drawMineSprite(ctx,p.x,p.y,performance.now(),m.arm>0,m.life<5);});monsters.forEach(drawMonster);
   wrecks.forEach(drawWreck);particles.forEach(p=>{if(UNDER.has(p.kind))drawParticle(p);});shots.forEach(drawShotShadow);
-  [...enemies].sort((a,b)=>a.y-b.y).forEach(e=>{const s=worldToScreen(e);if(e.boss){const t=performance.now()/1000,g=ctx.createRadialGradient(s.x,s.y,20,s.x,s.y,120);g.addColorStop(0,'#f1c66200');g.addColorStop(.7,`rgba(241,198,98,${.12+Math.sin(t*3)*.05})`);g.addColorStop(1,'#f1c66200');ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(s.x,s.y+6,120,70,0,0,Math.PI*2);ctx.fill();}const raster=e.tower?drawBastion(ctx,e.towerIndex??0,s.x,s.y):e.def?drawNpcShip(ctx,e.def.sprite,e.def.span,s.x,s.y,e.angle,performance.now()):false;if(!raster)drawShip(e,e.angle,e.color);const top=raster?(e.tower?TOWER_LABEL_OFFSET:shipLabelOffset(e.def!.span)):-42;ctx.fillStyle='#07161c';ctx.fillRect(s.x-25,s.y+top,50,5);ctx.fillStyle=e.boss?'#f1c662':e.tower?'#e0823f':e.role==='heavy'?'#e04b3f':'#50a8b4';ctx.fillRect(s.x-25,s.y+top,50*e.hp/e.maxHp,5);ctx.fillStyle=e.boss?'#f1c662':'#d7cbb5';ctx.font='10px Inter';ctx.textAlign='center';ctx.fillText(e.name,s.x,s.y+top-7);});
+  wakes.forEach((_,o)=>drawWake(o));
+  [...enemies].sort((a,b)=>a.y-b.y).forEach(e=>{const s=worldToScreen(e);if(e.boss)drawBossAura(e,s);if(!e.tower)drawHullWater(e,hullLength(e),shipMoving(e));const raster=e.tower?drawBastion(ctx,e.towerIndex??0,s.x,s.y):e.def?drawNpcShip(ctx,e.def.sprite,e.def.span,s.x,s.y,e.angle,performance.now()):false;if(!raster)drawShip(e,e.angle,e.color);const top=raster?(e.tower?TOWER_LABEL_OFFSET:shipLabelOffset(e.def!.span)):-42;if(e.boss){drawBossFlag(s,top);drawBossPlate(e,s,top);return;}const bw=e.tower||e.role==='heavy'?72:56;drawHealthBar(s.x,s.y+top,bw,e.hp/e.maxHp,e.tower?'#f09a4f':e.role==='heavy'?'#f0584a':'#4fd0da');ctx.fillStyle='#e6dccb';ctx.font='600 10px Inter';ctx.textAlign='center';ctx.shadowColor='#000';ctx.shadowBlur=3;ctx.fillText(e.name,s.x,s.y+top-7);ctx.shadowBlur=0;});
   if(selected&&targetExists(selected)){const t=worldToScreen(selected);ctx.strokeStyle='#f1c662';ctx.lineWidth=2;ctx.beginPath();ctx.arc(t.x,t.y,selected.kind==='monster'?selected.radius+10:34,0,7);ctx.stroke();}
-  drawPlayerShip();drawPlayerLabel();
+  drawHullWater(player,hullLength(player),shipMoving(player));drawPlayerShip();drawPlayerLabel();
   particles.forEach(p=>{if(!UNDER.has(p.kind))drawParticle(p);});shots.forEach(drawShotBall);
   if(consumableOn.shield){const p=worldToScreen(player),t=performance.now()/1000,g=ctx.createRadialGradient(p.x,p.y,30,p.x,p.y,62);g.addColorStop(0,'#9fe8ff00');g.addColorStop(.75,'#9fe8ff30');g.addColorStop(1,'#d4a64c88');ctx.fillStyle=g;ctx.beginPath();ctx.arc(p.x,p.y,62,0,Math.PI*2);ctx.fill();ctx.strokeStyle=`rgba(212,166,76,${.55+Math.sin(t*6)*.25})`;ctx.lineWidth=2;ctx.beginPath();ctx.arc(p.x,p.y,62,0,Math.PI*2);ctx.stroke();}
   if(destination){const d=worldToScreen(destination),p=worldToScreen(player);ctx.strokeStyle='#e7cf8d55';ctx.setLineDash([3,8]);ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(d.x,d.y);ctx.stroke();ctx.setLineDash([]);ctx.strokeStyle='#e7cf8d';ctx.beginPath();ctx.arc(d.x,d.y,9,0,7);ctx.stroke();}
