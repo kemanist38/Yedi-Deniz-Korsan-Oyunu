@@ -64,7 +64,7 @@ button { font: inherit; }
 /* Tactical HUD: map, captain profile and live combat roster */
 .brand{left:20px;top:12px;font-size:18px}.brand small{font-size:7px}
 .map-cluster{pointer-events:none;position:absolute;left:18px;top:58px;z-index:11;width:170px}
-.map-cluster #minimap{position:static;display:block;width:170px;height:125px;border:1px solid #c69a4e88;border-radius:7px;background:#061820;box-shadow:0 9px 28px #000a}
+.map-cluster #minimap{position:static;display:block;width:170px;height:113px;border:1px solid #c69a4e88;border-radius:7px;background:#061820;box-shadow:0 9px 28px #000a}
 .map-cluster .zoom-controls{pointer-events:auto;position:static;display:flex;width:max-content;margin:7px auto 0;align-items:center;gap:5px;padding:5px}
 .world-map-button{pointer-events:auto;position:absolute;left:178px;top:7px;width:48px;height:48px;border:1px solid #c99a4f99;border-radius:50%;background:radial-gradient(circle,#254d55,#07191f 72%);color:#f0cc82;font:700 21px Cinzel;cursor:pointer;box-shadow:0 7px 20px #000b,inset 0 0 10px #77d9d31b}
 .world-map-button span{display:block;margin-top:-3px;font-size:6px;letter-spacing:.07em}.world-map-button:hover{filter:brightness(1.2)}

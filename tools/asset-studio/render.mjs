@@ -44,6 +44,10 @@ const {SHIPS,MONSTERS}=await import('./catalog.js');
 for(const sp of SHIPS)jobs[`ship-${sp.id}`]=()=>page.evaluate(id=>renderCatalogShip(id),sp.id);
 for(const m of MONSTERS)jobs[`monster-${m.id}`]=()=>page.evaluate(id=>renderCatalogMonster(id),m.id);
 const {FLEET_THEMES}=await import('./fleet.js');
+const {ISLE_THEMES,SHAPES:ISLE_SHAPES,collisionCircles}=await import('./isles.js');
+for(const th of Object.keys(ISLE_THEMES))jobs[`isles-${th}-v1`]=()=>page.evaluate(t=>renderIsles(t),th);
+// Ada biçimlerinin oyun verisi (kare kapsamı ve çarpışma yarıçapı)
+fs.writeFileSync(path.resolve(here,'../../src/islesMeta.ts'),`// Otomatik üretildi: tools/asset-studio/render.mjs (isles.js) — elle düzenlemeyin.\n// Ada sayfası: public/assets/isles-<tema>-v1.webp, biçim başına 640 px kare; span = karenin kapsadığı dünya birimi, r = kaba yarıçap; circles = ada merkezine göre çarpışma daireleri [x, y, r] (aynalı adada x ters çevrilir).\nexport const ISLE_FRAME=640;\nexport const ISLE_SHAPES:{id:string;name:string;span:number;r:number;circles:[number,number,number][]}[]=${JSON.stringify(ISLE_SHAPES.map(s=>({id:s.id,name:s.name,span:s.span,r:s.r,circles:collisionCircles(s)})))};\n`);
 {const src=fs.readFileSync(path.resolve(here,'../../src/campaign.ts'),'utf8');const npcIds=[...src.matchAll(/npc\('(n\d-\d-(?:light|heavy))'/g)].map(m=>m[1]),monIds=[...src.matchAll(/mon\('(m\d-\d)'/g)].map(m=>m[1]);jobs['portraits-v2']=()=>page.evaluate(order=>renderPortraitsV2(order),[...npcIds,...monIds,'boss']);}
 for(const th of Object.keys(FLEET_THEMES)){jobs[`fleet-base-${th}-v2`]=()=>page.evaluate(t=>renderFleetBase(t),th);jobs[`fleet-towers-${th}-v2`]=()=>page.evaluate(t=>renderFleetTowers(t),th);}
 for(const [look,a,b] of [['ice',71,72],['toxic',81,82],['lava',91,92],['abyss',101,102],['verdant',11,12],['misty',21,22],['coral',31,32],['haven',41,42],['crimson',51,52],['storm',61,62]])

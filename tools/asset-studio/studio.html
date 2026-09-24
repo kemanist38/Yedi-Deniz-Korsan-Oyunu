@@ -8,6 +8,7 @@ import {buildShip,buildLeviathan,buildChest,buildIsland,buildPortal,buildFort,FL
 import {paintSeaTile,paintWorldChart,paintSeaSparkle} from './paint.js';
 import {paintVfxAtlas} from './vfx.js';
 import {paintWorldScroll} from './ui-paint.js';
+import {buildIsle,SHAPES as ISLE_SHAPES,ISLE_ELEVATION} from './isles.js';
 import {buildIcon} from './icons.js';
 import {buildFleetBase,buildFleetTower,FLEET_TOWERS,FLEET_ELEVATION} from './fleet.js';
 import {SHIPS,MONSTERS} from './catalog.js';
@@ -81,6 +82,11 @@ window.renderPortal=({count=8,frame=256,span=150}={})=>{const cam=camera(span,6)
 window.renderSeaTile=()=>exportCanvas(paintSeaTile());
 window.renderWorldChart=()=>exportCanvas(paintWorldChart());
 window.renderVfxAtlas=()=>({...exportCanvas(paintVfxAtlas()),cell:128,cols:8,rows:6});
+// Deniz adacıkları: tema başına 7 biçim yan yana (kare 640 px; her kare kendi biçiminin span'ını kapsar)
+window.renderIsles=(theme,{frame=640}={})=>{const frames=ISLE_SHAPES.map((sh,i)=>{const scene=stage(),m=buildIsle(i,theme);prepare(m);m.traverse(o=>{if(o.isMesh&&o.userData.noClip)o.material.clippingPlanes=[];if(o.isMesh&&o.material.isShadowMaterial)o.castShadow=false;});scene.add(m);
+    const sun=scene.children.find(o=>o.isDirectionalLight&&o.castShadow);sun.position.set(-420,340,260);Object.assign(sun.shadow.camera,{left:-sh.span*.7,right:sh.span*.7,top:sh.span*.7,bottom:-sh.span*.7,near:10,far:1600});sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.updateProjectionMatrix();sun.intensity=2.8;
+    return shot(scene,cameraAt(sh.span,ISLE_ELEVATION),frame);});
+  return{...exportCanvas(sheet(frames,frames.length)),frame,shapes:ISLE_SHAPES.map(s=>({id:s.id,span:s.span,r:s.r}))};};
 window.renderWorldScroll=()=>exportCanvas(paintWorldScroll());
 window.renderSeaSparkle=()=>({...exportCanvas(paintSeaSparkle()),frame:128,frames:8});
 let envMap=null;

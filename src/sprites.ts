@@ -1,3 +1,4 @@
+import {ISLE_FRAME,ISLE_SHAPES} from './islesMeta';
 // Raster sprite sayfaları: NPC gemileri, canavarlar, adalar, filo adaları, sandıklar, mayınlar.
 // Görseller tools/asset-studio içindeki 3B modellerden üretilir (npm run render).
 export type ChestKind='wood'|'gilded';
@@ -43,12 +44,12 @@ export function drawBossSprite(ctx:CanvasRenderingContext2D,x:number,y:number,an
   ctx.restore();return true;
 }
 
-// Adalar: görünüm başına 2 varyantlı sayfa (512 px). Çizim boyu = 2.36 × ada yarıçapı.
-export function islandSheetUrl(look:string){return`/assets/islands-${look}-v1.webp`;}
+// Deniz adacıkları: tema başına 7 biçimlik sayfa (isles-<tema>-v1.webp, kare 640 px); her kare kendi span'ı kadar dünya birimini kapsar
+export function islandSheetUrl(look:string){return`/assets/isles-${look}-v1.webp`;}
 export function drawIslandSprite(ctx:CanvasRenderingContext2D,island:{look:string;variant:number;r:number;flip?:boolean},x:number,y:number){
-  const sheet=load(islandSheetUrl(island.look));if(!ready(sheet))return false;
-  const size=island.r*2.36;ctx.save();ctx.translate(x,y);if(island.flip)ctx.scale(-1,1);
-  ctx.drawImage(sheet,island.variant*512,0,512,512,-size/2,-size/2,size,size);ctx.restore();return true;
+  const sheet=load(islandSheetUrl(island.look));if(!ready(sheet))return false;const shape=ISLE_SHAPES[island.variant];if(!shape)return false;
+  const size=shape.span;ctx.save();ctx.translate(x,y);if(island.flip)ctx.scale(-1,1);
+  ctx.drawImage(sheet,island.variant*ISLE_FRAME,0,ISLE_FRAME,ISLE_FRAME,-size/2,-size/2,size,size);ctx.restore();return true;
 }
 
 // Onaylı raster ada (1000 dünya birimi) ve bağımsız dört kule türü.
