@@ -7,6 +7,7 @@ import {ABILITIES,SPECIAL_AMMO,MINE,SPEED_BOOST,SHIELD_FACTOR,ARSENAL_MARKET,loa
 import {BOSS,loadFleetOwners,saveFleetOwners} from './conquest';
 import {TALENTS,OFFICERS,OFFICER_MAX_RANK,officerCost,officerSlots,talentPoints,loadCrew,saveCrew,spentPoints,computeBonus,type TalentId,type OfficerId} from './crew';
 import {FLEET_MASK} from './fleetMask';
+import {drawVfx,drawVfxAnim,EXPLOSION_ROW,SPLASH_ROW} from './vfx';
 import {towerContains,towerMuzzle} from './towerGeometry';
 import {loadGuild,saveGuild,islandSlots,towerTypeCost,tagError,canBuild,TOWER_TYPES,ROLE_NAMES,TOWER_SLOTS,type TowerType,type GuildRole,GUILD_NAME_MAX,GUILD_TAG_MAX,type Guild} from './guild';
 import {loadProfile,saveProfile,nickError,rankOf,NICK_CHANGE_COST,NICK_COOLDOWN_MS,NICK_MAX} from './profile';
@@ -17,11 +18,14 @@ type Vec = { x: number; y: number };
 type AmmoKind = 'iron'|'chain'|'fire'|'grape';
 type CannonKind = 'cast'|'long'|'rapid'|'heavy';
 type CannonStock=Record<CannonKind,number>;
-type Shot = Vec & { vx:number; vy:number; life:number; owner:'player'|'enemy'; damage:number; hit:boolean; ammo:AmmoKind; target?:Target; slow?:number; splash?:number };
+type Shot = Vec & { vx:number; vy:number; life:number; owner:'player'|'enemy'; damage:number; hit:boolean; ammo:AmmoKind; target?:Target; slow?:number; splash?:number; visual?:'spit'; age?:number; flight?:number; arc?:number; trail?:number };
 type SalvoRound = { delay:number; target:Target; side:number; slot:number; damage:number; ammo:AmmoKind };
 type EnemyRole='light'|'heavy';
 type Enemy = Vec & { kind:'ship'; def?:NpcDef; burnTimer?:number; tower?:boolean; towerIndex?:number; boss?:boolean; summoned?:boolean; hitRadius?:number; fireRange?:number; rewardXp?:number; role:EnemyRole; angle:number; hp:number; maxHp:number; cooldown:number; speed:number; damage:number; reload:number; rewardGold:number; rewardWood:number; rewardFame:number; color:string; name:string; tier:number; aggro:boolean; wander:number; slowTimer:number; homeX:number; homeY:number; combatTimer:number };
-type Particle = Vec & { vx:number; vy:number; life:number; maxLife:number; kind:'foam'|'smoke'|'spark'|'damage'; text?:string };
+type ParticleKind='foam'|'smoke'|'spark'|'damage'|'flash'|'explosion'|'splash'|'splinter'|'bubble'|'plank'|'firePuff'|'target'|'poison';
+// z: su üstünden yükseklik (ekranda yukarı kayar); vz ile savrulan parçalar suya düşer
+type Particle = Vec & { vx:number; vy:number; life:number; maxLife:number; kind:ParticleKind; text?:string; z?:number; vz?:number; rot?:number; vr?:number; size?:number; variant?:number };
+type Wreck = Vec & { angle:number; sprite:string; span:number; t:number; bubble:number };
 type Monster = Vec & { kind:'monster'; def:MonsterDef; burnTimer?:number; phase:number; radius:number; name:string; hp:number; maxHp:number; cooldown:number; aggro:boolean; slowTimer:number; homeX:number; homeY:number; combatTimer:number };
 type Target = Enemy|Monster;
 type UpgradeKind = 'hull'|'damage'|'range'|'reload'|'speed'|'repair';
@@ -471,14 +475,14 @@ function releaseSalvo(round:SalvoRound){
   const x=player.x+muzzle.x,y=player.y+muzzle.y;
   shots.push({x,y,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,life:Math.max(1.1,d/speed+.5),owner:'player',damage:round.damage,hit:false,ammo:round.ammo,target:round.target});
   playCannon(state.cannonType,round.ammo);
-  particles.push({x,y,vx:rx*round.side*12,vy:ry*round.side*12,life:.38,maxLife:.38,kind:'smoke'});
+  muzzleFlash(x,y,Math.atan2(muzzle.y,muzzle.x));
 }
 function enemyFire(e:Enemy){
   if(e.boss){bossFire(e);return;}
   const a=Math.atan2(player.y-e.y,player.x-e.x);playEnemyCannon(dist(e,player),(e.x-player.x)/600);
-  shots.push({x:e.x,y:e.y,vx:Math.cos(a)*260,vy:Math.sin(a)*260,life:2.2,owner:'enemy',damage:e.damage,hit:false,ammo:'iron'}); e.cooldown=e.reload+Math.random()*.55;
+  shots.push({x:e.x,y:e.y,vx:Math.cos(a)*260,vy:Math.sin(a)*260,life:2.2,owner:'enemy',damage:e.damage,hit:false,ammo:'iron'}); e.cooldown=e.reload+Math.random()*.55;muzzleFlash(e.x+Math.cos(a)*16,e.y+Math.sin(a)*16,a,54);
 }
-function monsterFire(m:Monster){const a=Math.atan2(player.y-m.y,player.x-m.x);playSplash();for(const off of m.def.tier>=5?[-.12,0,.12]:[0])shots.push({x:m.x,y:m.y,vx:Math.cos(a+off)*210,vy:Math.sin(a+off)*210,life:2.4,owner:'enemy',damage:m.def.damage,hit:false,ammo:'iron'});m.cooldown=m.def.reload;}
+function monsterFire(m:Monster){const a=Math.atan2(player.y-m.y,player.x-m.x);playSplash();for(const off of m.def.tier>=5?[-.12,0,.12]:[0])shots.push({x:m.x,y:m.y,vx:Math.cos(a+off)*210,vy:Math.sin(a+off)*210,life:2.4,owner:'enemy',damage:m.def.damage,hit:false,ammo:'iron',visual:'spit'});m.cooldown=m.def.reload;}
 // Batınca bulunduğun denizde, düşmanlardan uzak rastgele bir noktada %10 gövdeyle yeniden doğ.
 function respawn(){
   const deathMap=currentMap;
@@ -491,7 +495,20 @@ function respawn(){
   enemies.forEach(e=>{e.aggro=false;e.combatTimer=0;});monsters.forEach(m=>{m.aggro=false;m.combatTimer=0;});ui('attack').classList.remove('active');
   mapFade=1;playSplash();saveAccount();toast(`Gemin battı — ${mapDef().key} ${coordLabel(player)} konumunda %10 gövdeyle yeniden doğdun`);
 }
-function burst(x:number,y:number,large=false){for(let n=0;n<(large?18:7);n++){const a=Math.random()*Math.PI*2,s=15+Math.random()*(large?75:35);particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.35+Math.random()*.7,maxLife:1,kind:n%3?'smoke':'spark'});}}
+// Vuruş: patlama animasyonu, savrulup suya düşen tahta kıymıkları, korlar ve yükselen duman
+function burst(x:number,y:number,large=false){
+  const R=Math.random,TAU=Math.PI*2;particles.push({x,y,vx:0,vy:0,life:large?.95:.6,maxLife:large?.95:.6,kind:'explosion',size:large?250:150});
+  for(let n=0;n<(large?10:4);n++){const a=R()*TAU,sp=40+R()*(large?130:70);particles.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp*.6,life:1+R()*.8,maxLife:1.8,kind:'splinter',z:8,vz:90+R()*(large?170:110),rot:R()*6,vr:(R()-.5)*16,size:32+R()*16,variant:n%3});}
+  for(let n=0;n<(large?12:5);n++){const a=R()*TAU,sp=50+R()*(large?150:90);particles.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp*.6,life:.4+R()*.5,maxLife:.9,kind:'spark',z:10,vz:60+R()*140,size:20});}
+  for(let n=0;n<(large?4:2);n++)particles.push({x:x+(R()-.5)*20,y:y+(R()-.5)*14,vx:(R()-.5)*14,vy:-10-R()*10,life:1.2+R()*.8,maxLife:2,kind:'smoke',z:14,size:large?80:52,variant:n%4,rot:R()*6});
+  if(large)for(let n=0;n<4;n++){const a=R()*TAU,sp=20+R()*40;particles.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp*.6,life:3+R()*2,maxLife:5,kind:'plank',rot:R()*6,vr:(R()-.5)*1.2,size:52+R()*16});}
+}
+// Iska: suya düşen güllenin su sütunu ve köpük halkası
+function splashAt(x:number,y:number,size=110){particles.push({x,y,vx:0,vy:0,life:.75,maxLife:.75,kind:'splash',size});for(let n=0;n<3;n++)particles.push({x:x+(Math.random()-.5)*18,y:y+(Math.random()-.5)*10,vx:(Math.random()-.5)*16,vy:(Math.random()-.5)*10,life:.9,maxLife:.9,kind:'foam',size:34,variant:n%2});}
+// Namlu alevi ve top dumanı
+function muzzleFlash(x:number,y:number,angle:number,size=64){particles.push({x,y,vx:0,vy:0,life:.13,maxLife:.13,kind:'flash',rot:angle,size,z:6});for(let n=0;n<2;n++)particles.push({x,y,vx:Math.cos(angle)*(30+n*25)+(Math.random()-.5)*10,vy:Math.sin(angle)*(30+n*25)+(Math.random()-.5)*10,life:.9+Math.random()*.4,maxLife:1.3,kind:'smoke',z:6,size:36+n*10,variant:(n+Math.floor(Math.random()*4))%4,rot:Math.random()*6});}
+const wrecks:Wreck[]=[];
+const WRECK_TIME=1.8;
 function damageText(x:number,y:number,value:number){particles.push({x,y,vx:0,vy:-24,life:1,maxLife:1,kind:'damage',text:`-${Math.round(value)}`});}
 let toastTimer=0;
 function toast(msg:string){ui('toast').textContent=msg;ui('toast').classList.add('show');toastTimer=2.2;}
@@ -849,6 +866,13 @@ function update(dt:number){
   for(let i=shots.length-1;i>=0;i--){
     const s=shots[i];
     if(s.owner==='player'&&s.target&&targetExists(s.target)){const a=Math.atan2(s.target.y-s.y,s.target.x-s.x),speed=Math.hypot(s.vx,s.vy);s.vx=Math.cos(a)*speed;s.vy=Math.sin(a)*speed;s.life=Math.max(s.life,.12);}
+    if(s.flight===undefined){const aim=s.owner==='player'?s.target:player,sp=Math.max(1,Math.hypot(s.vx,s.vy)),d=aim&&targetExistsOrPlayer(aim)?dist(s,aim):sp*s.life;s.flight=Math.max(.15,Math.min(s.life,d/sp));s.age=0;s.arc=Math.min(80,d*.13)*(s.splash?2.2:1);
+      if(s.splash&&aim)particles.push({x:aim.x,y:aim.y,vx:0,vy:0,life:s.flight,maxLife:s.flight,kind:'target',size:120});}
+    s.age=(s.age??0)+dt;s.trail=(s.trail??0)-dt;
+    if(s.trail<=0){s.trail=s.ammo==='fire'?.03:.05;const z=shotHeight(s);
+      if(s.visual==='spit')particles.push({x:s.x,y:s.y,vx:(Math.random()-.5)*10,vy:(Math.random()-.5)*10,life:.4,maxLife:.4,kind:'bubble',z,size:14});
+      else if(s.ammo==='fire')particles.push({x:s.x,y:s.y,vx:(Math.random()-.5)*12,vy:(Math.random()-.5)*12,life:.4,maxLife:.4,kind:'firePuff',z,size:30});
+      else if(s.ammo!=='grape')particles.push({x:s.x,y:s.y,vx:0,vy:0,life:.35,maxLife:.35,kind:'smoke',z,size:16,variant:Math.floor(Math.random()*4)});}
     s.x+=s.vx*dt;s.y+=s.vy*dt;s.life-=dt;
     if(s.owner==='player'){
       for(let j=enemies.length-1;j>=0&&s.life>0;j--){
@@ -878,12 +902,15 @@ function update(dt:number){
         }
       }
     }
-    if(s.life<=0)shots.splice(i,1);
+    if(s.life<=0){if(!s.hit)splashAt(s.x,s.y,s.splash?160:110);shots.splice(i,1);}
   }
   updateLootChests(dt);updateSparkles(dt);updateArsenal(dt);updateEvents(dt);
   if(insideOwnLagoon(player)&&state.hp<effectiveMaxHp()){state.hp=Math.min(effectiveMaxHp(),state.hp+effectiveMaxHp()*.06*dt);if(state.hp>=effectiveMaxHp())saveAccount();}
   updateJumpPrompt();updateCoordBadge();mapFade=Math.max(0,mapFade-dt*1.6);updateWeather(dt);
-  for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.97;p.vy*=.97;p.life-=dt;if(p.life<=0)particles.splice(i,1);}
+  for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.97;p.vy*=.97;p.life-=dt;if(p.vr)p.rot=(p.rot??0)+p.vr*dt;
+    if(p.vz!==undefined){p.z=(p.z??0)+p.vz*dt;p.vz-=340*dt;if(p.z<=0){p.z=0;p.vz=undefined;p.vx*=.25;p.vy*=.25;p.vr=(p.vr??0)*.1;if(p.kind==='splinter')particles.push({x:p.x,y:p.y,vx:0,vy:0,life:.4,maxLife:.4,kind:'foam',size:20,variant:0});}}
+    if(p.life<=0)particles.splice(i,1);}
+  for(let i=wrecks.length-1;i>=0;i--){const w=wrecks[i];w.t+=dt;w.bubble-=dt;if(w.bubble<=0){w.bubble=.09;const a=Math.random()*Math.PI*2,r=Math.random()*26;particles.push({x:w.x+Math.cos(a)*r,y:w.y+Math.sin(a)*r*.6,vx:0,vy:-6,life:.7,maxLife:.7,kind:Math.random()<.6?'bubble':'foam',size:10+Math.random()*10,variant:0});}if(w.t>=WRECK_TIME)wrecks.splice(i,1);}
   let need=xpNeed(state.level);while(state.fame>=need){state.fame-=need;state.level++;state.maxHp+=20;state.hp=effectiveMaxHp();state.pearls+=10;saveAccount();playLevelUp();rewardNotice(`SEVİYE ${state.level}   +20 Azami Gövde   +10 İnci   +1 Yetenek Puanı   ${state.level}/1 AÇILDI`);toast(`Seviye ${state.level}! Yeni denizler açıldı`);need=xpNeed(state.level);}
   if(state.level>=MAX_LEVEL)state.fame=Math.min(state.fame,0);
   if(toastTimer>0){toastTimer-=dt;if(toastTimer<=0)ui('toast').classList.remove('show');}if(rewardTimer>0){rewardTimer-=dt;if(rewardTimer<=0){ui('rewardToast').classList.remove('show');const next=rewardQueue.shift();if(next)setTimeout(()=>showReward(next),220);}} updateUI();
@@ -892,7 +919,8 @@ function update(dt:number){
 function sinkEnemy(e:Enemy){
   const j=enemies.indexOf(e);if(j<0)return;
   enemies.splice(j,1);if(selected===e){selected=null;state.attacking=false;ui('attack').classList.remove('active');}
-  burst(e.x,e.y,true);playExplosion();
+  burst(e.x,e.y,true);playExplosion();splashAt(e.x,e.y,190);
+  if(e.def&&!e.tower&&!e.boss)wrecks.push({x:e.x,y:e.y,angle:e.angle,sprite:e.def.sprite,span:e.def.span,t:0,bubble:0});
   if(e.tower){destroyTower();return;}
   if(e.boss){burst(e.x,e.y,true);defeatBoss(e);return;}
   // NPC batınca sandık düşmez: sandığın ganimeti doğrudan hesaba eklenir.
@@ -911,7 +939,7 @@ function updateTower(e:Enemy,dt:number){
   e.aggro=!mapDef().safe&&(d<(e.fireRange??460)+30||e.combatTimer>0);
   if(e.hp<e.maxHp)e.hp=Math.min(e.maxHp,e.hp+e.maxHp*(e.aggro?.004:.02)*(activeEliteShip==='plague'&&e.burnTimer&&e.burnTimer>0?.5:1)*dt);
   if(e.aggro&&d<(e.fireRange??460)&&e.cooldown<=0&&state.invulnerable<=0){const muzzle=towerMuzzle(e),tx=muzzle.x,ty=muzzle.y,a=Math.atan2(player.y-ty,player.x-tx);
-    for(const off of [-.05,.05])shots.push({x:tx,y:ty,vx:Math.cos(a+off)*320,vy:Math.sin(a+off)*320,life:2.2,owner:'enemy',damage:e.damage,hit:false,ammo:theme().fleet==='lava'?'fire':'iron'});
+    muzzleFlash(tx,ty,a,60);for(const off of [-.05,.05])shots.push({x:tx,y:ty,vx:Math.cos(a+off)*320,vy:Math.sin(a+off)*320,life:2.2,owner:'enemy',damage:e.damage,hit:false,ammo:theme().fleet==='lava'?'fire':'iron'});
     playEnemyCannon(d,(e.x-player.x)/600);e.cooldown=e.reload+Math.random()*.4;}
 }
 function destroyTower(){
@@ -929,7 +957,7 @@ function updateOwnTowers(dt:number){
     tw.cooldown-=dt;if(tw.cooldown>0)continue;
     const target=enemies.filter(e=>!e.tower&&dist(e,tw)<range).sort((a,b)=>dist(a,tw)-dist(b,tw))[0]??monsters.find(m=>dist(m,tw)<range);
     if(!target)continue;tw.cooldown=t.reload*def.reload;const muzzle=towerMuzzle(tw,tw.type),a=Math.atan2(target.y-muzzle.y,target.x-muzzle.x),speed=tw.type==='mortar'?300:420;
-    shots.push({x:muzzle.x,y:muzzle.y,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,life:2.8,owner:'player',damage:t.ownDamage*def.damage,hit:false,ammo:tw.type==='chain'?'chain':theme().fleet==='lava'?'fire':'iron',target,
+    muzzleFlash(muzzle.x,muzzle.y,a,60);shots.push({x:muzzle.x,y:muzzle.y,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,life:2.8,owner:'player',damage:t.ownDamage*def.damage,hit:false,ammo:tw.type==='chain'?'chain':theme().fleet==='lava'?'fire':'iron',target,
       slow:tw.type==='chain'?3:undefined,splash:tw.type==='mortar'?90:undefined});}
 }
 // Havan: isabet noktasının çevresindeki diğer düşmanlara %60 hasar
@@ -943,7 +971,7 @@ function spawnBoss(){
 }
 function bossFire(e:Enemy){
   const base=Math.atan2(player.y-e.y,player.x-e.x),enraged=e.hp<e.maxHp*BOSS.escortAt;playEnemyCannon(dist(e,player)*.6,(e.x-player.x)/600);
-  for(const off of enraged?[-.24,-.12,0,.12,.24]:[-.15,0,.15])shots.push({x:e.x,y:e.y,vx:Math.cos(base+off)*280,vy:Math.sin(base+off)*280,life:2.2,owner:'enemy',damage:e.damage*(enraged?.8:1),hit:false,ammo:'iron'});
+  muzzleFlash(e.x+Math.cos(base)*30,e.y+Math.sin(base)*30,base,84);for(const off of enraged?[-.24,-.12,0,.12,.24]:[-.15,0,.15])shots.push({x:e.x,y:e.y,vx:Math.cos(base+off)*280,vy:Math.sin(base+off)*280,life:2.2,owner:'enemy',damage:e.damage*(enraged?.8:1),hit:false,ammo:'iron'});
   e.cooldown=e.reload*(enraged?.8:1);
   if(enraged&&!e.summoned){e.summoned=true;const def=NPCS[mapDef().npcs[1]];for(let k=0;k<2;k++){const ship=makeShip(def,e.x+(k?60:-60),e.y+40,e.angle);ship.aggro=true;ship.combatTimer=20;ship.name='Hayalet Muhafız';enemies.push(ship);}toast('Hayalet Amiral muhafızlarını çağırdı!');}
 }
@@ -1132,17 +1160,43 @@ function drawFleetIsland(){
   if(!baseOk){ctx.fillStyle='#4a7a3c';ctx.beginPath();ctx.arc(s.x,s.y,FLEET.islandR,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#3a3c42';ctx.lineWidth=18;ctx.beginPath();ctx.arc(s.x,s.y,FLEET.wallR,Math.PI/2+FLEET.gap/2,Math.PI/2-FLEET.gap/2+Math.PI*2);ctx.stroke();}
   ctx.textAlign='center';ctx.font='700 14px Cinzel';ctx.fillStyle=owned?'#9fe8dc':'#f0b8a8';ctx.shadowColor='#000';ctx.shadowBlur=6;ctx.fillText(f.name,s.x,s.y-FLEET.islandR-24);ctx.font='700 9px Inter';ctx.fillText(owned?'FİLO ADAN · LAGÜNDE ONARIM':fleetEnterable()?'RAKİP FİLO · TEST: GİRİŞ AÇIK (GÜNEY KANALI)':'RAKİP FİLO · GİRİŞ YASAK',s.x,s.y-FLEET.islandR-10);ctx.shadowBlur=0;
 }
+// ---- atış ve savaş efektleri (src/vfx.ts atlası)
+const UNDER=new Set<ParticleKind>(['foam','bubble','plank','target']);
+function targetExistsOrPlayer(t:Target|typeof player){return t===player||targetExists(t as Target);}
+function shotHeight(s:Shot){if(!s.flight)return 0;const p=Math.min(1,(s.age??0)/s.flight);return (s.arc??0)*4*p*(1-p);}
+function drawShotShadow(s:Shot){const p=worldToScreen(s),h=shotHeight(s),k=1-Math.min(.5,h/160);drawVfx(ctx,'shadow',p.x,p.y+2,46*k,{alpha:.9*k});}
+function drawShotBall(s:Shot){const p=worldToScreen(s),y=p.y-shotHeight(s),spin=(s.age??0)*16;
+  if(s.visual==='spit'){drawVfx(ctx,'spit',p.x,y,46,{rot:spin*.2});return;}
+  if(s.owner==='enemy'){if(s.ammo==='fire')drawVfx(ctx,'fire',p.x,y,52,{rot:spin*.3});else drawVfx(ctx,'enemy',p.x,y,40);return;}
+  if(s.ammo==='fire')drawVfx(ctx,'fire',p.x,y,54,{rot:spin*.3});
+  else if(s.ammo==='chain')drawVfx(ctx,'chain',p.x,y,62,{rot:spin});
+  else if(s.ammo==='grape'){const a=Math.atan2(s.vy,s.vx);for(let k=0;k<5;k++){const off=(k-2)*7,back=(k%2)*8;drawVfx(ctx,'pellet',p.x-Math.cos(a)*back-Math.sin(a)*off,y-Math.sin(a)*back+Math.cos(a)*off,34);}}
+  else drawVfx(ctx,'iron',p.x,y,40);}
+function drawParticle(p:Particle){const s=worldToScreen(p),a=Math.max(0,Math.min(1,p.life/p.maxLife)),y=s.y-(p.z??0),size=p.size;
+  switch(p.kind){
+    case 'damage':ctx.globalAlpha=a;ctx.fillStyle='#ffd878';ctx.font='700 14px Inter';ctx.textAlign='center';ctx.fillText(p.text||'',s.x,y);ctx.globalAlpha=1;return;
+    case 'explosion':drawVfxAnim(ctx,EXPLOSION_ROW,1-a,s.x,y-(size??90)*.12,size??90);return;
+    case 'splash':drawVfxAnim(ctx,SPLASH_ROW,1-a,s.x,y-(size??70)*.28,size??70);return;
+    case 'flash':drawVfx(ctx,'flash',s.x,y,(size??40)*(.75+.5*(1-a)),{rot:p.rot,alpha:a});return;
+    case 'smoke':drawVfx(ctx,'smoke',s.x,y,(size??22)*(1+(1-a)*1.1),{alpha:a*.75,variant:p.variant??0,rot:p.rot});return;
+    case 'spark':drawVfx(ctx,'ember',s.x,y,size??12,{alpha:a});return;
+    case 'foam':drawVfx(ctx,'foam',s.x,y,(size??18)*(1+(1-a)*.8),{alpha:a*.85,variant:p.variant??0});return;
+    case 'target':drawVfx(ctx,'target',s.x,y,(size??100)*(1.15-.15*(1-a)),{alpha:.55+.35*Math.sin(performance.now()/90)});return;
+    case 'splinter':drawVfx(ctx,'splinter',s.x,y,size??24,{rot:p.rot,alpha:Math.min(1,a*2),variant:p.variant??0});return;
+    default:drawVfx(ctx,p.kind as 'bubble'|'plank'|'firePuff'|'poison',s.x,y,(size??18)*(p.kind==='firePuff'?.6+a*.6:1),{rot:p.rot,alpha:Math.min(1,a*1.6)});}}
+// Batan gemi: yan yatar, suya gömülür, kabarcıklar çıkarır
+function drawWreck(w:Wreck){const s=worldToScreen(w),k=Math.min(1,w.t/WRECK_TIME);ctx.save();ctx.globalAlpha=Math.max(0,1-k*k);ctx.translate(s.x,s.y+k*12);ctx.rotate(Math.sin(w.t*3)*.05+k*.35);ctx.scale(1-k*.2,1-k*.5);drawNpcShip(ctx,w.sprite,w.span,0,0,w.angle,performance.now());ctx.restore();}
 function draw(){
   const w=innerWidth,h=innerHeight,map=mapDef(),th=theme();const sea=ctx.createLinearGradient(0,0,0,h);sea.addColorStop(0,th.sea[0]);sea.addColorStop(1,th.sea[1]);ctx.fillStyle=sea;ctx.fillRect(0,0,w,h);
   ctx.save();ctx.translate(w/2,h/2);ctx.scale(camera.zoom,camera.zoom);ctx.translate(-w/2,-h/2);
   const pattern=seaTilePattern(ctx);if(pattern){const vw=w/camera.zoom,vh=h/camera.zoom;pattern.setTransform(new DOMMatrix().translateSelf(-camera.x+w/2+Math.sin(performance.now()/5200)*14,-camera.y+h/2+performance.now()/260%1024).scaleSelf(2,2));ctx.globalAlpha=.2;ctx.fillStyle=pattern;ctx.fillRect(w/2-vw/2,h/2-vh/2,vw,vh);ctx.globalAlpha=1;}
   ctx.globalAlpha=.12;ctx.fillStyle=th.label;ctx.font='700 42px Cinzel';ctx.textAlign='center';for(const label of map.labels){const p=worldToScreen(label);ctx.fillText(label.text,p.x,p.y);}ctx.globalAlpha=1;
   drawCoordGrid();drawMapEdges();islands.forEach(drawIsland);drawFleetIsland();lootChests.forEach(drawLootChest);sparkles.forEach(drawSparkle);mines.forEach(m=>{const p=worldToScreen(m);drawMineSprite(ctx,p.x,p.y,performance.now(),m.arm>0,m.life<5);});monsters.forEach(drawMonster);
-  particles.forEach(p=>{const s=worldToScreen(p),a=Math.max(0,p.life/p.maxLife);ctx.globalAlpha=a;if(p.kind==='damage'){ctx.fillStyle='#ffd878';ctx.font='700 14px Inter';ctx.textAlign='center';ctx.fillText(p.text||'',s.x,s.y);}else{ctx.fillStyle=p.kind==='foam'?'#b9e2df':p.kind==='spark'?'#ffb340':'#3f4545';ctx.beginPath();ctx.arc(s.x,s.y,p.kind==='smoke'?7*(1-a)+3:p.kind==='foam'?4:2,0,7);ctx.fill();}ctx.globalAlpha=1;});
-  shots.forEach(s=>{const p=worldToScreen(s);ctx.fillStyle=s.owner==='player'?(s.ammo==='fire'?'#ff8a2a':s.ammo==='grape'?'#d8d2c0':'#ffd889'):'#ff7450';ctx.shadowColor=ctx.fillStyle;ctx.shadowBlur=9;ctx.beginPath();ctx.arc(p.x,p.y,4,0,7);ctx.fill();ctx.shadowBlur=0;});
+  wrecks.forEach(drawWreck);particles.forEach(p=>{if(UNDER.has(p.kind))drawParticle(p);});shots.forEach(drawShotShadow);
   [...enemies].sort((a,b)=>a.y-b.y).forEach(e=>{const s=worldToScreen(e),raster=e.tower?drawBastion(ctx,e.towerIndex??0,s.x,s.y):e.boss?drawBossSprite(ctx,s.x,s.y,e.angle,performance.now()):e.def?drawNpcShip(ctx,e.def.sprite,e.def.span,s.x,s.y,e.angle,performance.now()):false;if(!raster)drawShip(e,e.angle,e.color);const top=raster?(e.tower?TOWER_LABEL_OFFSET:e.boss?BOSS_LABEL_OFFSET:shipLabelOffset(e.def!.span)):-42;ctx.fillStyle='#07161c';ctx.fillRect(s.x-25,s.y+top,50,5);ctx.fillStyle=e.tower?'#e0823f':e.role==='heavy'?'#e04b3f':'#50a8b4';ctx.fillRect(s.x-25,s.y+top,50*e.hp/e.maxHp,5);ctx.fillStyle='#d7cbb5';ctx.font='10px Inter';ctx.textAlign='center';ctx.fillText(e.name,s.x,s.y+top-7);});
   if(selected&&targetExists(selected)){const t=worldToScreen(selected);ctx.strokeStyle='#f1c662';ctx.lineWidth=2;ctx.beginPath();ctx.arc(t.x,t.y,selected.kind==='monster'?selected.radius+10:34,0,7);ctx.stroke();}
   drawPlayerShip();drawPlayerLabel();
+  particles.forEach(p=>{if(!UNDER.has(p.kind))drawParticle(p);});shots.forEach(drawShotBall);
   if(abilityActive('shield')){const p=worldToScreen(player),t=performance.now()/1000,g=ctx.createRadialGradient(p.x,p.y,30,p.x,p.y,62);g.addColorStop(0,'#9fe8ff00');g.addColorStop(.75,'#9fe8ff30');g.addColorStop(1,'#d4a64c88');ctx.fillStyle=g;ctx.beginPath();ctx.arc(p.x,p.y,62,0,Math.PI*2);ctx.fill();ctx.strokeStyle=`rgba(212,166,76,${.55+Math.sin(t*6)*.25})`;ctx.lineWidth=2;ctx.beginPath();ctx.arc(p.x,p.y,62,0,Math.PI*2);ctx.stroke();}
   if(destination){const d=worldToScreen(destination),p=worldToScreen(player);ctx.strokeStyle='#e7cf8d55';ctx.setLineDash([3,8]);ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(d.x,d.y);ctx.stroke();ctx.setLineDash([]);ctx.strokeStyle='#e7cf8d';ctx.beginPath();ctx.arc(d.x,d.y,9,0,7);ctx.stroke();}
   const ps=worldToScreen(player);ctx.strokeStyle=selected?'#e8cf934d':'#e8cf9328';ctx.setLineDash([4,7]);ctx.beginPath();ctx.arc(ps.x,ps.y,selected?effectiveRange():115,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
@@ -1194,4 +1248,4 @@ function drawMinimap(){const W=170,H=125,sx=(x:number)=>x/WORLD*W,sy=(y:number)=
   mini.fillStyle='#f4dd9d';mini.beginPath();mini.arc(sx(player.x),sy(player.y),3,0,7);mini.fill();}
 let last=performance.now();function loop(now:number){const dt=Math.min(.033,(now-last)/1000);last=now;update(dt);draw();requestAnimationFrame(loop);}renderQuickSlots();updateUI();requestAnimationFrame(loop);
 // Yalnızca geliştirme sunucusunda: tarayıcı testleri için durum erişimi.
-if(import.meta.env.DEV)(window as any).__ky={state,player,camera,enemies,monsters,respawn,enterMap,mapDef,fleetOwner,lootChests,sparkles,sinkEnemy,route:(v:Vec)=>{routeTarget=navigablePoint(v);destination=routeVia(routeTarget);},fleetNav,get routeTarget(){return routeTarget;},get selected(){return selected;},get destination(){return destination;}};
+if(import.meta.env.DEV)(window as any).__ky={state,player,camera,enemies,monsters,respawn,enterMap,mapDef,fleetOwner,lootChests,sparkles,sinkEnemy,shots,particles,wrecks,select:(t:Target)=>{selected=t;state.attacking=true;},route:(v:Vec)=>{routeTarget=navigablePoint(v);destination=routeVia(routeTarget);},fleetNav,get routeTarget(){return routeTarget;},get selected(){return selected;},get destination(){return destination;}};
