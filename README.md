@@ -60,7 +60,7 @@ Gülleler kavis çizerek uçar, suda gölgeleri kayar; her güllenin kendi izi v
 
 ## Dünya: 8 seviye, 16 deniz
 
-Dünya haritası (`M` veya **DÜNYA**) Seafight tarzı küçük bir 4 × 4 paftadır. Her karede sol üstte adaya sahip filonun kısaltması, sağ üstte bulunduğun denizin sancağı, ortada deniz kodu, altta deniz adı yazar:
+Dünya haritası (`M` veya **DÜNYA**) Seafight tarzı parşömen tomarı üzerinde küçük bir 4 × 4 paftadır (korunaklı 1/1 ve 1/2 yeşil, diğerleri toprak rengi). Her karede sol üstte adaya sahip filonun kısaltması, sağ üstte bulunduğun denizin sancağı, ortada deniz kodu, altta deniz adı yazar:
 
 |   |   |   |   |
 |---|---|---|---|
@@ -70,10 +70,11 @@ Dünya haritası (`M` veya **DÜNYA**) Seafight tarzı küçük bir 4 × 4 pafta
 | 1/1 Sığınak Koyu | 1/2 Martı Kıyıları | 2/1 Mercan Geçidi | 2/2 İnci Resifleri |
 
 - **Seviye kilidi:** X/Y denizine X. seviyede girilir.
-- **Kenardan geçiş:** Denizin kenarına yanaşınca **HARİTA ATLA** istemi çıkar (`J`); paftadaki komşu denize geçilir.
+- **Kenardan geçiş:** Denizin kenarına yanaşınca **HARİTA ATLA** istemi çıkar (`J`); paftadaki komşu denize geçilir. Kenarlar sarmaldır: paftanın bir kenarından çıkan karşı kenardan girer (ör. 3/1 ↔ 4/2, 2/1 ↔ 8/1).
+- **Seviye = harita:** En yüksek seviye 8, en yüksek deniz de 8/x'tir.
 - **Temalar:** Her seviyenin kendi teması vardır: Zümrüt, Mercan, Sis, Kızıl, Buz, Zehir, Alev, Fırtına. Deniz rengi, adalar, hava efektleri (sis, kar, kor, spor, şimşek…) ve filo adası temaya göre değişir.
 - **NPC ve canavarlar:** Her denizin kendine özgü 2 NPC gemisi ve 1 canavarı vardır; toplam 32 gemi ve 16 canavar. Güçleri ve ödülleri seviyeyle artar.
-- **1/1 Sığınak Koyu savaşa kapalıdır:** Buradaki gemiler sen saldırmadıkça ateş etmez.
+- **1/1 Sığınak Koyu ve 1/2 Martı Kıyıları korunaklıdır:** Buradaki gemiler sen saldırmadıkça ateş etmez; boss etkinliği çıkmaz, mayın bırakılamaz.
 - **Batma ve yeniden doğma:** Batan gemi, hangi denizdeyse orada, düşmanlardan uzak rastgele bir noktada %10 gövdeyle yeniden doğar ve onarıma başlar.
 - **Koordinatlar:** Ekranın üstünde soldan sağa **00–60** sütunları, solda yukarıdan aşağı **AA–CZ** satırları vardır. Konumun harita rozetinde `1/1 - 35AJ` biçiminde görünür; oyuncular toplanma yerini bu koordinatla söyleyebilir.
 

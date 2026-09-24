@@ -491,31 +491,21 @@ body.shop-open .market-overlay,body.shop-open .ship-overlay,body.shop-open .load
 @media (max-width:1180px),(max-height:520px){.resources{top:auto;bottom:auto;top:74px;right:10px}.resources .compact{height:34px;min-width:74px}}
 @media (max-width:900px),(max-height:520px){.resources{top:60px}}
 
-/* ---- Dünya haritası v2: Seafight tarzı küçük pafta (4 × 4) ---- */
-.world-overlay .world-log{width:min(430px,94vw);max-height:94vh;padding:14px 16px 16px}
-.world-overlay .world-log header h2{font-size:18px}
-.world-overlay .world-chart{width:100%;margin:10px 0 0;padding:10px;aspect-ratio:auto;border:3px solid #b8904e;border-radius:6px;background:linear-gradient(#e9d7ae,#d8bf8c);background-image:none;box-shadow:inset 0 0 24px #7a562a88,0 6px 18px #000a;outline:4px double #7a1f1a;outline-offset:-10px}
-.world-overlay .world-grid{grid-template-columns:repeat(4,1fr);gap:0;border:1px solid #5a3a1a}
-.world-overlay .world-tile{aspect-ratio:1.3;display:grid;grid-template-rows:auto 1fr auto;align-content:stretch;justify-items:center;gap:0;padding:3px 3px 4px;border:1px solid #5a3a1a;border-radius:0;background:linear-gradient(160deg,color-mix(in srgb,var(--tint) 42%,#7a5428),color-mix(in srgb,var(--tile) 70%,#2a1808));color:#fff;cursor:pointer}
-.world-overlay .world-tile .wt-tag{justify-self:start;min-height:11px;font:800 9px Inter;color:#ffe29a;text-shadow:0 1px 2px #000}
-.world-overlay .world-tile .wt-flag{position:absolute;right:0;top:-2px;width:32px;height:32px;object-fit:contain;filter:drop-shadow(0 1px 2px #000)}
-.world-overlay .world-tile b{align-self:center;font:800 17px Cinzel;color:#ffe9b8;text-shadow:0 2px 3px #000}
-.world-overlay .world-tile strong{font:700 7.5px Cinzel;line-height:1.1;color:#fff4dc;text-align:center;text-shadow:0 1px 2px #000}
-.world-overlay .world-tile.safe{background:linear-gradient(160deg,#5f8a3a,#2f4a1c)}
-.world-overlay .world-tile.here{box-shadow:inset 0 0 0 2px #ffd36a,inset 0 0 14px #ffd36a66;z-index:1}
-.world-overlay .world-tile.selected{outline:2px solid #fff;outline-offset:-3px;z-index:2}
-.world-overlay .world-tile.locked{filter:grayscale(.45) brightness(.72)}
+/* ---- Dünya haritası v3: Seafight tarzı parşömen tomarı üzerinde küçük 4 × 4 pafta ---- */
+.world-overlay{background:#02090d8c}
+.world-overlay .world-scroll{position:relative;width:min(400px,88vw,calc(88vh * .75));aspect-ratio:480/640;background:url(/assets/world-scroll-v1.webp) center/100% 100% no-repeat;filter:drop-shadow(0 14px 30px #000c)}
+.world-overlay .scroll-close{position:absolute;right:2%;top:.5%;z-index:3;width:30px;height:30px;padding:0;border:2px solid #6a4a22;border-radius:50%;background:radial-gradient(circle,#3a2a1a,#1a1008);color:#f0d9a8;font:700 18px/1 Inter;cursor:pointer;box-shadow:0 2px 6px #000a}
+.world-overlay .world-chart{position:absolute;left:9.5%;right:9.5%;top:11%;bottom:11%;margin:0;padding:0;background:none;border:0;box-shadow:none;outline:0;aspect-ratio:auto;width:auto}
+.world-overlay .world-grid{height:100%;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,1fr);gap:0;border:2px solid #7a5628;box-shadow:0 0 0 1px #3a2410}
+.world-overlay .world-tile{position:relative;display:grid;grid-template-rows:auto 1fr auto;justify-items:center;align-content:stretch;gap:0;aspect-ratio:auto;padding:3px 3px 5px;border:1px solid #7a5628;border-radius:0;cursor:default;filter:none;outline:0;
+  background:repeating-linear-gradient(135deg,rgba(90,55,20,.08) 0 2px,transparent 2px 6px),linear-gradient(160deg,#d9b57c,#b88a4e);color:#5a2a0e}
+.world-overlay .world-tile.safe{background:repeating-linear-gradient(135deg,rgba(20,50,10,.12) 0 2px,transparent 2px 6px),linear-gradient(160deg,#8fae5a,#5f8a36);color:#24400c}
+.world-overlay .world-tile .wt-tag{justify-self:start;min-height:12px;font:800 10px Inter;color:#3a1a06;text-shadow:none}
+.world-overlay .world-tile .wt-flag{position:absolute;right:1px;top:-1px;width:30px;height:30px;object-fit:contain;filter:drop-shadow(0 1px 1px #0008)}
+.world-overlay .world-tile b{align-self:center;font:800 18px Cinzel;color:#8a3a10;text-shadow:0 1px 0 #f3dcaa}
+.world-overlay .world-tile.safe b{color:#f6ffe0;text-shadow:0 1px 2px #1a3008}
+.world-overlay .world-tile strong{font:700 7px Cinzel;line-height:1.1;color:inherit;text-align:center;text-shadow:none;opacity:.9}
+.world-overlay .world-tile.here{box-shadow:inset 0 0 0 2px #fff3c0,inset 0 0 12px #ffe08a;z-index:1}
+.world-overlay .world-tile.locked{filter:saturate(.55) brightness(.82)}
+.world-overlay .world-tile.selected{outline:0}
 .world-overlay .world-tile i,.world-overlay .world-tile small,.world-overlay .world-tile em{display:none}
-.world-overlay .world-info{flex-direction:column;align-items:stretch;gap:8px;margin-top:10px;padding:10px 12px}
-.world-overlay .world-info h3{font-size:15px;margin:2px 0 4px}
-.world-overlay .world-info p{font-size:11px;margin:0 0 6px}
-.world-overlay .world-info dl{flex-wrap:wrap;gap:6px 14px}
-.world-overlay .world-info dd{font-size:10.5px}
-.world-overlay .world-info button{padding:7px 10px;font-size:10px}
-/* Elit geminin özel yeteneği: saldırı düğmesinin sol üstünde, mor halkalı; gemi değişince ikon ve ad güncellenir */
-.combat-controls .combat-action.elite{right:150px;bottom:136px;width:64px;height:64px;min-width:0;border:0;background:url(/assets/ui-ring-v1.webp) center/100% 100% no-repeat;box-shadow:0 0 0 2px #9a6fd0,0 0 14px #a94fff66}
-.combat-controls .combat-action.elite b{inset:14%;border-radius:50%;overflow:hidden;background:radial-gradient(circle,#3a2a5a,#120c1e)}
-.combat-controls .combat-action.elite .elite-ability-icon{display:block;width:100%;height:100%;background:var(--elite-img) center/140% auto no-repeat}
-.combat-controls .combat-action.elite>span{bottom:-14px;max-width:none;font-size:7px}
-.combat-controls .combat-action.elite.active{box-shadow:0 0 0 3px #d993ff,0 0 22px #d993ffaa}
-.combat-controls .combat-action.elite::after{content:'';position:absolute;inset:14%;border-radius:50%;background:conic-gradient(#000a calc(var(--cd,0)*360deg),transparent 0);pointer-events:none}
