@@ -44,6 +44,13 @@ const ARCH={
            {t:.46,h:46,r:.95,flag:8,yards:[{y:43,w:17,drop:10,sail:1},{y:32,w:21.5,drop:12,sail:1},{y:19,w:26,drop:13.5,sail:0,bulge:2.3}]},
            {t:.2,h:36,r:.8,flag:5,yards:[{y:33,w:13,drop:8.5,sail:2},{y:23.5,w:16.5,drop:9.5,sail:2}],gaff:{foot:3,throat:14,peak:18,len:12,sail:2,bulge:1}}],
     jib:{sail:2,bulge:1.2,drop:3},bowsprit:14,cargo:2,castles:[{from:0,to:.2,h:3.2,windows:4,lanterns:true},{from:.83,to:.93,h:1.6,windows:2}],span:112}),
+  // Hafif gemilerin gelişmiş tipleri (önizleme): iki direkli uskuna ve üç direkli karavela
+  schooner:(p)=>({hull:{L:48,B:15,D:9,bowRise:3,sternRise:3.6,sternW:.56,bulwark:1.1,waterline:.72},hp:hullPaint(p,{ports:3,stripe:true}),guns:{count:3},figurehead:true,
+    masts:[{t:.66,h:34,r:.65,flag:5,yards:[{y:31,w:12,drop:7,sail:1,bulge:1.6}],gaff:{foot:2.4,throat:22,peak:26,len:14,sail:0,bulge:1.6}},{t:.34,h:37,r:.7,flag:6,gaff:{foot:2.4,throat:27,peak:33,len:18,sail:1,bulge:1.7}}],
+    jib:{sail:2,bulge:1.3,drop:2},bowsprit:12,cargo:3,castles:[{from:0,to:.16,h:2.2,windows:3,lanterns:true}],span:104}),
+  caravel:(p)=>({hull:{L:50,B:16,D:9.5,bowRise:3.4,sternRise:5.2,sternW:.6,bulwark:1.2,waterline:.72},hp:hullPaint(p,{ports:3,stripe:true}),guns:{count:3},
+    masts:[{t:.74,h:30,r:.65,flag:4,yards:[{y:27,w:14,drop:9,sail:0,bulge:1.8}]},{t:.5,h:36,r:.72,flag:6,lateen:{len:32,low:5,high:34,sail:1}},{t:.24,h:28,r:.6,flag:4,lateen:{len:24,low:4,high:26,sail:2}}],
+    bowsprit:7,cargo:3,castles:[{from:0,to:.2,h:3.4,windows:3,lanterns:true},{from:.86,to:.96,h:1.4,windows:1}],span:104}),
   // Boss amiral gemisi: 4 direkli, iki katlı top güverteli büyük kalyon (span 176)
   flagship:(p)=>({hull:{L:90,B:27,D:14.5,bowRise:5.5,sternRise:10,sternW:.8,bulwark:1.8,waterline:.72},hp:hullPaint(p,{ports:10,stripe:true}),guns:{count:10},figurehead:true,
     masts:[{t:.8,h:44,r:1,flag:6,yards:[{y:41,w:17,drop:9.5,sail:1},{y:30.5,w:22,drop:11.5,sail:1},{y:18.5,w:27,drop:13,sail:1,bulge:2.2}]},
@@ -117,6 +124,9 @@ export const SHIPS=[
 ];
 
 // ---------------------------------------------------------------- Canavarlar (tür + palet)
+// Hafif gemilerin gelişmiş sürümleri (id: <npc>-v2). sloop → uskuna, lugger → karavela; renkler aynı.
+const LIGHT_UP={sloop:'schooner',lugger:'caravel'};
+export const LIGHT_V2=SHIPS.filter(x=>x.id.endsWith('-light')&&LIGHT_UP[x.arch]).map(x=>ship(`${x.id}-v2`,LIGHT_UP[x.arch],x.pal));
 // ---------------------------------------------------------------- Harita bossları
 // Her haritanın bossu, o haritanın en güçlü NPC'sinin (ağır) renklerini taşır; altın süsleme ve amiral sancağıyla büyütülür.
 // Eski görselli iki ağır NPC (Yağmacılar, Kızıl Savaş Gemisi) katalogda olmadığı için paletleri burada.
