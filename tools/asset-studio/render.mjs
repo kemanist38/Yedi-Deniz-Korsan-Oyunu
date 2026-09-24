@@ -32,6 +32,7 @@ const jobs={
   'sea-tile-v1':()=>page.evaluate(()=>renderSeaTile()),
   'world-chart-v1':()=>page.evaluate(()=>renderWorldChart()),
   'vfx-atlas-v1':()=>page.evaluate(()=>renderVfxAtlas()),
+  'world-scroll-v1':()=>page.evaluate(()=>renderWorldScroll()),
   'sea-sparkle-v1':()=>page.evaluate(()=>renderSeaSparkle()),
   'fleet-towers-built-v1':()=>page.evaluate(()=>renderBuiltTowers()),
   'fleet-island-3d-v1':()=>page.evaluate(a=>renderFleetIsland3D(a),islandArgs()),
