@@ -202,16 +202,19 @@ for(const key of MAP_KEYS){
 }
 
 // ---------------------------------------------------------------- Görevler (seviyeye göre)
-export type QuestDef={id:string;tier:number;title:string;description:string;kind:'npc'|'monster'|'chest';ids:string[];required:number;gold:number;wood:number;xp:number;pearls:number};
-const tierMaps=(t:number)=>MAP_KEYS.filter(k=>tierOf(k)===t).map(k=>MAPS[k]);
-export const QUESTS:QuestDef[]=[1,2,3,4,5,6,7,8,9].flatMap(t=>{
-  const maps=tierMaps(t),light=maps.map(m=>m.npcs[0]),heavy=maps.map(m=>m.npcs[1]),monsters=maps.map(m=>m.monster),theme=THEMES[t].name,scale=(v:number)=>Math.round(v*Math.pow(t,1.3));
-  const names=(ids:string[],src:Record<string,{name:string}>)=>ids.map(id=>src[id].name).join(' ve ');
+// Görevler haritaya özeldir: her haritanın 4 görevi o haritanın NPC ve canavarlarıyla yapılır.
+// Oyuncu hangi haritadaysa (kendi seviyesine kadar her harita açık) o haritanın görevlerini alır.
+// Ödül, görevdeki batırmaların normal ödülünün 1,5 katıdır; böylece harita seviyesi arttıkça ödül de artar. İnci ödülü seviyeyle büyür.
+export type QuestDef={id:string;map:MapKey;tier:number;title:string;description:string;kind:'npc'|'monster'|'chest';ids:string[];required:number;gold:number;xp:number;pearls:number};
+export const QUEST_BONUS=1.5;
+export const QUESTS:QuestDef[]=MAP_KEYS.flatMap(key=>{
+  const m=MAPS[key],t=m.tier,L=NPCS[m.npcs[0]],H=NPCS[m.npcs[1]],Mo=MONSTERS[m.monster],pay=(n:number,u:{gold:number;xp:number},k=QUEST_BONUS)=>({gold:Math.round(n*u.gold*k),xp:Math.round(n*u.xp*k)});
+  const nL=15+t*3,nH=8+t*2,nM=t<5?2:3,nC=5+t,head=`${key} ${m.name}`;
   return[
-    {id:`q${t}-light`,tier:t,title:`${theme}: Devriye Avı`,description:`${names(light,NPCS)} gemilerinden ${10+t*2} tanesini batır.`,kind:'npc',ids:light,required:10+t*2,gold:scale(90),wood:scale(18),xp:scale(260),pearls:1+Math.ceil(t/2)},
-    {id:`q${t}-heavy`,tier:t,title:`${theme}: Ağır Filo`,description:`${names(heavy,NPCS)} gemilerinden ${6+t} tanesini denizin dibine gönder.`,kind:'npc',ids:heavy,required:6+t,gold:scale(160),wood:scale(30),xp:scale(420),pearls:2+t},
-    {id:`q${t}-monster`,tier:t,title:`${theme}: Canavar Avı`,description:`${names(monsters,MONSTERS)} canavarlarından ${t<5?1:2} tanesini yen.`,kind:'monster',ids:monsters,required:t<5?1:2,gold:scale(220),wood:scale(40),xp:scale(600),pearls:3+t},
-    {id:`q${t}-chest`,tier:t,title:`${theme}: Ganimet Avı`,description:`Denizlerde sürüklenen ya da batan gemilerden kalan ${6+t} ganimet sandığını topla.`,kind:'chest',ids:['any'],required:6+t,gold:scale(260),wood:scale(50),xp:scale(700),pearls:4+t},
+    {id:`q${key}-light`,map:key,tier:t,title:`${head}: Devriye Avı`,description:`${L.name} gemilerinden ${nL} tanesini batır.`,kind:'npc',ids:[L.id],required:nL,...pay(nL,L),pearls:2+t},
+    {id:`q${key}-heavy`,map:key,tier:t,title:`${head}: Ağır Filo`,description:`${H.name} gemilerinden ${nH} tanesini denizin dibine gönder.`,kind:'npc',ids:[H.id],required:nH,...pay(nH,H),pearls:3+2*t},
+    {id:`q${key}-monster`,map:key,tier:t,title:`${head}: Canavar Avı`,description:`${Mo.name} canavarından ${nM} tanesini yen.`,kind:'monster',ids:[Mo.id],required:nM,...pay(nM,Mo),pearls:5+2*t},
+    {id:`q${key}-chest`,map:key,tier:t,title:`${head}: Ganimet Avı`,description:`Bu denizde sürüklenen ${nC} ganimet sandığını topla.`,kind:'chest',ids:[key],required:nC,...pay(nC,{gold:L.gold*4,xp:L.xp*3},1),pearls:4+2*t},
   ];
 });
 export const QUEST_COOLDOWN_MS=2*60*60*1000;
