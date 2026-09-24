@@ -15,9 +15,10 @@ export const shipLabelOffset=(span:number)=>-Math.round(shipDrawSize(span)*.46);
 export function drawNpcShip(ctx:CanvasRenderingContext2D,sprite:string,span:number,x:number,y:number,angle:number,time:number){
   const sheet=load(sprite);if(!ready(sheet))return false;
   const step=Math.PI*2/SHIP.dirs,index=((Math.round(angle/step)%SHIP.dirs)+SHIP.dirs)%SHIP.dirs;
-  const size=shipDrawSize(span),k=size/SHIP.frame,bob=Math.sin(time/460+x*.013)*1.4;
+  // Kare boyu sayfadan okunur (NPC 192 px, boss 224 px); çapa karenin aynı oranındadır.
+  const F=sheet.naturalWidth/SHIP.cols,size=shipDrawSize(span),k=size/F,bob=Math.sin(time/460+x*.013)*1.4;
   ctx.save();ctx.shadowColor='#000a';ctx.shadowBlur=11;ctx.shadowOffsetY=3;
-  ctx.drawImage(sheet,(index%SHIP.cols)*SHIP.frame,Math.floor(index/SHIP.cols)*SHIP.frame,SHIP.frame,SHIP.frame,x-SHIP.anchorX*k,y+bob-SHIP.anchorY*k,size,size);
+  ctx.drawImage(sheet,(index%SHIP.cols)*F,Math.floor(index/SHIP.cols)*F,F,F,x-F*SHIP.anchorX/SHIP.frame*k,y+bob-F*SHIP.anchorY/SHIP.frame*k,size,size);
   ctx.restore();return true;
 }
 

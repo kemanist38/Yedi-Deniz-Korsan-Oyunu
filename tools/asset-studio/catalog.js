@@ -44,6 +44,13 @@ const ARCH={
            {t:.46,h:46,r:.95,flag:8,yards:[{y:43,w:17,drop:10,sail:1},{y:32,w:21.5,drop:12,sail:1},{y:19,w:26,drop:13.5,sail:0,bulge:2.3}]},
            {t:.2,h:36,r:.8,flag:5,yards:[{y:33,w:13,drop:8.5,sail:2},{y:23.5,w:16.5,drop:9.5,sail:2}],gaff:{foot:3,throat:14,peak:18,len:12,sail:2,bulge:1}}],
     jib:{sail:2,bulge:1.2,drop:3},bowsprit:14,cargo:2,castles:[{from:0,to:.2,h:3.2,windows:4,lanterns:true},{from:.83,to:.93,h:1.6,windows:2}],span:112}),
+  // Boss amiral gemisi: 4 direkli, iki katlı top güverteli büyük kalyon (span 176)
+  flagship:(p)=>({hull:{L:90,B:27,D:14.5,bowRise:5.5,sternRise:10,sternW:.8,bulwark:1.8,waterline:.72},hp:hullPaint(p,{ports:10,stripe:true}),guns:{count:10},figurehead:true,
+    masts:[{t:.8,h:44,r:1,flag:6,yards:[{y:41,w:17,drop:9.5,sail:1},{y:30.5,w:22,drop:11.5,sail:1},{y:18.5,w:27,drop:13,sail:1,bulge:2.2}]},
+           {t:.58,h:56,r:1.15,flag:11,yards:[{y:53,w:20,drop:11,sail:1},{y:40,w:26,drop:14,sail:0},{y:24,w:32,drop:16,sail:0,bulge:2.5}]},
+           {t:.36,h:46,r:1,flag:7,yards:[{y:43,w:16,drop:9,sail:1},{y:32,w:21,drop:11,sail:1},{y:19.5,w:25,drop:12.5,sail:2,bulge:2.1}]},
+           {t:.15,h:36,r:.85,flag:5,lateen:{len:28,low:8,high:34,sail:2}}],
+    jib:{sail:2,bulge:1.3,drop:3},bowsprit:19,cargo:2,castles:[{from:0,to:.26,h:6.5,windows:6,lanterns:true},{from:.84,to:.95,h:3,windows:3,lanterns:true}],span:176}),
   galleon:(p)=>({hull:{L:72,B:22,D:12,bowRise:5,sternRise:8,sternW:.74,bulwark:1.6,waterline:.72},hp:hullPaint(p,{ports:8}),guns:{count:8},figurehead:true,
     masts:[{t:.74,h:42,r:.9,flag:6,yards:[{y:39,w:16,drop:9,sail:1},{y:29,w:21,drop:11,sail:1},{y:17.5,w:25,drop:12.5,sail:1,bulge:2.1}]},
            {t:.48,h:50,r:1,flag:9,yards:[{y:47,w:18,drop:10,sail:1},{y:35.5,w:23,drop:12.5,sail:1},{y:21.5,w:28,drop:14.5,sail:0,bulge:2.4}]},
@@ -55,7 +62,7 @@ const ARCH={
 function ship(id,arch,p){
   const a=ARCH[arch](p),seed=[...id].reduce((s,ch)=>s*31+ch.charCodeAt(0)>>>0,7)%9973;
   const sail=(base,extra={})=>({base,dirt:p.dirt??.14,ragged:p.ragged||0,patches:p.patches||0,patchColors:p.patchColors||['#6b4a33'],...extra});
-  return{id,arch,span:a.span,def:{seed,hull:a.hull,hullPaint:a.hp,deckPaint:{wood:p.deck||'#6a5236',dark:p.deckDark||'#44331f'},spar:p.spar||'#3a281b',
+  return{id,arch,pal:p,span:a.span,def:{seed,hull:a.hull,hullPaint:a.hp,deckPaint:{wood:p.deck||'#6a5236',dark:p.deckDark||'#44331f'},spar:p.spar||'#3a281b',
     sails:[sail(p.sail,{emblem:E[p.emblem],emblemColor:p.emblemColor,stripes:p.stripes||0,stripeColor:p.stripeColor,hstripes:p.hstripes||0,border:p.border,battens:arch==='junk'?6:0}),
            sail(p.sail2||p.sail,{stripes:p.stripes||0,stripeColor:p.stripeColor,hstripes:p.hstripes||0,border:p.border,battens:arch==='junk'?6:0}),
            sail(p.sail3||p.sail2||p.sail,{battens:arch==='junk'?5:0})],
@@ -110,6 +117,31 @@ export const SHIPS=[
 ];
 
 // ---------------------------------------------------------------- Canavarlar (tür + palet)
+// ---------------------------------------------------------------- Harita bossları
+// Her haritanın bossu, o haritanın en güçlü NPC'sinin (ağır) renklerini taşır; altın süsleme ve amiral sancağıyla büyütülür.
+// Eski görselli iki ağır NPC (Yağmacılar, Kızıl Savaş Gemisi) katalogda olmadığı için paletleri burada.
+const LEGACY_PAL={'n1-2-heavy':{...wood,plank:'#2e2420',plankDark:'#1a1411',band:'#3a2e28',portLid:'#4a3a30',sail:'#3a3634',sail2:'#46413e',sail3:'#524c48',flag:'#141414',flagColor:'#e8dcc0',patches:2,patchColors:['#5a524c'],dirt:.25},
+  'n2-1-heavy':{...wood,plank:'#4a1c16',plankDark:'#2e100c',band:'#8a241a',portLid:'#b8342a',sail:'#c8402e',sail2:'#d85a44',sail3:'#e8d8c0',stripes:3,stripeColor:'#f0e0c8',flag:'#b8342a',flagMark:'bar'}};
+const heavyPal=id=>LEGACY_PAL[id]||SHIPS.find(x=>x.id===id).pal;
+const boss=(key,heavy,extra)=>{const p=heavyPal(heavy);return ship(`boss-${key.replace('/','-')}`,'flagship',{...p,trim:'#f2c65a',glass:'#ffd98a',border:p.border||'#e0b24e',...extra});};
+export const BOSSES=[
+  boss('1/1','n1-1-heavy',{emblem:'anchor',emblemColor:'#1f4a2a',sail3:'#e6dcb8'}),
+  boss('1/2','n1-2-heavy',{emblem:'crown',emblemColor:'#6a4a2a',flag:'#2a2a2a',flagMark:'cross'}),
+  boss('2/1','n2-1-heavy',{emblem:'shell',emblemColor:'#a8342c'}),
+  boss('2/2','n2-2-heavy',{emblem:'crown',emblemColor:'#1f6f6a'}),
+  boss('3/1','n3-1-heavy',{emblem:'eye',emblemColor:'#2c3833'}),
+  boss('3/2','n3-2-heavy',{emblem:'skull',emblemColor:'#163024'}),
+  boss('4/1','n4-1-heavy',{emblem:'skull',emblemColor:'#5a0f0f'}),
+  boss('4/2','n4-2-heavy',{emblem:'sun',emblemColor:'#5a3a22'}),
+  boss('5/1','n5-1-heavy',{emblem:'snow',emblemColor:'#2a5a7a'}),
+  boss('5/2','n5-2-heavy',{emblem:'crown',emblemColor:'#2a5a7a'}),
+  boss('6/1','n6-1-heavy',{emblem:'drop',emblemColor:'#2f4a1a'}),
+  boss('6/2','n6-2-heavy',{emblem:'skull',emblemColor:'#3a4a1a'}),
+  boss('7/1','n7-1-heavy',{emblem:'flame',emblemColor:'#7a1f0a'}),
+  boss('7/2','n7-2-heavy',{emblem:'sun',emblemColor:'#7a2a0a'}),
+  boss('8/1','n8-1-heavy',{emblem:'bolt',emblemColor:'#1f2f5a'}),
+  boss('8/2','n8-2-heavy',{emblem:'spiral',emblemColor:'#1f2f5a'}),
+];
 export const MONSTERS=[
   {id:'m1-1',kind:'crab',pal:{base:'#4a6a3a',dark:'#1e2e16',light:'#8aa85a',spots:'#c8d070',eye:['#ffe070','#ffb020'],limb:'#5a7a44'}},
   {id:'m1-2',kind:'serpent',pal:{base:'#2f6a6a',dark:'#123436',light:'#7ac0b0',spots:'#e0e090',eye:['#ffe070','#ff9a20'],fin:'#e07a4a'}},

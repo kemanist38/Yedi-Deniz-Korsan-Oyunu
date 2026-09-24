@@ -104,6 +104,21 @@ export const PORTRAIT_COUNT=BOSS_PORTRAIT+1;
 export const PORTRAIT_COLS=10;
 export const PORTRAIT_ATLAS='/assets/portraits-v2.webp';
 
+// ---------------------------------------------------------------- Harita bossları
+// Her haritada o haritanın en güçlü NPC'sinden (ağır gemi) 200 tane batırılınca haritanın bossu çıkar.
+// Boss yalnızca tecrübe puanı ve inci verir. Can: ağır NPC ×30, hasar ×2 (3 güllelik yelpaze), canı yarıya inince 2 muhafız çağırır.
+export const BOSS_KILLS=200;
+export const BOSS_ATLAS='/assets/boss-portraits-v1.webp',BOSS_ATLAS_COLS=8;
+export type BossDef={key:MapKey;id:string;name:string;sprite:string;span:number;role:'heavy';tier:number;hp:number;damage:number;reload:number;speed:number;gold:number;xp:number;pearls:number;portrait:number;trigger:string};
+const BOSS_NAMES:Record<MapKey,string>={
+  '1/1':'Yosunbıyık Reis','1/2':'Kara Martı Reis','2/1':'Kızıl Mercan Amirali','2/2':'İnci Kraliçesi Nerissa',
+  '3/1':'Sis Lordu Morvan','3/2':'Solgun Kaptan Elias','4/1':'Kanlı Barones','4/2':'Demir Ejder Hanı',
+  '5/1':'Ayaz Hükümdarı','5/2':'Kutup Amirali Borealis','6/1':'Zehirdiş','6/2':'Veba Piskoposu',
+  '7/1':'Kül Amirali Pyros','7/2':'Magma Sultanı','8/1':'Şimşek Lordu','8/2':'Kasırga İmparatoru'};
+export const bossFor=(key:MapKey):BossDef=>{const m=MAPS[key],h=NPCS[m.npcs[1]],hp=h.hp*30,i=MAP_KEYS.indexOf(key);
+  return{key,id:`boss-${key.replace('/','-')}`,name:BOSS_NAMES[key],sprite:`/assets/boss-${key.replace('/','-')}.webp`,span:260,role:'heavy',tier:m.tier,hp,damage:h.damage*2,reload:2.2,speed:Math.round(h.speed*.8),gold:0,
+    xp:Math.round(hp/60),pearls:50*m.tier,portrait:i,trigger:h.id};};
+
 // ---------------------------------------------------------------- Koordinat ızgarası
 // Seafight tarzı: üstte soldan sağa 00–60 sütun, solda yukarıdan aşağı AA–CZ satır. Konum "35AJ" gibi yazılır.
 export const GRID_COLS=61,GRID_ROWS=78,CELL_W=WORLD_WIDTH/GRID_COLS,CELL_H=WORLD_HEIGHT/GRID_ROWS;

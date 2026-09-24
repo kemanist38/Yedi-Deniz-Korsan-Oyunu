@@ -578,3 +578,9 @@ body.shop-open .market-overlay,body.shop-open .ship-overlay,body.shop-open .load
 .buy-confirm button{padding:10px;border:1px solid #b8904e;border-radius:5px;font:700 11px Cinzel;cursor:pointer}
 #buyOk{background:#2f6b3e;border-color:#6fd68a;color:#eaffef}#buyOk:disabled{opacity:.45;cursor:default}#buyCancel{background:#3a2a1a;color:#f1d091}
 @media(max-width:800px){.market-item.buy-row,.buy-row:has(.cannon-shop-art){grid-template-columns:54px 1fr}.buy-box{grid-column:1/-1}}
+/* Harita bossu satırı */
+.event-row.boss{border-color:#f1c662aa;box-shadow:0 0 16px #f1c66244}.event-row.boss small{color:#f1c662}
+.event-row.boss i em{background:linear-gradient(90deg,#f1c662,#e0823f)}
+.event-row.boss-wait b{float:right;margin-top:-16px;color:#f1c662;font:800 11px Inter}
+.event-row.boss-wait i em{background:#9b7b45}
+.event-row i.event-art{height:44px;margin:0;border-radius:5px;background-color:#0c2228;overflow:hidden}

@@ -30,7 +30,9 @@ const jobs={
 };
 for(const name of ['ammo-fire','ammo-grape','ammo-explosive','ammo-breaker','ammo-leech','icon-mine','icon-attack','icon-repair','icon-speed','icon-shield','icon-hat','icon-chest','officer-gunner','officer-helmsman','officer-carpenter','officer-lookout','officer-quartermaster','officer-surgeon','ui-ring','ui-ring-attack','ui-slot','icon-scroll','icon-gear','icon-anvil','gunner-vignette','icon-market','icon-menu','captain-bust','icon-flag'])jobs[`${name}-v1`]=()=>page.evaluate(n=>renderIcon(n),name);
 jobs['sea-mine-v1']=()=>page.evaluate(()=>renderMineSprite());
-const {SHIPS,MONSTERS}=await import('./catalog.js');
+const {SHIPS,MONSTERS,BOSSES}=await import('./catalog.js');
+for(const b of BOSSES)jobs[b.id]=()=>page.evaluate(id=>renderCatalogShip(id,{frame:224}),b.id);
+jobs['boss-portraits-v1']=()=>page.evaluate(ids=>renderPortraitsV2(ids,{cols:8}),BOSSES.map(b=>b.id));
 for(const sp of SHIPS)jobs[`ship-${sp.id}`]=()=>page.evaluate(id=>renderCatalogShip(id),sp.id);
 for(const m of MONSTERS)jobs[`monster-${m.id}`]=()=>page.evaluate(id=>renderCatalogMonster(id),m.id);
 {const src=fs.readFileSync(path.resolve(here,'../../src/campaign.ts'),'utf8');const npcIds=[...src.matchAll(/npc\('(n\d-\d-(?:light|heavy))'/g)].map(m=>m[1]),monIds=[...src.matchAll(/mon\('(m\d-\d)'/g)].map(m=>m[1]);jobs['portraits-v2']=()=>page.evaluate(order=>renderPortraitsV2(order),[...npcIds,...monIds,'boss']);}
