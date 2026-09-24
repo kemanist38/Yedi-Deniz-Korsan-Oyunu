@@ -251,6 +251,17 @@ export function buildIcon(name){
   if(name==='icon-chest'){
     const c=buildChestIcon();root.add(c);root.userData.cam={pos:[0,8,15],look:[0,3,0]};
   }
+  if(name==='icon-flag'){
+    // "Buradasın" sancağı: ahşap direk, pirinç topuz, dalgalanan kızıl korsan bayrağı
+    const wood=std({color:'#5a3a1e',roughness:.8,metalness:0}),brass=std({color:'#d4a64c',metalness:.9,roughness:.3});
+    const pole=new THREE.Mesh(new THREE.CylinderGeometry(.22,.28,12,12),wood);pole.position.y=6;root.add(pole);
+    const knob=new THREE.Mesh(new THREE.SphereGeometry(.5,16,12),brass);knob.position.y=12.2;root.add(knob);
+    const base=new THREE.Mesh(new THREE.CylinderGeometry(1.4,1.7,.6,20),brass);base.position.y=.3;root.add(base);
+    const tex=T.flagTexture({seed:44,base:'#b3261e',mark:(c,W,H,col)=>{c.fillStyle=col;c.beginPath();c.arc(W*.4,H*.42,H*.2,0,7);c.fill();c.fillRect(W*.4-H*.12,H*.55,H*.24,H*.12);c.fillStyle='#b3261e';c.beginPath();c.arc(W*.4-H*.08,H*.4,H*.055,0,7);c.arc(W*.4+H*.08,H*.4,H*.055,0,7);c.fill();c.strokeStyle=col;c.lineWidth=H*.06;c.beginPath();c.moveTo(W*.4-H*.3,H*.72);c.lineTo(W*.4+H*.3,H*.9);c.moveTo(W*.4+H*.3,H*.72);c.lineTo(W*.4-H*.3,H*.9);c.stroke();},markColor:'#f0e2c0',tail:false});
+    const g=new THREE.PlaneGeometry(7,4.6,14,4),p=g.attributes.position;for(let i=0;i<p.count;i++){const x=p.getX(i)+3.5;p.setX(i,x);p.setZ(i,Math.sin(x/7*Math.PI*1.6)*.7*x/7);p.setY(i,p.getY(i)-x*.08);}g.computeVertexNormals();
+    const flag=new THREE.Mesh(g,std({map:tex,side:THREE.DoubleSide,roughness:.85,metalness:0}));flag.position.set(.2,9.4,0);root.add(flag);
+    root.rotation.y=-.35;root.userData.cam={pos:[0,4,15],look:[1.6,6.5,0]};
+  }
   if(name==='icon-market'){
     // Pazar tezgâhı: ahşap tezgâh, dört direk, kırmızı-krem çizgili tente, çuval, fıçı ve altın yığını
     const wood=std({map:T.chestWoodTexture({seed:131,wood:'#8a5a32',dark:'#4a2c16'}),roughness:.8,metalness:0}),post=std({color:'#5a3a20',roughness:.8,metalness:0});

@@ -254,8 +254,8 @@ canvas.addEventListener('pointerdown',e=>{
   }
   const towerHit=enemies.filter(n=>n.tower&&towerContains(world,n)).sort((a,b)=>b.y-a.y)[0];
   const hit=towerHit??[...enemies,...monsters].filter(n=>dist(n,world)<Math.max(42,n.kind==='monster'?n.radius:(n.hitRadius??0))).sort((a,b)=>dist(a,world)-dist(b,world))[0];
-  if(hit){selected=hit;state.attacking=false;ui('attack').classList.remove('active');toast(`${hit.name} hedef seçildi`);}
-  else{const glint=sparkles.find(g=>dist(g,world)<34);if(glint){routeTarget={x:glint.x,y:glint.y};destination=routeVia(routeTarget);state.attacking=false;ui('attack').classList.remove('active');toast('Rota inci pırıltısına çizildi');return;}const chest=lootChests.find(c=>dist(c,world)<CHEST_CLICK_RADIUS);routeTarget=chest?{x:chest.x,y:chest.y}:navigablePoint(world);destination=routeVia(routeTarget);state.attacking=false;ui('attack').classList.remove('active');if(chest)toast('Rota ganimet sandığına çizildi');}
+  if(hit){if(hit!==selected){selected=hit;state.attacking=false;attackChase=false;ui('attack').classList.remove('active');toast(`${hit.name} hedef seçildi`);}}
+  else{const glint=sparkles.find(g=>dist(g,world)<34);if(glint){routeTarget={x:glint.x,y:glint.y};destination=routeVia(routeTarget);attackChase=false;toast('Rota inci pırıltısına çizildi');return;}const chest=lootChests.find(c=>dist(c,world)<CHEST_CLICK_RADIUS);routeTarget=chest?{x:chest.x,y:chest.y}:navigablePoint(world);destination=routeVia(routeTarget);attackChase=false;if(chest)toast('Rota ganimet sandığına çizildi');}
 });
 ui('attack').onclick=toggleAttack;
 ui('repair').onclick=toggleRepair;
@@ -450,7 +450,9 @@ function broadsideCourse(target:Target){
   return Math.abs(angleDelta(right,player.angle))<=Math.abs(angleDelta(left,player.angle))?right:left;
 }
 
-function toggleAttack(){if(!selected||!targetExists(selected)){toast('Önce bir hedef seç');return;}state.attacking=!state.attacking;if(state.attacking){state.repairing=false;fireAtTarget();}ui('attack').classList.toggle('active',state.attacking);toast(state.attacking?'Otomatik saldırı başladı':'Saldırı durduruldu');}
+// Saldırı menzil dışından başlatılırsa gemi hedefe yaklaşır; kaptan rota verirse yaklaşma biter.
+let attackChase=false;
+function toggleAttack(){if(!selected||!targetExists(selected)){toast('Önce bir hedef seç');return;}state.attacking=!state.attacking;attackChase=state.attacking&&dist(player,selected)>effectiveRange();if(state.attacking){state.repairing=false;fireAtTarget();}ui('attack').classList.toggle('active',state.attacking);toast(state.attacking?'Otomatik saldırı başladı':'Saldırı durduruldu');}
 function toggleRepair(){
   if(state.hp>=effectiveMaxHp()){toast('Gövde zaten tamamen sağlam');return;}
   const danger=enemies.some(e=>e.aggro&&dist(e,player)<520)||monsters.some(m=>m.aggro&&dist(m,player)<520);
@@ -679,8 +681,10 @@ function openWorldMap(){chartSelection=currentMap;renderWorldMap();ui('worldMapO
 function closeWorldMap(){ui('worldMapOverlay').classList.remove('open');}
 function renderWorldMap(){
   const chart=ui('worldChart');chart.style.backgroundImage=`url(${WORLD_CHART})`;
+  // Seafight tarzı küçük pafta: sol üstte adaya sahip filonun kısaltması, sağ üstte bulunduğun denizin sancağı, ortada deniz kodu, altta adı
   chart.innerHTML=`<div class="world-grid">${GRID.flat().map(key=>{const m=MAPS[key],locked=state.level<m.tier,here=key===currentMap,owned=fleetOwner(key)==='player',t=THEMES[m.tier];
-    return`<button class="world-tile ${here?'here':''} ${locked?'locked':''} ${m.safe?'safe':''} ${chartSelection===key?'selected':''}" data-chart="${key}" style="--tile:${t.sea[0]};--tile2:${t.sea[1]};--tint:${t.tint}"><i style="background-image:url(${islandSheetUrl(m.islands[0].look)});background-position:${m.islands[0].variant*100}% 0"></i><b>${key}</b><strong>${m.name}</strong><small>${here?'BURADASIN':locked?`SEVİYE ${m.tier}`:m.safe?'SAVAŞA KAPALI':t.name}</small>${owned?'<em title="Filo adası senin">⚑</em>':''}</button>`;}).join('')}</div><div class="world-legend"><span class="lg-here">Buradasın</span><span class="lg-safe">Savaşa kapalı</span><span class="lg-lock">Kilitli</span><span class="lg-own">⚑ Filo adası senin</span></div>`;
+    const tag=owned?(guild?`[${escapeHtml(guild.tag)}]`:'SEN'):'';
+    return`<button class="world-tile ${here?'here':''} ${locked?'locked':''} ${m.safe?'safe':''} ${chartSelection===key?'selected':''}" data-chart="${key}" style="--tile:${t.sea[0]};--tile2:${t.sea[1]};--tint:${t.tint}"><span class="wt-tag">${tag}</span>${here?'<img class="wt-flag" src="/assets/icon-flag-v1.webp" alt="Buradasın" draggable="false"/>':''}<b>${key}</b><strong>${m.name}</strong></button>`;}).join('')}</div>`;
   chart.querySelectorAll<HTMLButtonElement>('[data-chart]').forEach(b=>b.onclick=()=>{chartSelection=b.dataset.chart as MapKey;renderWorldMap();});
   const m=MAPS[chartSelection??currentMap],locked=state.level<m.tier,npcs=m.npcs.map(id=>NPCS[id].name).join(', ');
   ui('worldInfo').innerHTML=`<div><span class="eyebrow">${m.key} · ${THEMES[m.tier].name}</span><h3>${m.name}</h3><p>${m.description}</p><dl><div><dt>Seviye</dt><dd>${m.tier}+</dd></div><div><dt>Gemiler</dt><dd>${npcs}</dd></div><div><dt>Canavar</dt><dd>${MONSTERS[m.monster].name}</dd></div><div><dt>Filo adası</dt><dd>${fleetOwner(m.key)==='player'?'<b class="safe">Senin</b>':'<b class="danger">Rakip</b>'}</dd></div></dl></div><button disabled>${m.key===currentMap?'ŞU AN BURADASIN':locked?`SEVİYE ${m.tier} GEREKLİ`:'KENARLARDAN GEÇİŞ'}</button>`;
@@ -858,15 +862,17 @@ function update(dt:number){
   if(state.repairing){state.hp=Math.min(effectiveMaxHp(),state.hp+effectiveMaxHp()*(.035+upgrades.repair*.008)*bonus.repair*dt);if(state.hp>=effectiveMaxHp()){state.repairing=false;saveAccount();ui('repair').classList.remove('active');toast('Gövde tamamen onarıldı');}}
   wakeClock-=dt;if(Math.abs(player.speed)>8&&wakeClock<=0){wakeClock=.1;particles.push({x:player.x-Math.sin(player.angle)*22,y:player.y+Math.cos(player.angle)*22,vx:-Math.sin(player.angle)*8,vy:Math.cos(player.angle)*8,life:.75,maxLife:.75,kind:'foam'});}
   monsters.forEach(m=>{m.phase+=dt;m.cooldown-=dt;m.slowTimer=Math.max(0,m.slowTimer-dt);if(m.aggro){m.combatTimer-=dt;if(m.combatTimer<=0||Math.hypot(m.x-m.homeX,m.y-m.homeY)>720)m.aggro=false;}if(m.aggro&&dist(m,player)<430&&m.cooldown<=0)monsterFire(m);});
+  // Saldırı: kaptan hareket etse de hedef menzildeyken ateş sürer; hedef menzilden çıkınca saldırı durur
+  // ve menzile tekrar girildiğinde SALDIR'a yeniden basmak gerekir.
   if(state.attacking&&selected){
     const d=dist(player,selected),cannonRange=effectiveRange();
     if(d>cannonRange){
-      const away=Math.atan2(player.y-selected.y,player.x-selected.x);
-      routeTarget=null;destination=routeVia(navigablePoint({x:selected.x+Math.cos(away)*(cannonRange-35),y:selected.y+Math.sin(away)*(cannonRange-35)}));
+      if(attackChase){const away=Math.atan2(player.y-selected.y,player.x-selected.x);routeTarget=null;destination=routeVia(navigablePoint({x:selected.x+Math.cos(away)*(cannonRange-35),y:selected.y+Math.sin(away)*(cannonRange-35)}));}
+      else{state.attacking=false;ui('attack').classList.remove('active');toast('Hedef menzil dışına çıktı — saldırı durdu');}
     }else{
-      destination=null;player.speed+=(effectiveSpeed()*.42-player.speed)*Math.min(1,dt*1.4);
-      const course=broadsideCourse(selected),delta=angleDelta(course,player.angle);
-      player.angle+=clamp(delta,-2.6*dt,2.6*dt);
+      if(attackChase){attackChase=false;destination=null;routeTarget=null;}
+      // Rota verilmediyse gemi borda ateşi için hedefin yanına döner
+      if(!destination){player.speed+=(effectiveSpeed()*.42-player.speed)*Math.min(1,dt*1.4);const course=broadsideCourse(selected),delta=angleDelta(course,player.angle);player.angle+=clamp(delta,-2.6*dt,2.6*dt);}
       fireAtTarget();
     }
   }
@@ -1141,14 +1147,19 @@ function drawShip(p:Vec,angle:number,color:string,scale=1){
 const SHIP_DIRECTION_FRAMES=[4,3,6,5,0,1,2,7] as const;
 function shipCompass(angle:number){return(Math.round(angle/(Math.PI/4))+8)%8;}
 function shipDirectionFrame(angle:number){return SHIP_DIRECTION_FRAMES[shipCompass(angle)];}
+// Elit gemiler de Kara Yelken gibi 8 yönlü çizilir: pruva gidilen yöne döner (elite-dir-<id>-v1.webp, 4 × 2 kare, 221 × 256).
+// Tüm elit ve sonradan eklenecek özel gemiler aynı kare düzenini ve aynı yön eşlemesini (shipDirectionFrame) kullanır.
+const eliteDirImages=new Map<string,HTMLImageElement>();
+function eliteDirImage(id:string){let im=eliteDirImages.get(id);if(!im){im=new Image();im.decoding='async';im.src=`/assets/elite-dir-${id}-v1.webp`;eliteDirImages.set(id,im);}return im;}
+const ELITE_FRAME={w:221,h:256,scale:.56};
 function drawEliteDirectionalShip(s:Vec){
-  const im=eliteArtImage(eliteShip().id);if(!im.complete||!im.naturalWidth)return false;
-  // Çizim pruvası sola bakar; sağa giderken yatay aynalanır. Kuzey/güney yönünde son yön korunur, hafif yatış verilir.
-  const dx=Math.sin(player.angle),dy=-Math.cos(player.angle);if(Math.abs(dx)>.2)eliteFacing=dx<0?-1:1;
-  const tilt=clamp(Math.atan2(dy,Math.abs(dx)+.001)-.45,-.5,.5)*.22,bob=Math.sin(performance.now()/420)*1.8,size=150;
+  const id=eliteShip().id,dir=eliteDirImage(id),bob=Math.sin(performance.now()/420)*1.8;
   ctx.save();ctx.translate(s.x,s.y+bob);ctx.globalAlpha=state.invulnerable&&Math.floor(performance.now()/120)%2?.55:1;
   ctx.shadowColor='#000b';ctx.shadowBlur=13;ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
-  if(eliteFacing>0)ctx.scale(-1,1);ctx.rotate(-tilt);ctx.drawImage(im,-size/2,-size/2,size,size);
+  if(dir.complete&&dir.naturalWidth){const f=shipDirectionFrame(player.angle),{w,h,scale}=ELITE_FRAME;ctx.drawImage(dir,(f%4)*w,Math.floor(f/4)*h,w,h,-w*scale/2,-h*scale/2,w*scale,h*scale);ctx.restore();return true;}
+  // Yön sayfası yüklenene kadar yan görünüş (sağa giderken aynalanır)
+  const im=eliteArtImage(id);if(!im.complete||!im.naturalWidth){ctx.restore();return false;}
+  const dx=Math.sin(player.angle);if(Math.abs(dx)>.2)eliteFacing=dx<0?-1:1;if(eliteFacing>0)ctx.scale(-1,1);ctx.drawImage(im,-75,-75,150,150);
   ctx.restore();return true;
 }
 function drawPlayerShip(){

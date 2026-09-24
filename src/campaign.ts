@@ -1,21 +1,22 @@
-// Kara Yelken kampanyası: 9 seviye, 18 deniz. Her denizin kendi NPC gemileri, canavarı ve filo adası vardır.
+// Kara Yelken kampanyası: 8 seviye, 16 deniz. Her denizin kendi NPC gemileri, canavarı ve filo adası vardır.
 // Güç ve ödüller denizin seviyesiyle birlikte artar.
-export type MapKey='1/1'|'1/2'|'2/1'|'2/2'|'3/1'|'3/2'|'4/1'|'4/2'|'5/1'|'5/2'|'6/1'|'6/2'|'7/1'|'7/2'|'8/1'|'8/2'|'9/1'|'9/2';
+export type MapKey='1/1'|'1/2'|'2/1'|'2/2'|'3/1'|'3/2'|'4/1'|'4/2'|'5/1'|'5/2'|'6/1'|'6/2'|'7/1'|'7/2'|'8/1'|'8/2';
 export type IslandLook='verdant'|'misty'|'coral'|'haven'|'crimson'|'storm'|'ice'|'toxic'|'lava'|'abyss';
 export type FleetTheme='verdant'|'coral'|'misty'|'crimson'|'ice'|'toxic'|'lava'|'storm'|'abyss';
 export type Weather='fog'|'snow'|'embers'|'spores'|'storm'|'motes'|'sparkle'|'dust'|null;
 export type WorldIsland={x:number;y:number;r:number;name:string;look:IslandLook;variant:0|1;flip?:boolean};
 
 export const WORLD=3200;
-export const MAX_LEVEL=9;
-// Dünya haritası düzeni (üst sıradan alta)
+export const MAX_LEVEL=8;
+// Dünya haritası düzeni (üst sıradan alta): 4 × 4, her seviyenin iki denizi yan yana
 export const GRID:MapKey[][]=[
-  ['7/1','7/2','8/1','8/2','9/1','9/2'],
-  ['5/1','5/2','4/1','4/2','6/1','6/2'],
-  ['1/1','1/2','2/1','2/2','3/1','3/2'],
+  ['7/1','7/2','8/1','8/2'],
+  ['5/1','5/2','6/1','6/2'],
+  ['3/1','3/2','4/1','4/2'],
+  ['1/1','1/2','2/1','2/2'],
 ];
-// Kenar geçişlerine ek sarmal bağlantılar: 1/1 batısı ↔ 3/2 doğusu, 1/1 güneyi ↔ 7/1 kuzeyi.
-const WRAPS:{from:MapKey;dir:Dir;to:MapKey}[]=[{from:'1/1',dir:'west',to:'3/2'},{from:'3/2',dir:'east',to:'1/1'},{from:'1/1',dir:'south',to:'7/1'},{from:'7/1',dir:'north',to:'1/1'}];
+// Kenar geçişleri yalnızca haritadaki komşuluklardan oluşur (sarmal bağlantı yok)
+const WRAPS:{from:MapKey;dir:Dir;to:MapKey}[]=[];
 export type Dir='north'|'south'|'east'|'west';
 export function neighbor(key:MapKey,dir:Dir):MapKey|null{
   const wrap=WRAPS.find(w=>w.from===key&&w.dir===dir);if(wrap)return wrap.to;
@@ -141,8 +142,6 @@ export const MAPS:Record<MapKey,MapDef>={
   '7/2':sea('7/2','Magma Boğazı','Lav nehirlerinin denize döküldüğü kaynayan boğaz.',{islands:[[2550,650,200,'Magma Kapısı',1],[650,700,180,'Yanık Kıyı',0,true],[2550,2550,190,'Ateş Çukuru',0]],fleet:[1150,2100,'Magma Filo Adası'],labels:[['MAGMA BOĞAZI',1900,1000]]}),
   '8/1':sea('8/1','Şimşek Denizi','Şimşeklerin hiç dinmediği kara sular. Fırtına Leviathanı burada hüküm sürer.',{islands:[[650,650,200,'Şimşek Kayalıkları',0],[2550,650,170,'Gök Kulesi',1],[650,2550,190,'Sessiz Mezar',1,true]],fleet:[2050,2100,'Fırtına Filo Adası'],labels:[['ŞİMŞEK DENİZİ',1300,1000]]}),
   '8/2':sea('8/2','Kasırga Gözü','Kasırganın ortasında sakin ama ölümcül bir göz.',{islands:[[2550,650,190,'Kasırga Burnu',1],[650,700,180,'Rüzgâr Kayası',0,true],[2550,2550,200,'Gürültü Adası',0]],fleet:[1150,2100,'Kasırga Filo Adası'],labels:[['KASIRGA GÖZÜ',1900,1000]]}),
-  '9/1':sea('9/1','Gölge Uçurumu','Işığın bile kaybolduğu uçurum. Uçurum Krakeni derinliklerden yükselir.',{islands:[[650,650,200,'Gölge Kayası',0],[2550,650,180,'Mor Kristal',1],[650,2550,190,'Boşluk Adası',1,true]],fleet:[2050,2100,'Gölge Filo Adası'],labels:[['GÖLGE UÇURUMU',1300,1000]]}),
-  '9/2':sea('9/2','Kara Yelken Tahtı','Denizlerin son ve en tehlikeli durağı. Kadim Hidra tahtı korur.',{islands:[[2550,650,210,'Taht Kayası',1],[650,700,180,'Kara Kule',0,true],[2550,2550,190,'Son Liman Kalıntısı',0]],fleet:[1150,2100,'Kara Taht Filo Adası'],labels:[['KARA YELKEN TAHTI',1900,1000]]}),
 };
 export const MAP_KEYS=Object.keys(MAPS) as MapKey[];
 
