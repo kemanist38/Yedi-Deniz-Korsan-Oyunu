@@ -20,8 +20,8 @@ export const BALL_DAMAGE=20;
 export const CHAIN_FACTOR=1.25;
 // Özel gülleler: damage, demir gülleye (20) göre çarpandır.
 export const SPECIAL_AMMO={
-  fire:{name:'Ateş Güllesi',damage:2.5,reload:1.1,rangeFactor:1,burnSeconds:4,burnDps:250,blastRadius:0,blastFactor:0,towerFactor:1,leech:0,icon:'/assets/ammo-fire-v1.webp',description:'Hedefi 4 saniye yakar; saniyede ek hasar verir.'},
-  grape:{name:'Saçma',damage:1.75,reload:1,rangeFactor:.65,burnSeconds:0,burnDps:0,blastRadius:0,blastFactor:0,towerFactor:1,leech:0,icon:'/assets/ammo-grape-v1.webp',description:'Kısa menzilde çok yüksek hasar; menzil %35 azalır.'},
+  fire:{name:'Ateş Güllesi',damage:2.5,reload:1.1,rangeFactor:1,burnSeconds:12,burnDps:250,blastRadius:0,blastFactor:0,towerFactor:1,leech:0,icon:'/assets/ammo-fire-v1.webp',description:'Gülle başı 50 hasar; hedef 12 saniye yanar ve isabetin %80\'i kadar ek hasar alır.'},
+  grape:{name:'Saçma',damage:2,reload:1,rangeFactor:.65,burnSeconds:0,burnDps:0,blastRadius:0,blastFactor:0,towerFactor:1,leech:0,icon:'/assets/ammo-grape-v1.webp',description:'Kısa menzilde çok yüksek hasar; menzil %35 azalır.'},
   // Seafight'taki patlayıcı / Shellshock / Soul Eater güllelerinden uyarlandı
   explosive:{name:'Patlayıcı Gülle',damage:3.75,reload:1.2,rangeFactor:1,burnSeconds:0,burnDps:0,blastRadius:120,blastFactor:.5,towerFactor:1,leech:0,icon:'/assets/ammo-explosive-v1.webp',description:'Çarptığı yerde patlar; 120 birim içindeki diğer düşmanlara %50 hasar verir.'},
   breaker:{name:'Kule Kırıcı',damage:2.25,reload:1.15,rangeFactor:1,burnSeconds:0,burnDps:0,blastRadius:0,blastFactor:0,towerFactor:2.6,leech:0,icon:'/assets/ammo-breaker-v1.webp',description:'Kulelere ve ada tahkimatına 2,6 kat hasar; gemilere biraz daha az işler.'},
@@ -29,6 +29,15 @@ export const SPECIAL_AMMO={
 } as const;
 export type SpecialAmmo=keyof typeof SPECIAL_AMMO;
 
+// Ateş güllesi yanması (Seafight Pyreball: 50 hasar + 12 sn boyunca 3 sn'de bir 10 = gülle başına %80 ek hasar)
+export const FIRE_DOT_SHARE=.8;
+// Elit puan: yalnızca inciyle alınan (elit) güllelerle ateş edilince kazanılır; gülle başına, gülle değeriyle orantılı
+// (≈ harcanan her inci için 10 elit puan). Seafight'ta da elit puan elit/inci güllesiyle yapılan atışlardan gelir.
+export const ELITE_POINTS_PER_BALL={grape:.1,fire:.2,breaker:.3,explosive:.4,leech:.5} as const;
+// Elit seviye eşiği (toplam elit puan): Elit 1 = 0, Elit 2 = 1.000, Elit 5 = 8.000, Elit 10 = 27.000, Elit 15 ≈ 52.400
+export const ELITE_MAX_LEVEL=15;
+export const eliteLevelEp=(level:number)=>Math.round(1000*Math.pow(Math.max(0,level-1),1.5));
+export const eliteLevelFromEp=(ep:number)=>{let l=1;while(l<ELITE_MAX_LEVEL&&ep>=eliteLevelEp(l+1))l++;return l;};
 export const MINE={armSeconds:1,triggerRadius:46,blastRadius:95,baseDamage:4000,damagePerLevel:400,maxActive:5,icon:'/assets/icon-mine-v1.webp'};
 
 // Dükkân birim fiyatları (altın). Oyuncu istediği adedi yazar; toplam = adet × birim fiyat.
