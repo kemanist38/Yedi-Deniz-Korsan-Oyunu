@@ -42,6 +42,14 @@ Ses efektleri WebAudio ile anlık üretilir; AYARLAR'dan açılıp kapatılabili
 
 Yeni üç gülleden her kaptana 10'ar adet tanıtım stoğu verilir; hızlı gülle sırasında yer varsa kendiliğinden yerleşir, yoksa MALZEMELER sekmesinden eklenir.
 
+## Ses efektleri
+
+Tüm sesler asset atölyesinde katman katman tasarlanır (`tools/asset-studio/sfx.js`): namlu çatlağı, barut patlaması gövdesi, orta bant "güm", alt bas desteği, açık denizde yuvarlanan kuyruk ve deniz yankısı. `node tools/asset-studio/sfx.mjs` her sesi birkaç varyantla üretip `public/assets/sfx/*.mp3` dosyalarına ve `src/sfxManifest.ts` listesine yazar. Oyun her çalışta rastgele bir varyantı hafif perde/seviye farkıyla çalar; uzaktaki düşman topları kısık ve boğuk duyulur, ıskalar ve batışlar oyuncuya uzaklığa göre kısılır.
+
+- **Top gövdesi:** döküm, uzun namlu, seri ve ağır top ayrı sesler.
+- **Gülle katmanı:** zincir (dönen zincir vınlaması ve şıngırtı), ateş (alev hışırtısı ve kor çıtırtısı), saçma (yayılan patlaklar), patlayıcı (fitil cızırtısı), kule kırıcı (çelik çınlaması ve ıslık), can emici (hayalet iniltisi).
+- **Diğer:** gövdeye isabet, küçük/büyük patlama, suya düşme, batış, altın, onarım, kalkan, rüzgâr, seviye atlama (gemi çanı), harita atlama, arayüz tıkırtısı.
+
 ## Atış efektleri
 
 Gülleler kavis çizerek uçar, suda gölgeleri kayar; her güllenin kendi izi vardır (demir: duman, ateş: kor ve alev, zincir: dönen zincirli çift gülle, saçma: yelpaze gibi dağılan taneler, canavar: köpüklü su topu). Atışta namlu alevi ve duman, isabette patlama, savrulup suya düşen kıymıklar ve korlar, ıskada su sütunu çıkar. Havan kulesi atışında hedefe önce kırmızı hedef halkası düşer. Batan gemi yan yatarak kabarcıklar içinde gömülür, arkasında yüzen enkaz kalır. Tüm efektler `public/assets/vfx-atlas-v1.webp` raster atlasındadır (`tools/asset-studio/vfx.js`).
