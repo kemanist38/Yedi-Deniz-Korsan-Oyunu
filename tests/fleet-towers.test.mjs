@@ -30,7 +30,7 @@ function scene(type){
     ownTowers:[tower],player:{x:200,y:400},state:{hp:50},effectiveMaxHp:()=>100,
     dist:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),particles:[],
     enemies:[{x:300,y:400,hp:100}],monsters:[],shots:[],theme:()=>({fleet:'verdant'}),
-    towerMuzzle:geometry.towerMuzzle});
+    towerMuzzle:geometry.towerMuzzle,muzzleFlash:()=>{}});
   vm.runInContext(updateCode,context);
   return context;
 }

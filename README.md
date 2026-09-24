@@ -30,6 +30,10 @@ Ses efektleri WebAudio ile anlık üretilir; AYARLAR'dan açılıp kapatılabili
 - **Sol üst:** mini harita; yanında dünya haritası ve altında görevleri açan korsan kaptan (aktif görevin ilerlemesi rozet olarak görünür).
 - **Sol alt:** hızlı gülle/malzeme yuvaları. **Alt orta:** gemiyi ekrana ortalama düğmesi. **Sağ alt:** savaş düğmeleri.
 
+## Atış efektleri
+
+Gülleler kavis çizerek uçar, suda gölgeleri kayar; her güllenin kendi izi vardır (demir: duman, ateş: kor ve alev, zincir: dönen zincirli çift gülle, saçma: yelpaze gibi dağılan taneler, canavar: köpüklü su topu). Atışta namlu alevi ve duman, isabette patlama, savrulup suya düşen kıymıklar ve korlar, ıskada su sütunu çıkar. Havan kulesi atışında hedefe önce kırmızı hedef halkası düşer. Batan gemi yan yatarak kabarcıklar içinde gömülür, arkasında yüzen enkaz kalır. Tüm efektler `public/assets/vfx-atlas-v1.webp` raster atlasındadır (`tools/asset-studio/vfx.js`).
+
 ## Dünya: 9 seviye, 18 deniz
 
 Dünya haritası (`M` veya **DÜNYA**) 6 × 3 ızgaradır:

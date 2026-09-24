@@ -21,7 +21,8 @@ function scenario(count,lethalIndex=count-1){
     bonus:{taken:1},eliteEnabled:()=>false,eliteIncomingFactor:()=>1,abilityActive:()=>false,
     dist:(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),damageText:noop,playHit:noop,burst:noop,
     ui:()=>({classList:{remove:noop}}),mapFade:0,playSplash:noop,saveAccount:noop,toast:noop,
-    mapDef:()=>({key:'5/2'}),coordLabel:()=>'',targetExists:()=>false});
+    mapDef:()=>({key:'5/2'}),coordLabel:()=>'',targetExists:()=>false,
+    targetExistsOrPlayer:()=>true,shotHeight:()=>0,splashAt:noop,particles:[]});
   vm.runInContext(code,c);return c;
 }
 for(const [count,index] of [[1,0],[6,5],[6,2]])test(`lethal shot ${index} among ${count}: respawn and next tick do not throw`,()=>{
