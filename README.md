@@ -50,24 +50,29 @@ Tüm sesler asset atölyesinde katman katman tasarlanır (`tools/asset-studio/sf
 - **Gülle katmanı:** zincir (dönen zincir vınlaması ve şıngırtı), ateş (alev hışırtısı ve kor çıtırtısı), saçma (yayılan patlaklar), patlayıcı (fitil cızırtısı), kule kırıcı (çelik çınlaması ve ıslık), can emici (hayalet iniltisi).
 - **Diğer:** gövdeye isabet, küçük/büyük patlama, suya düşme, batış, altın, onarım, kalkan, rüzgâr, seviye atlama (gemi çanı), harita atlama, arayüz tıkırtısı.
 
+## Saldırı
+
+Hedef seçip SALDIR'a basınca, hedef menzildeyken kaptan gemiyi istediği yere sürse bile ateş sürer; rota verilmediyse gemi borda ateşi için hedefin yanına döner. Saldırı menzil dışından başlatılırsa gemi önce hedefe yaklaşır. Hedef menzilden çıkınca saldırı durur ve menzile tekrar girildiğinde SALDIR'a yeniden basmak gerekir. Elit gemilerde saldırı düğmesinin yanında geminin özel yeteneği bulunur.
+
 ## Atış efektleri
 
 Gülleler kavis çizerek uçar, suda gölgeleri kayar; her güllenin kendi izi vardır (demir: duman, ateş: kor ve alev, zincir: dönen zincirli çift gülle, saçma: yelpaze gibi dağılan taneler, canavar: köpüklü su topu). Atışta namlu alevi ve duman, isabette patlama, savrulup suya düşen kıymıklar ve korlar, ıskada su sütunu çıkar. Havan kulesi atışında hedefe önce kırmızı hedef halkası düşer. Batan gemi yan yatarak kabarcıklar içinde gömülür, arkasında yüzen enkaz kalır. Tüm efektler `public/assets/vfx-atlas-v1.webp` raster atlasındadır (`tools/asset-studio/vfx.js`).
 
-## Dünya: 9 seviye, 18 deniz
+## Dünya: 8 seviye, 16 deniz
 
-Dünya haritası (`M` veya **DÜNYA**) 6 × 3 ızgaradır:
+Dünya haritası (`M` veya **DÜNYA**) Seafight tarzı küçük bir 4 × 4 paftadır. Her karede sol üstte adaya sahip filonun kısaltması, sağ üstte bulunduğun denizin sancağı, ortada deniz kodu, altta deniz adı yazar:
 
-|   |   |   |   |   |   |
-|---|---|---|---|---|---|
-| 7/1 Kül Adaları | 7/2 Magma Boğazı | 8/1 Şimşek Denizi | 8/2 Kasırga Gözü | 9/1 Gölge Uçurumu | 9/2 Kara Yelken Tahtı |
-| 5/1 Ayaz Boğazı | 5/2 Kristal Buzullar | 4/1 Kan Körfezi | 4/2 Paslı Sığlık | 6/1 Zehirli Mangrov | 6/2 Çürük Lagün |
-| 1/1 Sığınak Koyu | 1/2 Martı Kıyıları | 2/1 Mercan Geçidi | 2/2 İnci Resifleri | 3/1 Sis Kayalıkları | 3/2 Hayalet Boğazı |
+|   |   |   |   |
+|---|---|---|---|
+| 7/1 Kül Adaları | 7/2 Magma Boğazı | 8/1 Şimşek Denizi | 8/2 Kasırga Gözü |
+| 5/1 Ayaz Boğazı | 5/2 Kristal Buzullar | 6/1 Zehirli Mangrov | 6/2 Çürük Lagün |
+| 3/1 Sis Kayalıkları | 3/2 Hayalet Boğazı | 4/1 Kan Körfezi | 4/2 Paslı Sığlık |
+| 1/1 Sığınak Koyu | 1/2 Martı Kıyıları | 2/1 Mercan Geçidi | 2/2 İnci Resifleri |
 
 - **Seviye kilidi:** X/Y denizine X. seviyede girilir.
-- **Kenardan geçiş:** Denizin kenarına yanaşınca **HARİTA ATLA** istemi çıkar (`J`). Komşu denizlerin yanı sıra 1/1 ↔ 3/2 (yatay) ve 1/1 ↔ 7/1 (dikey) arasında da geçiş vardır.
-- **Temalar:** Her seviyenin kendi teması vardır: Zümrüt, Mercan, Sis, Kızıl, Buz, Zehir, Alev, Fırtına, Derinlik. Deniz rengi, adalar, hava efektleri (sis, kar, kor, spor, şimşek…) ve filo adası temaya göre değişir.
-- **NPC ve canavarlar:** Her denizin kendine özgü 2 NPC gemisi ve 1 canavarı vardır; toplam 36 gemi ve 18 canavar. Güçleri ve ödülleri seviyeyle artar.
+- **Kenardan geçiş:** Denizin kenarına yanaşınca **HARİTA ATLA** istemi çıkar (`J`); paftadaki komşu denize geçilir.
+- **Temalar:** Her seviyenin kendi teması vardır: Zümrüt, Mercan, Sis, Kızıl, Buz, Zehir, Alev, Fırtına. Deniz rengi, adalar, hava efektleri (sis, kar, kor, spor, şimşek…) ve filo adası temaya göre değişir.
+- **NPC ve canavarlar:** Her denizin kendine özgü 2 NPC gemisi ve 1 canavarı vardır; toplam 32 gemi ve 16 canavar. Güçleri ve ödülleri seviyeyle artar.
 - **1/1 Sığınak Koyu savaşa kapalıdır:** Buradaki gemiler sen saldırmadıkça ateş etmez.
 - **Batma ve yeniden doğma:** Batan gemi, hangi denizdeyse orada, düşmanlardan uzak rastgele bir noktada %10 gövdeyle yeniden doğar ve onarıma başlar.
 - **Koordinatlar:** Ekranın üstünde soldan sağa **00–60** sütunları, solda yukarıdan aşağı **AA–CZ** satırları vardır. Konumun harita rozetinde `1/1 - 35AJ` biçiminde görünür; oyuncular toplanma yerini bu koordinatla söyleyebilir.
