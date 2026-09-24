@@ -9,8 +9,6 @@ button { font: inherit; }
 #sea { display: block; width: 100%; height: 100%; cursor: crosshair; }
 .grain { pointer-events: none; position: absolute; inset: 0; opacity: .14; mix-blend-mode: overlay; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.34'/%3E%3C/svg%3E"); }
 .hud { pointer-events: none; position: absolute; inset: 0; }
-.brand { position: absolute; left: 24px; top: 20px; font: 700 26px Cinzel, serif; letter-spacing: .13em; color: #f5d594; text-shadow: 0 2px 12px #000; }
-.brand small { display: block; font: 600 9px Inter; letter-spacing: .42em; color: #7eb2b5; margin-top: 2px; }
 .resources { position: absolute; top: 18px; right: 22px; display: flex; gap: 8px; }
 .resource, .panel { background: linear-gradient(180deg, rgba(9,31,39,.92), rgba(4,17,23,.92)); border: 1px solid rgba(216,178,104,.25); box-shadow: 0 8px 30px #0007, inset 0 1px #ffffff10; backdrop-filter: blur(8px); }
 .resource { min-width: 96px; padding: 9px 13px; border-radius: 7px; font-size: 12px; color: #88a8aa; }
@@ -41,7 +39,7 @@ button { font: inherit; }
 .target-card{left:22px;top:88px;width:240px;padding:13px;opacity:.72}.target-card.visible{opacity:1;border-color:#d6a75266}.target-card h3{margin:5px 0 8px;font:700 14px Cinzel;color:#ecd29c}.target-meta{display:flex;justify-content:space-between;color:#80999c;font-size:10px}.actionbar{pointer-events:auto;left:50%;transform:translateX(-50%);bottom:20px;display:flex;padding:7px;gap:6px}.action{width:64px;height:58px;border:1px solid #9b793b55;border-radius:5px;background:#0a2028;color:#e8d2a6;cursor:pointer}.action b{display:block;font-size:17px}.action span{display:block;font-size:9px;font-weight:700}.action small{color:#718f92;font-size:8px}.action:hover,.action.active{background:#193b43;border-color:#e0b55e;box-shadow:inset 0 0 15px #d6a84b22}.action.fire{width:82px;background:#40251d;border-color:#b76a43}.action.fire.active{background:#713528}#minimap{position:absolute;pointer-events:none;right:22px;bottom:22px;border:1px solid #b9945266;border-radius:6px;box-shadow:0 8px 25px #0009;background:#061820}
 .zoom-controls{pointer-events:auto;right:22px;bottom:160px;display:flex;align-items:center;gap:5px;padding:5px}.zoom-controls button{width:34px;height:32px;border:1px solid #b9945266;border-radius:5px;background:#0a2028;color:#f2d59b;font-size:20px;cursor:pointer}.zoom-controls span{min-width:44px;text-align:center;color:#91aaac;font-size:10px}
 .action.fire.reloading{filter:saturate(.55);box-shadow:inset 0 0 18px #0008}.action.fire.reloading small{color:#f0bb68}
-@media (max-width:760px) { .brand {font-size:18px}.resources{top:65px;right:10px;flex-direction:column}.resource{min-width:80px;padding:5px 9px}#minimap{display:none}.quest{right:10px;top:225px;width:180px;padding:10px}.quest p{display:none}.quest h3{font-size:12px}.captain{left:10px;bottom:82px;width:210px}.target-card{left:10px;top:65px;width:190px}.actionbar{bottom:8px}.action{width:54px}.quest-entry{grid-template-columns:32px 1fr}.quest-entry>button{grid-column:1/-1}.quest-log{padding:16px} }
+@media (max-width:760px) { .resources{top:65px;right:10px;flex-direction:column}.resource{min-width:80px;padding:5px 9px}#minimap{display:none}.quest{right:10px;top:225px;width:180px;padding:10px}.quest p{display:none}.quest h3{font-size:12px}.captain{left:10px;bottom:82px;width:210px}.target-card{left:10px;top:65px;width:190px}.actionbar{bottom:8px}.action{width:54px}.quest-entry{grid-template-columns:32px 1fr}.quest-entry>button{grid-column:1/-1}.quest-log{padding:16px} }
 .reward-toast{position:absolute;left:50%;top:72px;z-index:12;transform:translate(-50%,-14px);opacity:0;pointer-events:none;padding:9px 20px;border-radius:999px;background:linear-gradient(180deg,#183944f2,#071920f2);border:1px solid #e2b85c99;color:#ffe1a0;box-shadow:0 8px 24px #0009,inset 0 1px #ffffff18;font:700 12px Cinzel,serif;letter-spacing:.04em;transition:opacity .28s ease,transform .28s ease}
 .reward-toast.show{opacity:1;transform:translate(-50%,0)}
 .quest-entry.active>button{border-color:#b65b4d88;background:#4b2825;color:#f1b1a1}
@@ -62,7 +60,6 @@ button { font: inherit; }
 @media(max-width:900px){.combat-controls{right:8px;bottom:8px;flex-direction:column}.combat-action{width:56px;height:54px}.combat-action.attack{width:66px;height:64px}.bottom-command{bottom:5px}.status-bars{grid-template-columns:145px 34px 145px}.status-line{grid-template-columns:16px 1fr}.status-line b{display:none}.bottom-command .quick-inventory{grid-template-columns:repeat(6,42px)}.bottom-command .quick-slot{width:42px;height:42px}.bottom-command .quick-slot i{width:31px;height:31px}.loadout-items{grid-template-columns:1fr 1fr}.loadout-slots{grid-template-columns:repeat(6,1fr)}.resources{top:5px;right:5px;flex-direction:row}.resources .compact{min-width:68px;padding:3px 5px}.captain{display:none}}
 
 /* Tactical HUD: map, captain profile and live combat roster */
-.brand{left:20px;top:12px;font-size:18px}.brand small{font-size:7px}
 .map-cluster{pointer-events:none;position:absolute;left:18px;top:58px;z-index:11;width:170px}
 .map-cluster #minimap{position:static;display:block;width:170px;height:125px;border:1px solid #c69a4e88;border-radius:7px;background:#061820;box-shadow:0 9px 28px #000a}
 .map-cluster .zoom-controls{pointer-events:auto;position:static;display:flex;width:max-content;margin:7px auto 0;align-items:center;gap:5px;padding:5px}
@@ -74,7 +71,7 @@ button { font: inherit; }
 .profile-stats{display:grid;grid-template-columns:1fr 1fr;gap:4px 8px}.profile-stats>div{position:relative;display:grid;grid-template-columns:20px 1fr;align-items:center;min-height:14px}.profile-stats span{color:#d3b879;font:700 7px Cinzel}.profile-stats b{z-index:1;color:#d5dfda;font-size:7px;text-align:right}.profile-stats i{position:absolute;left:19px;right:0;bottom:0;height:4px;overflow:hidden;border-radius:3px;background:#02090d}.profile-stats em{display:block;height:100%;background:linear-gradient(90deg,#633297,#c35eee)}.profile-stats>div:nth-child(2) em{background:linear-gradient(90deg,#17849b,#38d4d5)}
 .combat-targets{pointer-events:none;position:absolute;left:18px;top:248px;z-index:12;display:grid;width:244px;gap:6px;opacity:0;transform:translateX(-10px);transition:.18s}.combat-targets.visible{pointer-events:auto;opacity:1;transform:none}
 .combat-target{position:relative;display:grid;grid-template-columns:47px 1fr;gap:8px;width:100%;min-height:55px;padding:5px 8px 5px 5px;border:1px solid #73584a99;border-radius:6px;background:linear-gradient(90deg,#131a1ceF,#07171de8);color:#d8c69e;text-align:left;cursor:pointer;box-shadow:0 5px 16px #0009}.combat-target.selected{border-color:#d2a351;box-shadow:0 0 13px #c7903d33}.target-portrait{display:grid;place-items:center;width:43px;height:43px;border:1px solid #a2784f77;border-radius:5px;background:radial-gradient(circle,#4b3730,#151b1e);font-size:20px}.target-portrait.monster{color:#a8f0dc;background:radial-gradient(circle,#15514e,#0a2226)}.target-info{min-width:0}.target-info small,.target-info strong,.target-info b{display:block}.target-info small{color:#78999b;font-size:6px}.target-info strong{overflow:hidden;margin:2px 0;color:#efcf94;font:700 10px Cinzel;text-overflow:ellipsis;white-space:nowrap}.target-info i{display:block;height:7px;overflow:hidden;border:1px solid #02090c;border-radius:4px;background:#02090d}.target-info em{display:block;height:100%;background:linear-gradient(90deg,#268241,#6bd36f);transition:width .15s}.target-info b{margin-top:1px;color:#a8bfba;font-size:7px;text-align:right}.target-state{position:absolute;right:6px;top:5px;color:#db765f;font:700 6px Cinzel}
-@media(max-width:900px){.player-profile-top{top:55px;width:360px}.map-cluster{top:55px}.combat-targets{top:245px}.brand{display:none}}
+@media(max-width:900px){.player-profile-top{top:55px;width:360px}.map-cluster{top:55px}.combat-targets{top:245px}}
 @media(max-width:680px){.map-cluster{left:8px;top:54px;transform:scale(.82);transform-origin:top left}.player-profile-top{left:auto;right:7px;top:54px;width:310px;transform:none}.player-seal{width:48px;min-width:48px}.combat-targets{left:8px;top:220px;width:205px}.profile-heading strong{font-size:9px}.quest{display:none}}
 
 .top-shortcuts .captain-shortcut{position:relative}.captain-face{display:grid!important;place-items:center;width:30px!important;height:30px!important;border:1px solid #c7954d88;border-radius:50%;background:radial-gradient(circle,#674528,#121b1d 72%);color:#f2d49b!important;font-style:normal!important;font-size:15px!important}.captain-shortcut>b{position:absolute;right:8px;top:3px;display:grid;place-items:center;width:16px;height:16px;border:1px solid #e0ae57;border-radius:50%;background:#07171c;color:#ffe0a0;font-size:7px}
@@ -191,7 +188,6 @@ button.event-row{cursor:pointer}
 .event-row i{display:block;height:5px;margin-top:4px;border-radius:3px;background:#07161c;overflow:hidden}
 .event-row i em{display:block;height:100%;background:linear-gradient(90deg,#3fd6a8,#8dffd0)}
 .event-row i.danger em{background:linear-gradient(90deg,#c0392b,#ff8a5a)}
-.event-row.boss{border-color:#6dffc488;box-shadow:0 0 16px #6dffc433}.event-row.boss small{color:#8dffd0}
 .event-row.fort.owned{border-color:#3fd6c088}
 .castle-list{display:grid;gap:10px;width:100%;text-align:left}
 .castle-card{display:grid;grid-template-columns:120px 1fr;gap:12px;padding:10px;border:1px solid #5a4a3a66;border-radius:8px;background:#071a20}
@@ -513,9 +509,7 @@ body.shop-open .market-overlay,body.shop-open .ship-overlay,body.shop-open .load
 .map-badge{left:4px;right:auto;top:4px;bottom:auto;align-items:flex-start;padding:0;border:0;background:none}
 .map-badge strong,.map-badge small{display:none}
 .map-badge .map-coord{margin:0;padding:1px 6px;border-radius:4px;background:#030d11b3;font-size:10px}
-/* Oyun logosu: sol üstte, mini harita onun altında */
-.brand{left:18px;top:4px;z-index:12;display:flex;flex-direction:column;align-items:center;width:185px;font-size:0;letter-spacing:0;pointer-events:none}
-.brand img{display:block;width:185px;height:auto;filter:drop-shadow(0 4px 10px #000c)}
-.brand small{margin-top:-4px;font:700 8px Cinzel;letter-spacing:.3em;color:#e8c47a;text-shadow:0 1px 4px #000}
-.map-cluster{top:170px}.combat-targets{top:356px}
-@media(max-width:900px),(max-height:520px){.brand{display:flex;width:96px;left:8px;top:2px}.brand img{width:96px}.brand small{display:none}.map-cluster{top:84px}.combat-targets{top:250px}}
+/* Hızlı yuvalar yarı saydam: gülle ve malzemeler koyu zeminde kaybolmasın */
+.bottom-command .quick-inventory{background:linear-gradient(#0a1c2173,#050f1373);backdrop-filter:blur(2px)}
+.bottom-command .quick-slot{isolation:isolate;background:radial-gradient(circle at 50% 45%,#d8f1f033,#9fc7c814 62%,transparent 75%)}
+.bottom-command .quick-slot::before{content:'';position:absolute;inset:0;z-index:-1;background:url(/assets/ui-slot-v1.webp) center/100% 100% no-repeat;opacity:.5;pointer-events:none}

@@ -95,6 +95,7 @@ const MONSTER_LIST:Omit<MonsterDef,'portrait'>[]=[
   mon('m9-1','Uçurum Krakeni',9,64),mon('m9-2','Kadim Hidra',9,66),
 ];
 export const MONSTERS:Record<string,MonsterDef>=Object.fromEntries(MONSTER_LIST.map((m,i)=>[m.id,{...m,portrait:NPC_LIST.length+i}]));
+// Portre atlasının son karesi (eski Hayalet Amiral) şimdilik kullanılmıyor; yeni boss eklenince kullanılabilir.
 export const BOSS_PORTRAIT=NPC_LIST.length+MONSTER_LIST.length;
 export const PORTRAIT_COUNT=BOSS_PORTRAIT+1;
 export const PORTRAIT_COLS=10;
@@ -120,7 +121,7 @@ export const FLEET={islandR:500,wallR:370,gap:.56,lagoon:{x:0,y:60,r:150},channe
   base:{frame:1024,span:1000},tower:{frame:256,span:120,anchorY:0}};
 // Kuleler filo savaşı ölçeğinde: tek gemi yıkamaz, saldırı kesilince hızla onarılır.
 export const fleetTower=(tier:number)=>{const t=tier-1;return{hp:Math.round(40000*(1+.6*t)),damage:Math.round(7*(1+.35*t)),reload:2.2,range:460,ownDamage:Math.round(24*(1+.5*t))};};
-export const fleetReward=(tier:number)=>({gold:300*tier,pearls:3+tier,xp:Math.round(500*Math.pow(tier,1.2))});
+export const fleetReward=(tier:number)=>({gold:300*tier,xp:Math.round(500*Math.pow(tier,1.2))});
 
 // ---------------------------------------------------------------- Denizler
 export type MapDef={key:MapKey;tier:number;name:string;description:string;safe:boolean;npcs:[string,string];monster:string;npcCount:number;heavyShare:number;islands:WorldIsland[];fleet:{x:number;y:number;name:string};labels:{text:string;x:number;y:number}[];spawn:{x:number;y:number}};

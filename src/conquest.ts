@@ -1,8 +1,6 @@
-// Boss etkinliği ve filo adası sahipliği. Filo adası durumu ayrı anahtarda saklanır.
+// Filo adası sahipliği. Filo adası durumu ayrı anahtarda saklanır.
 import type {MapKey} from './campaign';
 
-export const BOSS={name:'Hayalet Amiral',hp:(tier:number)=>900*(1+.7*(tier-1)),damage:(tier:number)=>Math.round(16*(1+.35*(tier-1))),reload:1.9,speed:30,firstDelaySeconds:120,intervalSeconds:480,escortAt:.5,
-  reward:(tier:number)=>({gold:Math.round(320*(1+.6*(tier-1))),pearls:5+tier,xp:Math.round(900*Math.pow(tier,1.2)),elite:15}),chests:3,hitRadius:40};
 
 export type FleetOwner='npc'|'player';
 const STORAGE='yedi-deniz-fleet-v1';
