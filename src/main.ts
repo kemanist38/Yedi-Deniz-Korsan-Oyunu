@@ -90,9 +90,10 @@ const canvas = document.querySelector<HTMLCanvasElement>('#sea')!;
 const ctx = canvas.getContext('2d')!;
 const minimap = document.querySelector<HTMLCanvasElement>('#minimap')!;
 const mini = minimap.getContext('2d')!;
-const playerShipImage=new Image();playerShipImage.src='/assets/player-flagship-game-v1.webp';
+const playerShipImage=new Image();playerShipImage.src='/assets/starter-ship-v2.webp';
 document.documentElement.style.setProperty('--starter-ship',`url("${playerShipImage.src}")`);
-const directionalShipImage=new Image();directionalShipImage.src='/assets/player-flagship-directions-v1.webp';
+// Başlangıç gemisi "Yedi Deniz": 8 yönlü sayfa (4 × 2, 256 px; elitlerle aynı kare sırası)
+const directionalShipImage=new Image();directionalShipImage.src='/assets/starter-ship-dir-v2.webp';
 document.documentElement.style.setProperty('--pirate-icons','url("/assets/pirate-ui-icons-v1.webp")');
 ([['/assets/icon-world-v1.webp','worldMapIcon'],['/assets/icon-world-v1.webp','menuWorldIcon'],['/assets/icon-ship-nav-v1.webp','shipNavIcon']] as const).forEach(([src,id])=>{const img=document.getElementById(id) as HTMLImageElement|null;if(img)img.src=src;});
 const cannonAssetSources:Record<CannonKind,string>={cast:'/assets/cannon-cast-v1.webp',long:'/assets/cannon-long-v1.webp',rapid:'/assets/cannon-rapid-v1.webp',heavy:'/assets/cannon-heavy-v1.webp'};
@@ -1422,11 +1423,9 @@ function drawPlayerShip(){
   }
   ctx.save();ctx.translate(s.x,s.y);ctx.shadowColor='#000b';ctx.shadowBlur=13;ctx.globalAlpha=state.invulnerable&&Math.floor(performance.now()/120)%2?.55:1;
   if(directionalShipImage.complete&&directionalShipImage.naturalWidth){
-    // Başlangıç gemisi sayfasında kuzeybatı karesi (7) yanlışlıkla güneydoğuya bakar; kuzeybatıda kuzeydoğu karesi (3) aynalanır.
-    const nw=shipCompass(player.angle)===7,frame=nw?3:shipDirectionFrame(player.angle);
-    const sx=(frame%4)*256,sy=Math.floor(frame/4)*256;if(nw)ctx.scale(-1,1);
-    ctx.drawImage(directionalShipImage,sx,sy,256,256,-58,-58,116,116);
-  }else ctx.drawImage(playerShipImage,-49,-49,98,98);
+    const frame=shipDirectionFrame(player.angle),sx=(frame%4)*256,sy=Math.floor(frame/4)*256;
+    ctx.drawImage(directionalShipImage,sx,sy,256,256,-80,-86,160,160);
+  }else ctx.drawImage(playerShipImage,-75,-80,150,150);
   ctx.restore();
 }
 function drawIsland(i:WorldIsland){const s=worldToScreen(i);if(drawIslandSprite(ctx,i,s.x,s.y)){ctx.fillStyle='#e8dcb8';ctx.shadowColor='#000';ctx.shadowBlur=4;ctx.font='600 12px Cinzel';ctx.textAlign='center';ctx.fillText(i.name,s.x,s.y+i.r*.9);ctx.shadowBlur=0;return;}const g=ctx.createRadialGradient(s.x-20,s.y-30,10,s.x,s.y,i.r);g.addColorStop(0,'#617c4e');g.addColorStop(.5,'#3c593e');g.addColorStop(.66,'#b9a16b');g.addColorStop(.72,'#17434a');g.addColorStop(1,'#0b2b35');ctx.fillStyle=g;ctx.beginPath();for(let n=0;n<18;n++){const a=n/18*Math.PI*2,r=i.r*(.78+Math.sin(n*4.7)*.09);const x=s.x+Math.cos(a)*r,y=s.y+Math.sin(a)*r;n?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.closePath();ctx.fill();for(let n=0;n<7;n++){const a=n*2.1,r=i.r*.38;ctx.fillStyle='#213c2d';ctx.beginPath();ctx.arc(s.x+Math.cos(a)*r,s.y+Math.sin(a)*r,7+n%3*2,0,7);ctx.fill();}ctx.fillStyle='#d7c697';ctx.font='600 11px Cinzel';ctx.textAlign='center';ctx.fillText(i.name,s.x,s.y+i.r*.76);}
