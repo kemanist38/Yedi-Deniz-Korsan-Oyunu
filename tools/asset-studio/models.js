@@ -95,7 +95,10 @@ export function buildShip(def,{heading=Math.PI*1.25}={}){
     const side=std({map:tex}),top=std({map:mats.deck.map});
     const box=new THREE.Mesh(new THREE.BoxGeometry(wd,c.h,len),[side,side,top,side,side,side]);box.position.set(0,y0+c.h/2,zc);root.add(box);
     for(const [bw,bl,bx,bz] of [[wd+.4,.4,0,-len/2],[wd+.4,.4,0,len/2],[.4,len,-wd/2,0],[.4,len,wd/2,0]]){const rail=new THREE.Mesh(new THREE.BoxGeometry(bw,.7,bl),mats.trim);rail.position.set(bx,y0+c.h+.35,zc+bz);root.add(rail);}
-    if(c.lanterns){for(const sx of [-1,1]){const l=new THREE.Mesh(new THREE.SphereGeometry(.7,10,8),std({color:def.glow||'#ffd27a',emissive:def.glow||'#ffb54a',emissiveIntensity:1.6}));l.position.set(sx*wd*.42,y0+c.h+1.2,S.z(t0)+.4);root.add(l);const post=cyl(.12,.12,1,mats.trim);post.position.set(sx*wd*.42,y0+c.h+.55,S.z(t0)+.4);root.add(post);}}
+    if(c.lanterns){for(const sx of [-1,1]){const glow=std({color:def.glow||'#ffd27a',emissive:def.glow||'#ffb54a',emissiveIntensity:1.8,roughness:.22}),l=new THREE.Mesh(new THREE.SphereGeometry(.7,12,8),glow);l.position.set(sx*wd*.42,y0+c.h+1.2,S.z(t0)+.4);root.add(l);const post=cyl(.12,.12,1,mats.trim);post.position.set(sx*wd*.42,y0+c.h+.55,S.z(t0)+.4);root.add(post);
+      const cage=new THREE.Mesh(new THREE.TorusGeometry(.72,.07,5,12),mats.iron);cage.rotation.x=Math.PI/2;cage.position.copy(l.position);root.add(cage);}}
+    // Kıç/baş kasara üzerinde metal arma şeritleri ve küçük güverte babaları.
+    for(const sx of [-1,1])for(let k=0;k<3;k++){const bollard=cyl(.13,.17,.7,mats.trim,8);bollard.position.set(sx*wd*(.22+.23*k),y0+c.h+.55,zc+(k-1)*len*.22);root.add(bollard);}
   }
   // Toplar: namlu + bronz ağız bileziği + gerçek 3B tekerlekli kundak.
   if(def.guns){const n=def.guns.count;for(let i=0;i<n;i++){const t=.14+.72*(i+.5)/n;for(const sx of [-1,1]){const th=.39*Math.PI,w=S.w(t)*Math.pow(Math.sin(th),.55),y=S.top(t)-(S.top(t)-S.bot(t))*Math.pow(Math.cos(th),.75),z=S.z(t);
@@ -132,7 +135,11 @@ export function buildShip(def,{heading=Math.PI*1.25}={}){
     if(m.flag){const fm=std({map:T.flagTexture({seed:seed+40+mi,...def.flag}),side:THREE.DoubleSide});const f=flag(m.flag,m.flag*.42,fm);f.position.set(0,top+.6,z);f.rotation.y=Math.PI/2+.5;root.add(f);}
     for(const yd of m.yards||[]){const yy=y0+yd.y,pivot=new THREE.Group();pivot.position.set(0,yy,z);pivot.rotation.y=brace;root.add(pivot);
       const yard=cyl(.3,.3,yd.w,mats.wood,6);yard.rotation.z=Math.PI/2;yard.position.set(0,0,.3);pivot.add(yard);
-      const sail=squareSail(yd.w*.94,yd.drop,yd.bulge??1.6,sailMats[yd.sail??0]);sail.position.set(0,-.2,.55);pivot.add(sail);
+      const sailW=yd.w*.94,sail=squareSail(sailW,yd.drop,yd.bulge??1.6,sailMats[yd.sail??0]);sail.position.set(0,-.2,.55);pivot.add(sail);
+      // Yelken kenar halatları ve yatay dikiş/reef bantları gerçek 3B ip olarak modele işlenir.
+      const seamMat=std({color:def.sails[yd.sail??0]?.seam||'#b79b72',roughness:1});
+      for(const sx of [-1,1])pivot.add(between(new THREE.Vector3(sx*sailW*.49,-.25,.58),new THREE.Vector3(sx*sailW*.43,-yd.drop+.05,.58),.055,seamMat));
+      for(let k=1;k<=3;k++){const sy=-yd.drop*k/4,half=sailW*(.49-.035*k),seam=between(new THREE.Vector3(-half,sy,.62),new THREE.Vector3(half,sy,.62),.045,seamMat);pivot.add(seam);}
       ropes.push([new THREE.Vector3(-yd.w/2,yy,z+.3),new THREE.Vector3(-S.w(m.t)*.95,y0,z-2.5)],[new THREE.Vector3(yd.w/2,yy,z+.3),new THREE.Vector3(S.w(m.t)*.95,y0,z-2.5)]);}
     if(m.lateen){const L=m.lateen,ls=sailMats[L.sail??0],pivot=new THREE.Group();pivot.position.set(0,0,z);pivot.rotation.y=swing;root.add(pivot);
       const fore=new THREE.Vector3(0,y0+L.low,L.len*.42),aft=new THREE.Vector3(0,y0+L.high,-L.len*.58),foot=new THREE.Vector3(0,y0+2.2,-L.len*.36);
