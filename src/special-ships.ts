@@ -1,6 +1,5 @@
 // Özel gemiler: yalnızca görünüm (başlangıç gemisi gücünde), inciyle bir kez satın alınır. Tersanenin 2. sayfasında listelenir.
 // Kart görseli tek açılı raster (384 px, pruva sol-aşağı). Yön sayfası olmayan gemi sağa giderken yatay aynalanır.
-// Şövalye Kalyonu sayfasında KD ve KB kareleri geçici olarak K görünümüdür (üretilen sayfada bu iki açı hatalıydı).
 // dir: 8 yönlü sayfa (4 × 2, 256 px kare; elitlerle aynı sıra G, GB, B, KD, K, GD, D, KB). Yoksa tek görsel aynalanır.
 export type SpecialShip={id:string;name:string;english:string;price:number;art:string;description:string;dir?:string};
 export const SPECIAL_SHIPS:SpecialShip[]=[
