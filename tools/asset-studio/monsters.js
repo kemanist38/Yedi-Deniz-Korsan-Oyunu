@@ -13,6 +13,17 @@ function foam(root,size,color,seed){const f=new THREE.Mesh(new THREE.PlaneGeomet
 function eyes(root,pal,positions,size=2){const m=std({color:pal.eye[0],emissive:pal.eye[1],emissiveIntensity:2.2,roughness:.2});for(const p of positions){const e=new THREE.Mesh(new THREE.SphereGeometry(size,14,10),m);e.position.set(...p);root.add(e);const pu=new THREE.Mesh(new THREE.BoxGeometry(size*.25,size*1.2,size*.3),std({color:'#110c05'}));pu.position.set(p[0],p[1],p[2]+size*.9);root.add(pu);}}
 function skin(pal,seed){return std({map:T.skinTexture({seed,base:pal.base,dark:pal.dark,light:pal.light,spots:pal.spots}),roughness:.5});}
 function lavaMat(pal){return std({color:pal.lava,emissive:pal.lava,emissiveIntensity:2.2});}
+function detailMonster(root,pal,seed=1,scale=1){
+  const r=T.rng(seed*17+11),bone=std({color:pal.horn||pal.dark||'#d8c69c',roughness:.42,metalness:.08});
+  // Silueti zenginleştiren gerçek 3B sırt dikenleri / zırh çıkıntıları.
+  for(let i=0;i<7;i++){const a=(i/6-.5)*1.8,sp=new THREE.Mesh(new THREE.ConeGeometry((.65+r()*.45)*scale,(3.5+r()*3)*scale,7),bone);sp.position.set(Math.sin(a)*12*scale,(7+r()*4)*scale,Math.cos(a)*7*scale-4*scale);sp.rotation.set((r()-.5)*.35,a*.35,(r()-.5)*.25);root.add(sp);}
+  // Islak yüzey parlaması: ayrı şeffaf 3B kabuk, Canvas efekti değil.
+  const sheen=new THREE.Mesh(new THREE.SphereGeometry(17*scale,28,16),new THREE.MeshPhysicalMaterial({color:pal.light||pal.base||'#88a99b',transparent:true,opacity:.075,roughness:.12,metalness:.02,clearcoat:1,clearcoatRoughness:.15,depthWrite:false}));
+  sheen.scale.set(1.3,.38,1.05);sheen.position.y=5*scale;root.add(sheen);
+  // Su hattında küçük 3B köpük parçaları; ana köpük dokusuna hacim verir.
+  const fm=new THREE.MeshStandardMaterial({color:'#e7f6f3',roughness:.35,transparent:true,opacity:.72});
+  for(let i=0;i<10;i++){const a=i/10*Math.PI*2+r()*.3,b=new THREE.Mesh(new THREE.IcosahedronGeometry((.45+r()*.65)*scale,1),fm);b.scale.y=.32;b.position.set(Math.cos(a)*(27+r()*8)*scale,.18,Math.sin(a)*(20+r()*7)*scale);root.add(b);}
+}
 
 export function buildCrab(pal,phase,seed=1){
   const root=new THREE.Group(),shell=skin(pal,seed),limb=std({color:pal.limb,roughness:.45}),bob=Math.sin(phase)*.6;
@@ -32,7 +43,7 @@ export function buildCrab(pal,phase,seed=1){
   // Göz sapları
   for(const sx of [-1,1]){root.add(tube([new THREE.Vector3(sx*4,8+bob,13),new THREE.Vector3(sx*5,14+bob,15)],.7,.5,limb,4,6));}
   eyes(root,pal,[[-5,15+bob,15],[5,15+bob,15]],1.6);
-  foam(root,84,'214,240,232',seed+3);root.scale.setScalar(1.25);root.userData.waterline=0;return root;
+  detailMonster(root,pal,seed,1.05);foam(root,84,'214,240,232',seed+3);root.scale.setScalar(1.25);root.userData.waterline=0;return root;
 }
 
 export function buildSerpent(pal,phase,seed=2){
@@ -55,7 +66,7 @@ export function buildSerpent(pal,phase,seed=2){
     const f=new THREE.Mesh(new THREE.PlaneGeometry(7,5),fin);f.position.set(sx*6,1,-3);f.rotation.set(0,sx*.9,sx*.3);head.add(f);}
   root.add(head);eyes(root,pal,[[neck[3].x-3.6,neck[3].y+3.4,neck[3].z+4.6],[neck[3].x+3.6,neck[3].y+3.4,neck[3].z+4.6]],1.5);
   if(pal.lava)for(let i=0;i<5;i++){const drip=new THREE.Mesh(new THREE.SphereGeometry(1.1,8,6),std({color:pal.lava,emissive:pal.lava,emissiveIntensity:2.4}));drip.position.set(arcs[i%3][0]+(i-2)*2,6+i,arcs[i%3][1]);root.add(drip);}
-  foam(root,96,'214,240,232',seed+3);root.userData.waterline=0;return root;
+  detailMonster(root,pal,seed,1.08);foam(root,96,'214,240,232',seed+3);root.userData.waterline=0;return root;
 }
 
 export function buildJelly(pal,phase,seed=3){
@@ -69,7 +80,7 @@ export function buildJelly(pal,phase,seed=3){
   // Su yüzeyinde dalgalanan dokunaçlar
   const tm=std({color:pal.tentacle,emissive:pal.glow,emissiveIntensity:1.4,transparent:true,opacity:.9});
   for(let i=0;i<12;i++){const a=i/12*Math.PI*2+.13,pts=[];for(let k=0;k<=8;k++){const t=k/8,d=18+t*(26+(i%3)*6),off=Math.sin(phase*1.5+t*5+i)*4*t;pts.push(new THREE.Vector3(Math.cos(a)*d-Math.sin(a)*off,.35+Math.sin(t*Math.PI)*.8,Math.sin(a)*d+Math.cos(a)*off));}root.add(tube(pts,1.3,.3,tm,24,6));}
-  foam(root,86,'230,240,255',seed+3);root.userData.waterline=0;return root;
+  detailMonster(root,pal,seed,.92);foam(root,86,'230,240,255',seed+3);root.userData.waterline=0;return root;
 }
 
 export function buildTurtle(pal,phase,seed=4){
@@ -89,7 +100,7 @@ export function buildTurtle(pal,phase,seed=4){
   eyes(root,pal,[[-3.6,6.2+lift,37],[3.6,6.2+lift,37]],1.3);
   // Yüzgeçler
   for(const [sx,sz,ph] of [[-1,1,0],[1,1,Math.PI],[-1,-1,Math.PI],[1,-1,0]]){const f=new THREE.Mesh(new THREE.SphereGeometry(8,16,8),sk);f.scale.set(1.2,.18,.55);const sw=Math.sin(phase+ph)*.5;f.position.set(sx*24,.6,sz*16);f.rotation.set(0,sx*(.6+sw)*sz,sx*.15);root.add(f);}
-  foam(root,80,'214,240,232',seed+3);root.scale.setScalar(1.25);root.userData.waterline=0;return root;
+  detailMonster(root,pal,seed,1.0);foam(root,80,'214,240,232',seed+3);root.scale.setScalar(1.25);root.userData.waterline=0;return root;
 }
 
 export function buildHydra(pal,phase,seed=5){
@@ -105,5 +116,5 @@ export function buildHydra(pal,phase,seed=5){
     const jaw=new THREE.Mesh(new THREE.SphereGeometry(5,16,10),sk);jaw.scale.set(.85,.4,1.4);jaw.position.set(0,-2.6-Math.max(0,Math.sin(w*2))*1.2,1.8);h.add(jaw);
     for(const sx of [-1,1]){const hr=new THREE.Mesh(new THREE.ConeGeometry(.9,6,6),horn);hr.position.set(sx*2.6,3.4,-3.4);hr.rotation.set(-1,0,sx*-.3);h.add(hr);}
     root.add(h);eyes(root,pal,[[neck[3].x-3.4,neck[3].y+3.2,neck[3].z+4.6],[neck[3].x+3.4,neck[3].y+3.2,neck[3].z+4.6]],1.4);});
-  foam(root,90,'214,240,232',seed+3);root.userData.waterline=0;return root;
+  detailMonster(root,pal,seed,1.12);foam(root,90,'214,240,232',seed+3);root.userData.waterline=0;return root;
 }
