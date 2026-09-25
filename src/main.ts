@@ -1401,10 +1401,11 @@ function drawEliteDirectionalShip(s:Vec){
 const specialImages=new Map<string,HTMLImageElement>();
 function drawSpecialShip(s:Vec){
   const sp=specialById(activeSkin);if(!sp)return false;
-  let im=specialImages.get(sp.id);if(!im){im=new Image();im.decoding='async';im.src=sp.art;specialImages.set(sp.id,im);}
+  const src=sp.dir??sp.art;let im=specialImages.get(src);if(!im){im=new Image();im.decoding='async';im.src=src;specialImages.set(src,im);}
   if(!im.complete||!im.naturalWidth)return false;
-  specialFacingDir=specialFacing(player.angle,specialFacingDir);
   ctx.save();ctx.translate(s.x,s.y);ctx.globalAlpha=state.invulnerable&&Math.floor(performance.now()/120)%2?.55:1;ctx.shadowColor='#000b';ctx.shadowBlur=13;
+  if(sp.dir){const f=shipDirectionFrame(player.angle),c=im.naturalWidth/4;ctx.drawImage(im,(f%4)*c,Math.floor(f/4)*c,c,c,-80,-86,160,160);ctx.restore();return true;}
+  specialFacingDir=specialFacing(player.angle,specialFacingDir);
   if(specialFacingDir>0)ctx.scale(-1,1);ctx.drawImage(im,-78,-96,156,156);ctx.restore();return true;
 }
 function drawPlayerShip(){
