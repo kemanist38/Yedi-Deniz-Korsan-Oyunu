@@ -17,5 +17,5 @@ test('every elite ship shows the travelled direction in all eight headings',()=>
 test('correct sheets keep their original frames without mirroring',()=>{
   const map=[4,3,6,5,0,1,2,7];
   for(let c=0;c<8;c++)assert.deepEqual(E.eliteDirFrame('magma',c),{frame:map[c],mirror:false});
-  assert.deepEqual(E.eliteDirFrame('atlantean',7),{frame:3,mirror:true},'kuzeybatı = aynalanmış kuzeydoğu');
+  assert.deepEqual(E.eliteDirFrame('plague',7),{frame:3,mirror:true},'kuzeybatı = aynalanmış kuzeydoğu');
 });
