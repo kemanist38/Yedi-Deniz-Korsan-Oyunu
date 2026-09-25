@@ -1484,6 +1484,20 @@ function drawMonster(m:Monster){const s=worldToScreen(m);if(drawMonsterSheet(ctx
 function drawFleetIsland(){
   if(!hasFleetIsland())return;const f=mapDef().fleet,s=worldToScreen(f),th=theme().fleet,owned=fleetOwner()==='player';
   const baseOk=drawFleetBase(ctx,th,s.x,s.y);
+  // Biyom kalesi katmanı: raster tabanın deniz rengine müdahale etmeden, kale merkezine hacim/ışık verir.
+  // Yeni özel rasterlar geldikçe aynı katman onların üzerinde çevresel efekt olarak kalır.
+  const now=performance.now()/1000;
+  ctx.save();
+  if(th==='lava'){
+    const pulse=.72+Math.sin(now*3.1)*.18;
+    const glow=ctx.createRadialGradient(s.x,s.y-115,12,s.x,s.y-70,210);glow.addColorStop(0,`rgba(255,210,80,${.42*pulse})`);glow.addColorStop(.45,`rgba(255,82,24,${.22*pulse})`);glow.addColorStop(1,'rgba(255,60,10,0)');ctx.fillStyle=glow;ctx.beginPath();ctx.ellipse(s.x,s.y-55,215,105,0,0,Math.PI*2);ctx.fill();
+    ctx.lineCap='round';for(const dx of [-92,-28,54,118]){ctx.strokeStyle=`rgba(255,105,28,${.58*pulse})`;ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(s.x+dx,s.y-190+Math.abs(dx)*.18);ctx.bezierCurveTo(s.x+dx-18,s.y-115,s.x+dx+22,s.y-25,s.x+dx*.72,s.y+95);ctx.stroke();ctx.strokeStyle='rgba(255,226,92,.55)';ctx.lineWidth=2;ctx.stroke();}
+  }else if(th==='abyss'){
+    const pulse=.65+Math.sin(now*1.7)*.16,g=ctx.createRadialGradient(s.x,s.y-120,20,s.x,s.y-60,235);g.addColorStop(0,`rgba(151,105,255,${.28*pulse})`);g.addColorStop(.55,`rgba(52,29,100,${.16*pulse})`);g.addColorStop(1,'rgba(20,8,45,0)');ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(s.x,s.y-45,235,120,0,0,Math.PI*2);ctx.fill();for(let i=0;i<5;i++){const a=i/5*Math.PI*2+now*.04;ctx.strokeStyle='rgba(170,135,255,.22)';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(s.x+Math.cos(a)*70,s.y-90+Math.sin(a)*24);ctx.lineTo(s.x+Math.cos(a+.25)*185,s.y-55+Math.sin(a+.25)*72);ctx.stroke();}
+  }else if(th==='ice'){
+    const g=ctx.createRadialGradient(s.x,s.y-100,15,s.x,s.y-60,220);g.addColorStop(0,'rgba(225,250,255,.34)');g.addColorStop(.55,'rgba(100,210,255,.14)');g.addColorStop(1,'rgba(80,190,255,0)');ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(s.x,s.y-45,225,105,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle='rgba(220,250,255,.5)';ctx.lineWidth=3;for(const dx of [-125,-62,68,132]){ctx.beginPath();ctx.moveTo(s.x+dx,s.y-185);ctx.lineTo(s.x+dx-18,s.y-125);ctx.lineTo(s.x+dx+8,s.y-145);ctx.stroke();}
+  }
+  ctx.restore();
   if(owned)for(const tw of [...ownTowers].sort((a,b)=>a.y-b.y)){const p=worldToScreen(tw);drawBuiltTower(ctx,TOWER_TYPES[tw.type].frame,tw.slot,p.x,p.y);}
   if(!baseOk){ctx.fillStyle='#4a7a3c';ctx.beginPath();ctx.arc(s.x,s.y,FLEET.islandR,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#3a3c42';ctx.lineWidth=18;ctx.beginPath();ctx.arc(s.x,s.y,FLEET.wallR,Math.PI/2+FLEET.gap/2,Math.PI/2-FLEET.gap/2+Math.PI*2);ctx.stroke();}
   ctx.textAlign='center';ctx.font='700 14px Cinzel';ctx.fillStyle=owned?'#9fe8dc':'#f0b8a8';ctx.shadowColor='#000';ctx.shadowBlur=6;ctx.fillText(f.name,s.x,s.y-FLEET.islandR-24);ctx.font='700 9px Inter';ctx.fillText(owned?'FİLO ADAN · LAGÜNDE ONARIM':fleetEnterable()?'RAKİP FİLO · TEST: GİRİŞ AÇIK (GÜNEY KANALI)':'RAKİP FİLO · GİRİŞ YASAK',s.x,s.y-FLEET.islandR-10);ctx.shadowBlur=0;
