@@ -32,9 +32,8 @@ const DEFAULT_SHOWS='S SW W NE N SE E NW';
 // Kemik Biçici (bone) ve Kadim Atlantis Muhafızı (atlantean) sayfalarında kuzey açısı çizimde yoktu; K karesinde geçici
 // olarak KB görünümü durur (kemikte D, B'nin aynasıdır). Gerçek K görünümü gelince aynı kareye konur.
 export const ELITE_DIR_SHOWS:Partial<Record<EliteShipId,string>>={
-  plague:'S SW W NE N SE E SE',
-  sovereign:'S SW W NE N SE E SE',tempest:'S SW W NE N SE E SE',void:'S SW W NE N SE E SE',
-  ragnarok:'S NE W NE N SE E NW',jade:'S SE E NW N SE W NW',
+  void:'S SW W NE N SE E SE',
+  ragnarok:'S NE W NE N SE E NW',
 };
 // Pusula dizini (0 = kuzey, saat yönünde 45°) için {kare, ayna}
 export function eliteDirFrame(id:EliteShipId,compass:number):{frame:number;mirror:boolean}{
