@@ -584,7 +584,14 @@ function ammoImpact(s:Shot,target:Target,hit:number){
     for(let n=0;n<4;n++){const a=Math.atan2(player.y-target.y,player.x-target.x)+(Math.random()-.5)*.8,sp=dist(player,target)/.7;particles.push({x:target.x,y:target.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:.7,maxLife:.7,kind:'soul',z:18,size:26});}}
 }
 // Namlu alevi ve top dumanı
-function muzzleFlash(x:number,y:number,angle:number,size=64){particles.push({x,y,vx:0,vy:0,life:.13,maxLife:.13,kind:'flash',rot:angle,size,z:6});for(let n=0;n<2;n++)particles.push({x,y,vx:Math.cos(angle)*(30+n*25)+(Math.random()-.5)*10,vy:Math.sin(angle)*(30+n*25)+(Math.random()-.5)*10,life:.9+Math.random()*.4,maxLife:1.3,kind:'smoke',z:6,size:36+n*10,variant:(n+Math.floor(Math.random()*4))%4,rot:Math.random()*6});}
+function muzzleFlash(x:number,y:number,angle:number,size=64){
+  // Kısa sıcak çekirdek + namlu yönünde kıvılcım + hacimli barut dumanı. Tamamı atlas parçacıklarıyla çizilir;
+  // ek DOM/ışık kaynağı oluşturmadığı için yoğun NPC savaşında da hafif kalır.
+  particles.push({x,y,vx:0,vy:0,life:.16,maxLife:.16,kind:'flash',rot:angle,size,z:7});
+  particles.push({x:x+Math.cos(angle)*5,y:y+Math.sin(angle)*5,vx:Math.cos(angle)*34,vy:Math.sin(angle)*34,life:.24,maxLife:.24,kind:'firePuff',z:8,size:size*.58,rot:angle});
+  for(let n=0;n<5;n++){const spread=(Math.random()-.5)*.42,a=angle+spread,sp=75+Math.random()*105;particles.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:.18+Math.random()*.24,maxLife:.42,kind:'spark',z:7+Math.random()*8,vz:18+Math.random()*35,size:9+Math.random()*9});}
+  for(let n=0;n<3;n++){const a=angle+(Math.random()-.5)*.28,sp=24+n*20;particles.push({x,y,vx:Math.cos(a)*sp+(Math.random()-.5)*8,vy:Math.sin(a)*sp+(Math.random()-.5)*8,life:.95+Math.random()*.5,maxLife:1.45,kind:'smoke',z:7+n*2,vz:9+Math.random()*14,size:34+n*13,variant:(n+Math.floor(Math.random()*4))%4,rot:Math.random()*6});}
+}
 const wrecks:Wreck[]=[];
 const WRECK_TIME=3.2;
 function damageText(x:number,y:number,value:number){particles.push({x,y,vx:0,vy:-24,life:1,maxLife:1,kind:'damage',text:`-${Math.round(value).toLocaleString('tr-TR')}`});}
@@ -1550,9 +1557,12 @@ function drawParticle(p:Particle){const s=worldToScreen(p),a=Math.max(0,Math.min
     case 'splinter':drawVfx(ctx,'splinter',s.x,y,size??24,{rot:p.rot,alpha:Math.min(1,a*2),variant:p.variant??0});return;
     default:drawVfx(ctx,p.kind as 'bubble'|'plank'|'firePuff'|'poison',s.x,y,(size??18)*(p.kind==='firePuff'?.6+a*.6:1),{rot:p.rot,alpha:Math.min(1,a*1.6)});}}
 // Batan gemi: yan yatar, suya gömülür, kabarcıklar çıkarır
-function drawWreck(w:Wreck){const s=worldToScreen(w),k=Math.min(1,w.t/WRECK_TIME),sink=k*k;ctx.save();ctx.globalAlpha=Math.max(0,1-sink*.92);ctx.translate(s.x,s.y+sink*34);ctx.rotate(w.roll*k+Math.sin(w.t*2.2)*.025*(1-k));ctx.scale(1-k*.12,1-k*.62);drawNpcShip(ctx,w.sprite,w.span,0,0,w.angle,performance.now());ctx.restore();
-  // Su hattı geminin üstüne kapanırken genişleyen köpük halkası.
-  ctx.save();ctx.globalAlpha=(1-k)*.55;ctx.strokeStyle='#e8fbf8';ctx.lineWidth=2+4*k;ctx.beginPath();ctx.ellipse(s.x,s.y+12,28+w.span*.22*k,9+w.span*.07*k,0,0,Math.PI*2);ctx.stroke();ctx.restore();}
+function drawWreck(w:Wreck){const s=worldToScreen(w),k=Math.min(1,w.t/WRECK_TIME),sink=k*k,submerge=Math.max(0,(k-.38)/.62);ctx.save();ctx.globalAlpha=Math.max(0,1-sink*.94);ctx.translate(s.x,s.y+sink*42);ctx.rotate(w.roll*k+Math.sin(w.t*2.2)*.025*(1-k));ctx.scale(1-k*.1,1-k*.66);drawNpcShip(ctx,w.sprite,w.span,0,0,w.angle,performance.now());ctx.restore();
+  // Su hattı geminin üstüne kapanırken iki farklı hızda köpük/şok halkası oluşur.
+  ctx.save();ctx.globalAlpha=(1-k)*.62;ctx.strokeStyle='#e8fbf8';ctx.lineWidth=2+5*k;ctx.beginPath();ctx.ellipse(s.x,s.y+13,28+w.span*.25*k,9+w.span*.08*k,0,0,Math.PI*2);ctx.stroke();
+  if(k>.2){ctx.globalAlpha=(1-k)*.28;ctx.lineWidth=1.5+3*k;ctx.beginPath();ctx.ellipse(s.x,s.y+16,20+w.span*.38*(k-.2),7+w.span*.12*(k-.2),0,0,Math.PI*2);ctx.stroke();}
+  if(submerge>0){const g=ctx.createRadialGradient(s.x,s.y+18,2,s.x,s.y+18,35+w.span*.2*submerge);g.addColorStop(0,`rgba(225,247,244,${.2*(1-submerge)})`);g.addColorStop(1,'rgba(225,247,244,0)');ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(s.x,s.y+18,42+w.span*.22*submerge,13+w.span*.07*submerge,0,0,Math.PI*2);ctx.fill();}
+  ctx.restore();}
 // ---------------------------------------------------------------- Gemi–su etkileşimi
 // Her geminin altında yumuşak su gölgesi ve bordasında köpük halkası; hareket ederken kıçtan V biçiminde açılan
 // dümen suyu izi ve pruvada su sıçraması. Görünüm 42° yukarıdan bakış: zemindeki izler dikeyde ~0,67 basıktır.
