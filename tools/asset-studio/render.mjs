@@ -12,6 +12,8 @@ const page=await browser.newPage();page.on('console',m=>console.log('[studio]',m
 await page.goto(`http://localhost:${port}/studio.html`);await page.waitForFunction(()=>window.studioReady);
 const only=process.argv.slice(2);
 const jobs={
+  // Her biyom için 6 farklı profesyonel 3B ada raster atlası ve tematik filo kalesi.
+
   'enemy-scout-v1':()=>page.evaluate(()=>renderShipSheet('scout')),
   'enemy-raider-v1':()=>page.evaluate(()=>renderShipSheet('raider')),
   'enemy-warship-v1':()=>page.evaluate(()=>renderShipSheet('warship')),
@@ -23,6 +25,8 @@ const jobs={
   'world-scroll-v1':()=>page.evaluate(()=>renderWorldScroll()),
   'sea-sparkle-v1':()=>page.evaluate(()=>renderSeaSparkle()),
 };
+const islandThemes=['verdant','misty','coral','haven','crimson','storm','ice','toxic','lava','abyss'];
+for(const theme of islandThemes){jobs[`islands-${theme}`]=()=>page.evaluate(t=>renderIslandAtlas(t),theme);jobs[`fleet-base-${theme}`]=()=>page.evaluate(t=>renderFleetFortress(t),theme);}
 for(const name of ['ammo-fire','ammo-grape','ammo-explosive','ammo-breaker','ammo-leech','icon-mine','icon-attack','icon-repair','icon-speed','icon-shield','icon-hat','icon-chest','officer-helmsman','officer-carpenter','officer-lookout','officer-quartermaster','officer-surgeon','ui-ring','ui-ring-attack','ui-slot','icon-scroll','icon-gear','icon-anvil','gunner-vignette','icon-market','icon-menu','captain-bust','icon-flag'])jobs[`${name}-v1`]=()=>page.evaluate(n=>renderIcon(n),name);
 jobs['equip-atlas-v2']=()=>page.evaluate(()=>renderEquipAtlas());
 jobs['icon-powder-v2']=()=>page.evaluate(()=>renderItem('powder'));
