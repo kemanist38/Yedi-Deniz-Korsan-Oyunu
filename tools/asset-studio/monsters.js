@@ -13,13 +13,13 @@ function foam(root,size,color,seed){const f=new THREE.Mesh(new THREE.PlaneGeomet
 function eyes(root,pal,positions,size=2){const m=std({color:pal.eye[0],emissive:pal.eye[1],emissiveIntensity:2.2,roughness:.2});for(const p of positions){const e=new THREE.Mesh(new THREE.SphereGeometry(size,14,10),m);e.position.set(...p);root.add(e);const pu=new THREE.Mesh(new THREE.BoxGeometry(size*.25,size*1.2,size*.3),std({color:'#110c05'}));pu.position.set(p[0],p[1],p[2]+size*.9);root.add(pu);}}
 function skin(pal,seed){return std({map:T.skinTexture({seed,base:pal.base,dark:pal.dark,light:pal.light,spots:pal.spots}),roughness:.5});}
 function lavaMat(pal){return std({color:pal.lava,emissive:pal.lava,emissiveIntensity:2.2});}
-function detailMonster(root,pal,seed=1,scale=1){
+function detailMonster(root,pal,seed=1,scale=1,{spikes=true,sheen=true}={}){
   const r=T.rng(seed*17+11),bone=std({color:pal.horn||pal.dark||'#d8c69c',roughness:.42,metalness:.08});
-  // Silueti zenginleştiren gerçek 3B sırt dikenleri / zırh çıkıntıları.
-  for(let i=0;i<7;i++){const a=(i/6-.5)*1.8,sp=new THREE.Mesh(new THREE.ConeGeometry((.65+r()*.45)*scale,(3.5+r()*3)*scale,7),bone);sp.position.set(Math.sin(a)*12*scale,(7+r()*4)*scale,Math.cos(a)*7*scale-4*scale);sp.rotation.set((r()-.5)*.35,a*.35,(r()-.5)*.25);root.add(sp);}
+  // Diken yalnızca anatomisine uyan yaratıklarda kullanılır; denizanası gibi yumuşak türlerde kapatılır.
+  if(spikes)for(let i=0;i<7;i++){const a=(i/6-.5)*1.8,sp=new THREE.Mesh(new THREE.ConeGeometry((.65+r()*.45)*scale,(3.5+r()*3)*scale,7),bone);sp.position.set(Math.sin(a)*12*scale,(7+r()*4)*scale,Math.cos(a)*7*scale-4*scale);sp.rotation.set((r()-.5)*.35,a*.35,(r()-.5)*.25);root.add(sp);}
   // Islak yüzey parlaması: ayrı şeffaf 3B kabuk, Canvas efekti değil.
-  const sheen=new THREE.Mesh(new THREE.SphereGeometry(17*scale,28,16),new THREE.MeshPhysicalMaterial({color:pal.light||pal.base||'#88a99b',transparent:true,opacity:.075,roughness:.12,metalness:.02,clearcoat:1,clearcoatRoughness:.15,depthWrite:false}));
-  sheen.scale.set(1.3,.38,1.05);sheen.position.y=5*scale;root.add(sheen);
+  if(sheen){const wetShell=new THREE.Mesh(new THREE.SphereGeometry(17*scale,28,16),new THREE.MeshPhysicalMaterial({color:pal.light||pal.base||'#88a99b',transparent:true,opacity:.075,roughness:.12,metalness:.02,clearcoat:1,clearcoatRoughness:.15,depthWrite:false}));
+  wetShell.scale.set(1.3,.38,1.05);wetShell.position.y=5*scale;root.add(wetShell);}
   // Su hattında küçük 3B köpük parçaları; ana köpük dokusuna hacim verir.
   const fm=new THREE.MeshStandardMaterial({color:'#e7f6f3',roughness:.35,transparent:true,opacity:.72});
   for(let i=0;i<10;i++){const a=i/10*Math.PI*2+r()*.3,b=new THREE.Mesh(new THREE.IcosahedronGeometry((.45+r()*.65)*scale,1),fm);b.scale.y=.32;b.position.set(Math.cos(a)*(27+r()*8)*scale,.18,Math.sin(a)*(20+r()*7)*scale);root.add(b);}
@@ -80,7 +80,11 @@ export function buildJelly(pal,phase,seed=3){
   // Su yüzeyinde dalgalanan dokunaçlar
   const tm=std({color:pal.tentacle,emissive:pal.glow,emissiveIntensity:1.4,transparent:true,opacity:.9});
   for(let i=0;i<12;i++){const a=i/12*Math.PI*2+.13,pts=[];for(let k=0;k<=8;k++){const t=k/8,d=18+t*(26+(i%3)*6),off=Math.sin(phase*1.5+t*5+i)*4*t;pts.push(new THREE.Vector3(Math.cos(a)*d-Math.sin(a)*off,.35+Math.sin(t*Math.PI)*.8,Math.sin(a)*d+Math.cos(a)*off));}root.add(tube(pts,1.3,.3,tm,24,6));}
-  detailMonster(root,pal,seed,.92);foam(root,86,'230,240,255',seed+3);root.userData.waterline=0;return root;
+  // Denizanasına kemiksi genel diken yerine, yarı saydam kubbenin içinde radyal biyolüminesans organları ver.
+  const organMat=new THREE.MeshPhysicalMaterial({color:pal.core,emissive:pal.glow,emissiveIntensity:1.8,transparent:true,opacity:.58,roughness:.12,clearcoat:1,depthWrite:false});
+  for(let i=0;i<8;i++){const a=i/8*Math.PI*2,organ=new THREE.Mesh(new THREE.CapsuleGeometry(1.05,7,5,10),organMat);organ.position.set(Math.cos(a)*8,3.5,Math.sin(a)*8);organ.rotation.z=Math.cos(a)*.48;organ.rotation.x=Math.sin(a)*.48;root.add(organ);}
+  for(let i=0;i<6;i++){const a=i/6*Math.PI*2+phase*.08,node=new THREE.Mesh(new THREE.SphereGeometry(1.35,12,8),organMat);node.position.set(Math.cos(a)*12,2.5+Math.sin(phase+i)*.7,Math.sin(a)*12);root.add(node);}
+  detailMonster(root,pal,seed,.92,{spikes:false,sheen:false});foam(root,86,'230,240,255',seed+3);root.userData.waterline=0;return root;
 }
 
 export function buildTurtle(pal,phase,seed=4){
