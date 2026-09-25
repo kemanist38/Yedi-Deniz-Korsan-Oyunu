@@ -17,7 +17,7 @@ import {towerContains,towerMuzzle} from './towerGeometry';
 import {loadGuild,saveGuild,islandSlots,towerTypeCost,tagError,canBuild,TOWER_TYPES,ROLE_NAMES,TOWER_SLOTS,type TowerType,type GuildRole,GUILD_NAME_MAX,GUILD_TAG_MAX,type Guild} from './guild';
 import {loadProfile,saveProfile,nickError,rankOf,NICK_CHANGE_COST,NICK_COOLDOWN_MS,NICK_MAX} from './profile';
 import {createChest,chestRewardText,CHEST_PICKUP_RADIUS,CHEST_CLICK_RADIUS,DRIFT_RESPAWN_SECONDS,type LootChest} from './loot';
-import {ELITE_SHIPS,eliteById,type EliteShipId} from './elite-ships';
+import {ELITE_SHIPS,eliteById,eliteDirFrame,type EliteShipId} from './elite-ships';
 
 type Vec = { x: number; y: number };
 type AmmoKind = 'iron'|'chain'|SpecialAmmo;
@@ -593,7 +593,7 @@ function rewardNotice(msg:string){if(rewardTimer>0){rewardQueue.push(msg);return
 function saveQuestState(){localStorage.setItem(QUEST_STORAGE,JSON.stringify({active:state.activeQuest,progress:questProgress,cooldowns:questCooldownUntil}));}
 function saveAccount(){localStorage.setItem(ACCOUNT_STORAGE,JSON.stringify({pearls:state.pearls,gold:state.gold,fame:state.fame,level:state.level,maxHp:state.maxHp,hp:state.hp,chainAmmo:state.chainAmmo,elitePoints:state.elitePoints,battlePoints:state.battlePoints,cannonType:state.cannonType,cannonInventory,mountedCannons,equipOwned,equipped,quickSlots,upgrades,eliteShip:activeEliteShip,activeShip,elitePurchased,currentMap}));try{localStorage.setItem(WORLD_STORAGE,currentMap);}catch{}}
 function effectiveRange(){return(CANNONS[state.cannonType].range+upgrades.range*18+bonus.range+equipBonus().range)*(state.ammo==='grape'?SPECIAL_AMMO.grape.rangeFactor:1);}
-function effectiveSpeed(){return(104+upgrades.speed*5)*bonus.speed*(1+equipBonus().speed)*eliteSpeedFactor()*(abilityActive('speed')?SPEED_BOOST:1);}
+function effectiveSpeed(){return(128+upgrades.speed*5)*bonus.speed*(1+equipBonus().speed)*eliteSpeedFactor()*(abilityActive('speed')?SPEED_BOOST:1);}
 function cannonCapacity(){return BASE_CANNONS+upgrades.hull*CANNONS_PER_HULL+(eliteEnabled()?eliteShip().level*CANNONS_PER_ELITE:0);}
 function mountedCannonCount(){return (Object.keys(mountedCannons) as CannonKind[]).reduce((sum,kind)=>sum+mountedCannons[kind],0);}
 function cannonAsset(kind:CannonKind){
@@ -988,16 +988,17 @@ function update(dt:number){
     if(destination&&!thrust&&!turn){
       const d=dist(player,destination),desired=Math.atan2(destination.y-player.y,destination.x-player.x)+Math.PI/2;
       const delta=Math.atan2(Math.sin(desired-player.angle),Math.cos(desired-player.angle));
-      player.angle+=clamp(delta,-3.4*dt,3.4*dt);
-      const alignment=clamp(1-Math.abs(delta)/Math.PI,.28,1),arrival=clamp(d/135,0,1);
+      player.angle+=clamp(delta,-4.6*dt,4.6*dt);
+      // Dönüşte hız az düşer (90° dönüşte %80, tam geri dönüşte %45); varışta son 80 birimde yavaşlar
+      const alignment=1-.55*Math.pow(Math.abs(delta)/Math.PI,1.5),arrival=clamp(d/80,.25,1);
       const targetSpeed=effectiveSpeed()*alignment*arrival;
-      player.speed+=(targetSpeed-player.speed)*Math.min(1,dt*(targetSpeed<player.speed?4.8:2.4));
+      player.speed+=(targetSpeed-player.speed)*Math.min(1,dt*(targetSpeed<player.speed?3.2:4.4));
       if(d<7){destination=null;player.speed=0;}
     }
     else {
-      player.angle+=turn*2.45*dt;
-      const targetSpeed=thrust>0?effectiveSpeed():thrust<0?0:0;
-      player.speed+=(targetSpeed-player.speed)*Math.min(1,dt*(thrust>0?2.2:3.8));
+      player.angle+=turn*3.2*dt;
+      const targetSpeed=thrust>0?effectiveSpeed()*(turn?.88:1):0;
+      player.speed+=(targetSpeed-player.speed)*Math.min(1,dt*(thrust>0?4:3.8));
     }
     player.speed=clamp(player.speed,0,effectiveSpeed()+4);
     player.x=clamp(player.x+Math.sin(player.angle)*player.speed*dt,25,WORLD_WIDTH-25);player.y=clamp(player.y-Math.cos(player.angle)*player.speed*dt,25,WORLD_HEIGHT-25);resolveIslandCollision();
@@ -1362,7 +1363,7 @@ const SHIP_DIRECTION_FRAMES=[4,3,6,5,0,1,2,7] as const;
 function shipCompass(angle:number){return((Math.round(angle/(Math.PI/4))%8)+8)%8;}
 function shipDirectionFrame(angle:number){return SHIP_DIRECTION_FRAMES[shipCompass(angle)];}
 // Elit gemiler de başlangıç gemisi gibi 8 yönlü çizilir: pruva gidilen yöne döner (elite-dir-<id>-v1.webp, 4 × 2 kare, 221 × 256).
-// Tüm elit ve sonradan eklenecek özel gemiler aynı kare düzenini ve aynı yön eşlemesini (shipDirectionFrame) kullanır.
+// Sayfalardaki yanlış yöne bakan kareler elite-ships.ts ELITE_DIR_SHOWS ile düzeltilir (gerekirse karşı yön aynalanır).
 const eliteDirImages=new Map<string,HTMLImageElement>();
 function eliteDirImage(id:string){let im=eliteDirImages.get(id);if(!im){im=new Image();im.decoding='async';im.src=`/assets/elite-dir-${id}-v1.webp`;eliteDirImages.set(id,im);}return im;}
 const ELITE_FRAME={w:221,h:256,scale:.56};
@@ -1370,7 +1371,7 @@ function drawEliteDirectionalShip(s:Vec){
   const id=eliteShip().id,dir=eliteDirImage(id);
   ctx.save();ctx.translate(s.x,s.y);ctx.globalAlpha=state.invulnerable&&Math.floor(performance.now()/120)%2?.55:1;
   ctx.shadowColor='#000b';ctx.shadowBlur=13;ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
-  if(dir.complete&&dir.naturalWidth){const f=shipDirectionFrame(player.angle),{w,h,scale}=ELITE_FRAME;ctx.drawImage(dir,(f%4)*w,Math.floor(f/4)*h,w,h,-w*scale/2,-h*scale/2,w*scale,h*scale);ctx.restore();return true;}
+  if(dir.complete&&dir.naturalWidth){const {frame:f,mirror}=eliteDirFrame(id,shipCompass(player.angle)),{w,h,scale}=ELITE_FRAME;if(mirror)ctx.scale(-1,1);ctx.drawImage(dir,(f%4)*w,Math.floor(f/4)*h,w,h,-w*scale/2,-h*scale/2,w*scale,h*scale);ctx.restore();return true;}
   // Yön sayfası yüklenene kadar yan görünüş (sağa giderken aynalanır)
   const im=eliteArtImage(id);if(!im.complete||!im.naturalWidth){ctx.restore();return false;}
   const dx=Math.sin(player.angle);if(Math.abs(dx)>.2)eliteFacing=dx<0?-1:1;if(eliteFacing>0)ctx.scale(-1,1);ctx.drawImage(im,-75,-75,150,150);
