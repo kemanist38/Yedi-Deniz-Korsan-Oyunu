@@ -268,15 +268,17 @@ ui('repair').onclick=toggleRepair;
 ui('ability-speed').onclick=()=>activateAbility('speed');ui('ability-mine').onclick=dropMine;ui('ability-elite').onclick=activateEliteAbility;
 function recenterShip(){camera.x=player.x;camera.y=player.y;destination=null;toast('Kamera gemiye ortalandı');}
 ui('recenterShip').onclick=recenterShip;
-// Minimap seyir kamerası: tıklanan dünya noktasına kamerayı yumuşakça taşır; geminin rotasını değiştirmez.
+// Mini harita gerçek seyir kontrolüdür: tıklanan dünya noktasına güvenli rota oluşturur.
 const minimapCanvas=ui('minimap') as HTMLCanvasElement;
 minimapCanvas.style.cursor='crosshair';
-minimapCanvas.title='Haritada görmek istediğin bölgeye tıkla';
+minimapCanvas.title='Gitmek istediğin bölgeye tıkla';
 minimapCanvas.addEventListener('pointerdown',e=>{
   const r=minimapCanvas.getBoundingClientRect();
   const x=Math.max(0,Math.min(WORLD_WIDTH,(e.clientX-r.left)/r.width*WORLD_WIDTH));
   const y=Math.max(0,Math.min(WORLD_HEIGHT,(e.clientY-r.top)/r.height*WORLD_HEIGHT));
-  camera.x=x;camera.y=y;toast('Kamera mini haritada seçilen bölgeye taşındı');
+  routeTarget=navigablePoint({x,y});destination=routeVia(routeTarget);attackChase=false;
+  state.attacking=false;ui('attack').classList.remove('active');
+  toast('Mini haritadan seyir rotası çizildi');
 });
 ui('openWorldMap').onclick=openWorldMap;ui('closeWorldMap').onclick=closeWorldMap;
 ui('worldMapOverlay').addEventListener('pointerdown',e=>{if(e.target===ui('worldMapOverlay'))closeWorldMap();});
@@ -1626,7 +1628,7 @@ function draw(){
   monsters.forEach(m=>{const a=visionAlpha(m);if(a){ctx.save();ctx.globalAlpha=a;drawMonster(m);ctx.restore();}});
   wrecks.forEach(drawWreck);drawAbilityFxUnder(ctx,worldToScreen);particles.forEach(p=>{if(UNDER.has(p.kind))drawParticle(p);});shots.forEach(drawShotShadow);
   wakes.forEach((_,o)=>drawWake(o));
-  [...enemies].sort((a,b)=>a.y-b.y).forEach(e=>{if(!e.tower&&!inVision(e))return;const a=e.tower?1:visionAlpha(e),s=worldToScreen(e);ctx.save();ctx.globalAlpha*=a;if(e.boss)drawBossAura(e,s);if(!e.tower)drawHullWater(e,hullLength(e),shipMoving(e));const raster=e.tower?drawBastion(ctx,e.towerIndex??0,s.x,s.y):e.def?drawNpcShip(ctx,e.def.sprite,e.def.span,s.x,s.y,e.angle,performance.now()):false;if(!raster)drawShip(e,e.angle,e.color);const top=raster?(e.tower?TOWER_LABEL_OFFSET:shipLabelOffset(e.def!.span)):-42;if(e.boss){drawBossFlag(s,top);drawBossPlate(e,s,top);return;}const bw=e.tower||e.role==='heavy'?72:56;drawHealthBar(s.x,s.y+top,bw,e.hp/e.maxHp,e.tower?'#f09a4f':e.role==='heavy'?'#f0584a':'#4fd0da');ctx.fillStyle='#e6dccb';ctx.font='600 10px Inter';ctx.textAlign='center';ctx.shadowColor='#000';ctx.shadowBlur=3;ctx.fillText(e.name,s.x,s.y+top-7);ctx.shadowBlur=0;ctx.restore();});
+  [...enemies].sort((a,b)=>a.y-b.y).forEach(e=>{if(!e.tower&&!inVision(e))return;const a=e.tower?1:visionAlpha(e),s=worldToScreen(e);ctx.save();ctx.globalAlpha*=a;if(e.boss)drawBossAura(e,s);if(!e.tower)drawHullWater(e,hullLength(e),shipMoving(e));const raster=e.tower?drawBastion(ctx,e.towerIndex??0,s.x,s.y):e.def?drawNpcShip(ctx,e.def.sprite,e.def.span,s.x,s.y,e.angle,performance.now()):false;if(!raster)drawShip(e,e.angle,e.color);const top=raster?(e.tower?TOWER_LABEL_OFFSET:shipLabelOffset(e.def!.span)):-42;if(e.boss){drawBossFlag(s,top);drawBossPlate(e,s,top);ctx.restore();return;}const bw=e.tower||e.role==='heavy'?72:56;drawHealthBar(s.x,s.y+top,bw,e.hp/e.maxHp,e.tower?'#f09a4f':e.role==='heavy'?'#f0584a':'#4fd0da');ctx.fillStyle='#e6dccb';ctx.font='600 10px Inter';ctx.textAlign='center';ctx.shadowColor='#000';ctx.shadowBlur=3;ctx.fillText(e.name,s.x,s.y+top-7);ctx.shadowBlur=0;ctx.restore();});
   if(selected&&targetExists(selected)&&inVision(selected)){const t=worldToScreen(selected);ctx.strokeStyle='#f1c662';ctx.lineWidth=2;ctx.beginPath();ctx.arc(t.x,t.y,selected.kind==='monster'?selected.radius+10:34,0,7);ctx.stroke();}
   drawHullWater(player,hullLength(player),shipMoving(player));
   if(ghostTimer>0){const px=player.x,py=player.y;ghostTrail.forEach((p,i)=>{ghostFade=(i+1)/(ghostTrail.length+1)*.35;player.x=p.x;player.y=p.y;drawPlayerShip();});ghostFade=0;player.x=px;player.y=py;}
