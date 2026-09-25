@@ -102,7 +102,7 @@ const rasterItemAssets:Partial<Record<QuickItemId,string>>={};
 rasterItemAssets.iron='/assets/ammo-iron-v1.webp';rasterItemAssets.chain='/assets/ammo-chain-v1.webp';
 // Elit gemiler: tersane kartındaki tasarımın birebir aynısı, gemi başına temiz raster (384 px, pruva sol-aşağı).
 // Gemi görselleri aynı dosya adıyla yenilendiğinde tarayıcı önbelleği eskisini göstermesin diye sürüm eki (görsel değişince artır)
-const SHIP_ART_REV='5';
+const SHIP_ART_REV='6';
 const eliteArtUrl=(id:string)=>`/assets/elite-${id}-art-v2.webp?r=${SHIP_ART_REV}`;
 const eliteArtImages=new Map<string,HTMLImageElement>();
 function eliteArtImage(id:string){let im=eliteArtImages.get(id);if(!im){im=new Image();im.decoding='async';im.src=eliteArtUrl(id);eliteArtImages.set(id,im);}return im;}
