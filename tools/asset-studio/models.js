@@ -104,6 +104,14 @@ export function buildShip(def,{heading=Math.PI*1.25}={}){
     const carriage=new THREE.Mesh(new THREE.BoxGeometry(1.35,.38,1.15),std({color:'#55351f',roughness:.86}));carriage.position.set(sx*(w-.15),y-.7,z);root.add(carriage);
     for(const dz of [-.38,.38]){const wheel=cyl(.32,.32,.16,mats.wood,10);wheel.rotation.z=Math.PI/2;wheel.position.set(sx*(w-.15),y-.9,z+dz);root.add(wheel);}
   }}}
+  // Top mazgalları ve kapak çerçeveleri: namlular artık gövdeden "yapıştırılmış" görünmez.
+  if(def.guns){const n=def.guns.count,portMat=std({color:def.hullPaint.portColor||'#120b08',roughness:.78}),lidMat=std({color:def.hullPaint.portLid||def.hullPaint.band||'#4d281d',roughness:.7});
+    for(let i=0;i<n;i++){const t=.14+.72*(i+.5)/n,z=S.z(t),th=.39*Math.PI,w=S.w(t)*Math.pow(Math.sin(th),.55),y=S.top(t)-(S.top(t)-S.bot(t))*Math.pow(Math.cos(th),.75);
+      for(const sx of [-1,1]){const port=new THREE.Mesh(new THREE.BoxGeometry(.16,1.25,1.55),portMat);port.position.set(sx*(w+.08),y,z);root.add(port);
+        const lid=new THREE.Mesh(new THREE.BoxGeometry(.14,.9,1.38),lidMat);lid.position.set(sx*(w+.16),y+1.02,z-.12);lid.rotation.z=sx*.42;root.add(lid);}}}
+  // Güverte korkulukları: ince dikmeler ve üst küpeşte, uzaktan gemi siluetini zenginleştirir.
+  for(const sx of [-1,1]){const pts=[];for(let i=0;i<=8;i++){const t=.12+i*.095,x=sx*S.w(t)*.91,y=deckY(t)+1.35,z=S.z(t);pts.push(new THREE.Vector3(x,y,z));if(i>0&&i<8){const post=between(new THREE.Vector3(x,deckY(t)+.15,z),new THREE.Vector3(x,y,z),.09,mats.wood);root.add(post);}}
+    for(let i=0;i+1<pts.length;i++)root.add(between(pts[i],pts[i+1],.11,mats.wood));}
   // Güverte yükü
   const r=T.rng(seed+3);
   for(let i=0;i<(def.cargo||0);i++){const t=.28+r()*.4,w=S.w(t)*.55,isCrate=r()<.5,crate=isCrate?new THREE.Mesh(new THREE.BoxGeometry(1.4,1.2,1.4),std({color:'#6e4a2c',roughness:.9})):cyl(.65,.65,1.4,std({color:'#5a3a22',roughness:.82}),12);crate.position.set((r()*2-1)*w,deckY(t)+.7,S.z(t));crate.rotation.y=r()*3;root.add(crate);if(!isCrate){for(const yy of [-.45,.45]){const band=new THREE.Mesh(new THREE.TorusGeometry(.66,.055,5,12),mats.iron);band.rotation.x=Math.PI/2;band.position.set(crate.position.x,crate.position.y+yy,crate.position.z);root.add(band);}}}
@@ -138,8 +146,10 @@ export function buildShip(def,{heading=Math.PI*1.25}={}){
       pivot.add(foreAftSail([[0,y0+g.foot,-.4],[0,y0+g.foot,-g.len],[0,y0+g.peak,-g.len*1.05],[0,y0+g.throat,-.4]],g.bulge??1.4,gs));
       pivot.add(between(new THREE.Vector3(0,y0+g.foot,0),new THREE.Vector3(0,y0+g.foot,-g.len-.4),.28,mats.wood));
       pivot.add(between(new THREE.Vector3(0,y0+g.throat,0),new THREE.Vector3(0,y0+g.peak,-g.len*1.05),.24,mats.wood));}
-    // Çarmıh halatları
+    // Çarmıh halatları + basamaklı ip merdivenler.
     for(const sx of [-1,1])for(const dz of [-1.5,.2,1.9])ropes.push([new THREE.Vector3(0,top-.6,z),new THREE.Vector3(sx*S.w(m.t)*.98,S.top(m.t)-.2,z+dz)]);
+    for(const sx of [-1,1]){const railTop=new THREE.Vector3(sx*m.r*.8,top*.78+y0*.22,z),railBot=new THREE.Vector3(sx*S.w(m.t)*.88,S.top(m.t),z);ropes.push([railTop,railBot]);
+      for(let k=1;k<=5;k++){const t=k/6,p=new THREE.Vector3().lerpVectors(railTop,railBot,t),half=.55+.7*t;ropes.push([new THREE.Vector3(p.x-half,p.y,p.z),new THREE.Vector3(p.x+half,p.y,p.z)]);}}
     if(mi===0)foreTop=new THREE.Vector3(0,top-1,z);mainTop=new THREE.Vector3(0,top-1,z);
   });
   // Flok
