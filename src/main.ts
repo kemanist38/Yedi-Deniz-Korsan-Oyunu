@@ -33,7 +33,7 @@ type Enemy = Vec & { kind:'ship'; frozen?:number; def?:NpcDef; boss?:BossDef; su
 type ParticleKind='foam'|'smoke'|'spark'|'damage'|'flash'|'explosion'|'splash'|'splinter'|'bubble'|'plank'|'firePuff'|'target'|'poison'|'soul'|'shock';
 // z: su üstünden yükseklik (ekranda yukarı kayar); vz ile savrulan parçalar suya düşer
 type Particle = Vec & { vx:number; vy:number; life:number; maxLife:number; kind:ParticleKind; text?:string; z?:number; vz?:number; rot?:number; vr?:number; size?:number; variant?:number };
-type Wreck = Vec & { angle:number; sprite:string; span:number; t:number; bubble:number };
+type Wreck = Vec & { angle:number; sprite:string; span:number; t:number; bubble:number; roll:number };
 type Monster = Vec & { kind:'monster'; frozen?:number; def:MonsterDef; burnTimer?:number; burnDps?:number; phase:number; radius:number; name:string; hp:number; maxHp:number; cooldown:number; aggro:boolean; slowTimer:number; homeX:number; homeY:number; combatTimer:number };
 type Target = Enemy|Monster;
 type UpgradeKind = 'hull'|'damage'|'range'|'reload'|'speed'|'repair';
@@ -580,7 +580,7 @@ function ammoImpact(s:Shot,target:Target,hit:number){
 // Namlu alevi ve top dumanı
 function muzzleFlash(x:number,y:number,angle:number,size=64){particles.push({x,y,vx:0,vy:0,life:.13,maxLife:.13,kind:'flash',rot:angle,size,z:6});for(let n=0;n<2;n++)particles.push({x,y,vx:Math.cos(angle)*(30+n*25)+(Math.random()-.5)*10,vy:Math.sin(angle)*(30+n*25)+(Math.random()-.5)*10,life:.9+Math.random()*.4,maxLife:1.3,kind:'smoke',z:6,size:36+n*10,variant:(n+Math.floor(Math.random()*4))%4,rot:Math.random()*6});}
 const wrecks:Wreck[]=[];
-const WRECK_TIME=1.8;
+const WRECK_TIME=3.2;
 function damageText(x:number,y:number,value:number){particles.push({x,y,vx:0,vy:-24,life:1,maxLife:1,kind:'damage',text:`-${Math.round(value).toLocaleString('tr-TR')}`});}
 let toastTimer=0;
 function toast(msg:string){ui('toast').textContent=msg;ui('toast').classList.add('show');toastTimer=2.2;}
@@ -1096,7 +1096,7 @@ function update(dt:number){
   for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.97;p.vy*=.97;p.life-=dt;if(p.vr)p.rot=(p.rot??0)+p.vr*dt;
     if(p.vz!==undefined){p.z=(p.z??0)+p.vz*dt;p.vz-=340*dt;if(p.z<=0){p.z=0;p.vz=undefined;p.vx*=.25;p.vy*=.25;p.vr=(p.vr??0)*.1;if(p.kind==='splinter')particles.push({x:p.x,y:p.y,vx:0,vy:0,life:.4,maxLife:.4,kind:'foam',size:20,variant:0});}}
     if(p.life<=0)particles.splice(i,1);}
-  for(let i=wrecks.length-1;i>=0;i--){const w=wrecks[i];w.t+=dt;w.bubble-=dt;if(w.bubble<=0){w.bubble=.09;const a=Math.random()*Math.PI*2,r=Math.random()*26;particles.push({x:w.x+Math.cos(a)*r,y:w.y+Math.sin(a)*r*.6,vx:0,vy:-6,life:.7,maxLife:.7,kind:Math.random()<.6?'bubble':'foam',size:10+Math.random()*10,variant:0});}if(w.t>=WRECK_TIME)wrecks.splice(i,1);}
+  for(let i=wrecks.length-1;i>=0;i--){const w=wrecks[i];w.t+=dt;w.bubble-=dt;if(w.bubble<=0){w.bubble=.07+Math.random()*.07;const a=Math.random()*Math.PI*2,r=Math.random()*38;particles.push({x:w.x+Math.cos(a)*r,y:w.y+Math.sin(a)*r*.6,vx:(Math.random()-.5)*8,vy:-8-Math.random()*8,life:.8,maxLife:.8,kind:Math.random()<.62?'bubble':'foam',size:12+Math.random()*16,variant:0});}if(w.t<1.65&&Math.random()<dt*2.5){const a=Math.random()*Math.PI*2,r=Math.random()*w.span*.22;particles.push({x:w.x+Math.cos(a)*r,y:w.y+Math.sin(a)*r*.45,vx:0,vy:0,life:.55,maxLife:.55,kind:'explosion',size:80+Math.random()*70});}if(w.t>=WRECK_TIME)wrecks.splice(i,1);}
   let need=xpNeed(state.level);while(state.fame>=need){state.fame-=need;state.level++;setAch('level',state.level);state.maxHp=baseMaxHp();state.hp=effectiveMaxHp();saveAccount();playLevelUp();rewardNotice(`SEVİYE ${state.level}   +${HP_PER_LEVEL.toLocaleString('tr-TR')} Azami Gövde   +1 Yetenek Puanı   ${state.level}/1 AÇILDI`);toast(`Seviye ${state.level}! Yeni denizler açıldı`);need=xpNeed(state.level);}
   if(state.level>=MAX_LEVEL)state.fame=Math.min(state.fame,0);
   if(toastTimer>0){toastTimer-=dt;if(toastTimer<=0)ui('toast').classList.remove('show');}if(rewardTimer>0){rewardTimer-=dt;if(rewardTimer<=0){ui('rewardToast').classList.remove('show');const next=rewardQueue.shift();if(next)setTimeout(()=>showReward(next),220);}} updateUI();
@@ -1106,7 +1106,7 @@ function sinkEnemy(e:Enemy){
   const j=enemies.indexOf(e);if(j<0)return;
   enemies.splice(j,1);if(selected===e){selected=null;state.attacking=false;ui('attack').classList.remove('active');}
   burst(e.x,e.y,true);playExplosion();playSink(earGain(e));splashAt(e.x,e.y,190);
-  if(e.def&&!e.tower)wrecks.push({x:e.x,y:e.y,angle:e.angle,sprite:e.def.sprite,span:e.def.span,t:0,bubble:0});
+  if(e.def&&!e.tower)wrecks.push({x:e.x,y:e.y,angle:e.angle,sprite:e.def.sprite,span:e.def.span,t:0,bubble:0,roll:(Math.random()-.5)*.34});
   if(e.tower){destroyTower();return;}
   if(e.boss){defeatBoss(e);return;}
   // NPC ve canavar yalnızca tecrübe puanı ve altın verir (Seafight'taki gibi); savaş puanı sadece rakip oyuncu batırınca gelir.
@@ -1115,7 +1115,7 @@ function sinkEnemy(e:Enemy){
   rewardNotice(`+${goldGain} Altın   +${fame} TP`);toast(`${e.name} batırıldı`);if(e.def)recordQuestProgress('npc',e.def.id);countBossKill(e);if(!e.summoned)setTimeout(spawnEnemy,1800);
 }
 function defeatMonster(m:Monster){
-  playExplosion();const d=m.def;
+  playExplosion();burst(m.x,m.y,true);splashAt(m.x,m.y,m.radius*2.4);for(let i=0;i<5;i++){const a=Math.random()*Math.PI*2,r=Math.random()*m.radius*.7;particles.push({x:m.x+Math.cos(a)*r,y:m.y+Math.sin(a)*r*.55,vx:0,vy:0,life:.55+Math.random()*.35,maxLife:.9,kind:i%2?'explosion':'splash',size:90+Math.random()*90});}const d=m.def;
   const eliteLoot=eliteLootMult();if(bannerTimer>0)spawnCoins(m,player);
   const goldGain=goldGainAch(d.gold*(1+bonus.bounty)*eliteLoot),fame=xpGain(d.xp);state.gold+=goldGain;state.fame+=fame;saveAccount();bumpAch('monster');
   rewardNotice(`+${goldGain} Altın   +${fame} TP`);recordQuestProgress('monster',d.id);
@@ -1518,7 +1518,9 @@ function drawParticle(p:Particle){const s=worldToScreen(p),a=Math.max(0,Math.min
     case 'splinter':drawVfx(ctx,'splinter',s.x,y,size??24,{rot:p.rot,alpha:Math.min(1,a*2),variant:p.variant??0});return;
     default:drawVfx(ctx,p.kind as 'bubble'|'plank'|'firePuff'|'poison',s.x,y,(size??18)*(p.kind==='firePuff'?.6+a*.6:1),{rot:p.rot,alpha:Math.min(1,a*1.6)});}}
 // Batan gemi: yan yatar, suya gömülür, kabarcıklar çıkarır
-function drawWreck(w:Wreck){const s=worldToScreen(w),k=Math.min(1,w.t/WRECK_TIME);ctx.save();ctx.globalAlpha=Math.max(0,1-k*k);ctx.translate(s.x,s.y+k*12);ctx.rotate(Math.sin(w.t*3)*.05+k*.35);ctx.scale(1-k*.2,1-k*.5);drawNpcShip(ctx,w.sprite,w.span,0,0,w.angle,performance.now());ctx.restore();}
+function drawWreck(w:Wreck){const s=worldToScreen(w),k=Math.min(1,w.t/WRECK_TIME),sink=k*k;ctx.save();ctx.globalAlpha=Math.max(0,1-sink*.92);ctx.translate(s.x,s.y+sink*34);ctx.rotate(w.roll*k+Math.sin(w.t*2.2)*.025*(1-k));ctx.scale(1-k*.12,1-k*.62);drawNpcShip(ctx,w.sprite,w.span,0,0,w.angle,performance.now());ctx.restore();
+  // Su hattı geminin üstüne kapanırken genişleyen köpük halkası.
+  ctx.save();ctx.globalAlpha=(1-k)*.55;ctx.strokeStyle='#e8fbf8';ctx.lineWidth=2+4*k;ctx.beginPath();ctx.ellipse(s.x,s.y+12,28+w.span*.22*k,9+w.span*.07*k,0,0,Math.PI*2);ctx.stroke();ctx.restore();}
 // ---------------------------------------------------------------- Gemi–su etkileşimi
 // Her geminin altında yumuşak su gölgesi ve bordasında köpük halkası; hareket ederken kıçtan V biçiminde açılan
 // dümen suyu izi ve pruvada su sıçraması. Görünüm 42° yukarıdan bakış: zemindeki izler dikeyde ~0,67 basıktır.
