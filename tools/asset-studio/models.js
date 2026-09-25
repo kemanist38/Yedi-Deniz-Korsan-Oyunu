@@ -97,16 +97,21 @@ export function buildShip(def,{heading=Math.PI*1.25}={}){
     for(const [bw,bl,bx,bz] of [[wd+.4,.4,0,-len/2],[wd+.4,.4,0,len/2],[.4,len,-wd/2,0],[.4,len,wd/2,0]]){const rail=new THREE.Mesh(new THREE.BoxGeometry(bw,.7,bl),mats.trim);rail.position.set(bx,y0+c.h+.35,zc+bz);root.add(rail);}
     if(c.lanterns){for(const sx of [-1,1]){const l=new THREE.Mesh(new THREE.SphereGeometry(.7,10,8),std({color:def.glow||'#ffd27a',emissive:def.glow||'#ffb54a',emissiveIntensity:1.6}));l.position.set(sx*wd*.42,y0+c.h+1.2,S.z(t0)+.4);root.add(l);const post=cyl(.12,.12,1,mats.trim);post.position.set(sx*wd*.42,y0+c.h+.55,S.z(t0)+.4);root.add(post);}}
   }
-  // Toplar
-  if(def.guns){const n=def.guns.count;for(let i=0;i<n;i++){const t=.14+.72*(i+.5)/n;for(const sx of [-1,1]){const th=.39*Math.PI,w=S.w(t)*Math.pow(Math.sin(th),.55),y=S.top(t)-(S.top(t)-S.bot(t))*Math.pow(Math.cos(th),.75);const gun=cyl(.38,.46,2.4,mats.iron,8);gun.rotation.z=Math.PI/2;gun.position.set(sx*(w+.5),y,S.z(t));root.add(gun);}}}
+  // Toplar: namlu + bronz ağız bileziği + gerçek 3B tekerlekli kundak.
+  if(def.guns){const n=def.guns.count;for(let i=0;i<n;i++){const t=.14+.72*(i+.5)/n;for(const sx of [-1,1]){const th=.39*Math.PI,w=S.w(t)*Math.pow(Math.sin(th),.55),y=S.top(t)-(S.top(t)-S.bot(t))*Math.pow(Math.cos(th),.75),z=S.z(t);
+    const gun=cyl(.38,.5,2.6,mats.iron,12);gun.rotation.z=Math.PI/2;gun.position.set(sx*(w+.55),y,z);root.add(gun);
+    const muzzle=new THREE.Mesh(new THREE.TorusGeometry(.5,.09,6,12),mats.trim);muzzle.rotation.y=Math.PI/2;muzzle.position.set(sx*(w+1.78),y,z);root.add(muzzle);
+    const carriage=new THREE.Mesh(new THREE.BoxGeometry(1.35,.38,1.15),std({color:'#55351f',roughness:.86}));carriage.position.set(sx*(w-.15),y-.7,z);root.add(carriage);
+    for(const dz of [-.38,.38]){const wheel=cyl(.32,.32,.16,mats.wood,10);wheel.rotation.z=Math.PI/2;wheel.position.set(sx*(w-.15),y-.9,z+dz);root.add(wheel);}
+  }}}
   // Güverte yükü
   const r=T.rng(seed+3);
-  for(let i=0;i<(def.cargo||0);i++){const t=.28+r()*.4,w=S.w(t)*.55;const crate=r()<.5?new THREE.Mesh(new THREE.BoxGeometry(1.4,1.2,1.4),std({color:'#6e4a2c'})):cyl(.65,.65,1.4,std({color:'#5a3a22'}),10);crate.position.set((r()*2-1)*w,deckY(t)+.7,S.z(t));crate.rotation.y=r()*3;root.add(crate);}
+  for(let i=0;i<(def.cargo||0);i++){const t=.28+r()*.4,w=S.w(t)*.55,isCrate=r()<.5,crate=isCrate?new THREE.Mesh(new THREE.BoxGeometry(1.4,1.2,1.4),std({color:'#6e4a2c',roughness:.9})):cyl(.65,.65,1.4,std({color:'#5a3a22',roughness:.82}),12);crate.position.set((r()*2-1)*w,deckY(t)+.7,S.z(t));crate.rotation.y=r()*3;root.add(crate);if(!isCrate){for(const yy of [-.45,.45]){const band=new THREE.Mesh(new THREE.TorusGeometry(.66,.055,5,12),mats.iron);band.rotation.x=Math.PI/2;band.position.set(crate.position.x,crate.position.y+yy,crate.position.z);root.add(band);}}}
   // Cıvadra
   const bowT=1,bowZ=S.z(bowT)-.5,bowY=S.top(bowT)-.2;
   const bsEnd=new THREE.Vector3(0,bowY+def.bowsprit*.35,bowZ+def.bowsprit);
   root.add(between(new THREE.Vector3(0,bowY-.4,bowZ-3),bsEnd,.32,mats.wood));
-  if(def.figurehead){const fh=new THREE.Mesh(new THREE.SphereGeometry(.9,10,8),mats.trim);fh.scale.set(.7,1,1.4);fh.position.set(0,bowY-1.2,bowZ+.6);root.add(fh);}
+  if(def.figurehead){const fh=new THREE.Group();fh.position.set(0,bowY-1.2,bowZ+.8);const torso=new THREE.Mesh(new THREE.SphereGeometry(.9,16,10),mats.trim);torso.scale.set(.72,1.15,.75);fh.add(torso);const wingMat=std({color:def.hullPaint.trim||'#c89a45',metalness:.62,roughness:.32});for(const sx of [-1,1]){const wing=new THREE.Mesh(new THREE.ConeGeometry(.45,2.8,7),wingMat);wing.position.set(sx*.7,.2,-.2);wing.rotation.set(.25,0,sx*.72);fh.add(wing);}const head=new THREE.Mesh(new THREE.SphereGeometry(.42,12,8),wingMat);head.position.y=1.05;fh.add(head);root.add(fh);}
   // Direkler, sereneler, yelkenler
   const ropes=[];
   const sailMats=def.sails.map((s,i)=>{const map=T.sailTexture({seed:seed+20+i,...s});return std({map,side:THREE.DoubleSide,transparent:!!s.ragged,alphaTest:.4,roughness:.95,...(def.glow?{emissive:def.glow,emissiveMap:map,emissiveIntensity:.55}:{})});});
