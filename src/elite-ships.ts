@@ -30,7 +30,7 @@ export const eliteById=(id:string)=>ELITE_SHIPS.find(ship=>ship.id===id)??ELITE_
 export const COMPASS=['N','NE','E','SE','S','SW','W','NW'] as const;
 export type Compass=typeof COMPASS[number];
 const DEFAULT_SHOWS='S SW W NE N SE E NW';
-// Kemik Biçici (bone), Kadim Atlantis Muhafızı (atlantean) ve Mercan Koruyucusu (coral) sayfalarında kuzey açısı çizimde yoktu; K karesinde geçici
+// Kemik Biçici (bone), ve Kadim Atlantis Muhafızı (atlantean) sayfalarında kuzey açısı çizimde yoktu; K karesinde geçici
 // olarak KB görünümü durur (kemikte D, B'nin aynasıdır). Gerçek K görünümü gelince aynı kareye konur.
 export const ELITE_DIR_SHOWS:Partial<Record<EliteShipId,string>>={
 };
