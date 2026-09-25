@@ -43,7 +43,10 @@ export function buildCrab(pal,phase,seed=1){
   // Göz sapları
   for(const sx of [-1,1]){root.add(tube([new THREE.Vector3(sx*4,8+bob,13),new THREE.Vector3(sx*5,14+bob,15)],.7,.5,limb,4,6));}
   eyes(root,pal,[[-5,15+bob,15],[5,15+bob,15]],1.6);
-  detailMonster(root,pal,seed,1.05);foam(root,84,'214,240,232',seed+3);root.scale.setScalar(1.25);root.userData.waterline=0;return root;
+  // Yengeç: kabuk kenarında zırh plakaları ve perçin benzeri sert çıkıntılar.
+  const armor=std({color:pal.dark,roughness:.72,metalness:.06});
+  for(let i=0;i<8;i++){const a=(i/8-.5)*Math.PI*.92,p=new THREE.Mesh(new THREE.DodecahedronGeometry(1.5+(i%2)*.35,0),armor);p.scale.set(1.35,.55,1);p.position.set(Math.sin(a)*16,7+bob,Math.cos(a)*8-2);p.rotation.y=a;root.add(p);}
+  detailMonster(root,pal,seed,1.05,{spikes:false});foam(root,84,'214,240,232',seed+3);root.scale.setScalar(1.25);root.userData.waterline=0;return root;
 }
 
 export function buildSerpent(pal,phase,seed=2){
@@ -66,7 +69,10 @@ export function buildSerpent(pal,phase,seed=2){
     const f=new THREE.Mesh(new THREE.PlaneGeometry(7,5),fin);f.position.set(sx*6,1,-3);f.rotation.set(0,sx*.9,sx*.3);head.add(f);}
   root.add(head);eyes(root,pal,[[neck[3].x-3.6,neck[3].y+3.4,neck[3].z+4.6],[neck[3].x+3.6,neck[3].y+3.4,neck[3].z+4.6]],1.5);
   if(pal.lava)for(let i=0;i<5;i++){const drip=new THREE.Mesh(new THREE.SphereGeometry(1.1,8,6),std({color:pal.lava,emissive:pal.lava,emissiveIntensity:2.4}));drip.position.set(arcs[i%3][0]+(i-2)*2,6+i,arcs[i%3][1]);root.add(drip);}
-  detailMonster(root,pal,seed,1.08);foam(root,96,'214,240,232',seed+3);root.userData.waterline=0;return root;
+  // Deniz yılanı: omurga boyunca ayrı yüzgeç sırtı; genel merkez diken kümesi kullanılmaz.
+  const ridge=std({color:pal.fin,roughness:.42,...(pal.lava?{emissive:pal.lava,emissiveIntensity:.7}:{})});
+  for(let i=0;i<9;i++){const t=i/8,p=new THREE.Mesh(new THREE.ConeGeometry(.8+(.5-Math.abs(t-.5))*.7,3.5+Math.sin(t*Math.PI)*3,6),ridge);p.position.set(24+sway*(.25+t*.5),8+t*23,14+t*15);p.rotation.x=-.38;root.add(p);}
+  detailMonster(root,pal,seed,1.08,{spikes:false});foam(root,96,'214,240,232',seed+3);root.userData.waterline=0;return root;
 }
 
 export function buildJelly(pal,phase,seed=3){
@@ -104,7 +110,10 @@ export function buildTurtle(pal,phase,seed=4){
   eyes(root,pal,[[-3.6,6.2+lift,37],[3.6,6.2+lift,37]],1.3);
   // Yüzgeçler
   for(const [sx,sz,ph] of [[-1,1,0],[1,1,Math.PI],[-1,-1,Math.PI],[1,-1,0]]){const f=new THREE.Mesh(new THREE.SphereGeometry(8,16,8),sk);f.scale.set(1.2,.18,.55);const sw=Math.sin(phase+ph)*.5;f.position.set(sx*24,.6,sz*16);f.rotation.set(0,sx*(.6+sw)*sz,sx*.15);root.add(f);}
-  detailMonster(root,pal,seed,1.0);foam(root,80,'214,240,232',seed+3);root.scale.setScalar(1.25);root.userData.waterline=0;return root;
+  // Kaplumbağa: kabuk çevresinde barnacle kümeleri ve belirgin plakalı kenar; rastgele sırt dikenleri yok.
+  const barnacle=std({color:pal.light||'#b9c4aa',roughness:.88});
+  for(let i=0;i<12;i++){const a=i/12*Math.PI*2,b=new THREE.Mesh(new THREE.CylinderGeometry(.45,.85,1.25,7),barnacle);b.position.set(Math.cos(a)*19,4.3,Math.sin(a)*23);b.rotation.z=Math.cos(a)*.35;b.rotation.x=Math.sin(a)*.35;root.add(b);}
+  detailMonster(root,pal,seed,1.0,{spikes:false});foam(root,80,'214,240,232',seed+3);root.scale.setScalar(1.25);root.userData.waterline=0;return root;
 }
 
 export function buildHydra(pal,phase,seed=5){
@@ -120,5 +129,8 @@ export function buildHydra(pal,phase,seed=5){
     const jaw=new THREE.Mesh(new THREE.SphereGeometry(5,16,10),sk);jaw.scale.set(.85,.4,1.4);jaw.position.set(0,-2.6-Math.max(0,Math.sin(w*2))*1.2,1.8);h.add(jaw);
     for(const sx of [-1,1]){const hr=new THREE.Mesh(new THREE.ConeGeometry(.9,6,6),horn);hr.position.set(sx*2.6,3.4,-3.4);hr.rotation.set(-1,0,sx*-.3);h.add(hr);}
     root.add(h);eyes(root,pal,[[neck[3].x-3.4,neck[3].y+3.2,neck[3].z+4.6],[neck[3].x+3.4,neck[3].y+3.2,neck[3].z+4.6]],1.4);});
-  detailMonster(root,pal,seed,1.12);foam(root,90,'214,240,232',seed+3);root.userData.waterline=0;return root;
+  // Hidra: üç boynun tabanını birleştiren ağır omuz zırhı ve boynuz halkaları.
+  for(let i=0;i<5;i++){const a=(i/4-.5)*1.5,plate=new THREE.Mesh(new THREE.DodecahedronGeometry(3.2,0),horn);plate.scale.set(1.35,.55,1);plate.position.set(Math.sin(a)*14,7,Math.cos(a)*7-4);root.add(plate);}
+  for(const [bx] of heads)for(let j=0;j<3;j++){const ring=new THREE.Mesh(new THREE.TorusGeometry(4.5-j*.3,.42,6,18),horn);ring.rotation.x=Math.PI/2;ring.position.set(bx*(.75+j*.1),14+j*8,6+j*2);root.add(ring);}
+  detailMonster(root,pal,seed,1.12,{spikes:false});foam(root,90,'214,240,232',seed+3);root.userData.waterline=0;return root;
 }
