@@ -33,13 +33,16 @@ export function drawMonsterSheet(ctx:CanvasRenderingContext2D,def:{sprite:string
   ctx.restore();return true;
 }
 
-// Adalar: görünüm başına 2 varyantlı sayfa (512 px). Çizim boyu = 2.36 × ada yarıçapı.
+// Adalar: atlas 16 temel kare içerir. Aynı atlas karesini tekrar tekrar göstermek yerine ada adı/konumu
+// ile deterministik dönüş, ölçek ve yansıtma uygulanır; böylece her denizde 6+ okunabilir siluet oluşur.
 export function islandSheetUrl(_look:string){return'/assets/islands-seven-seas-v1.webp';}
+function islandSeed(i:{look:string;variant:number},x:number,y:number){let h=2166136261;for(const c of i.look)h=Math.imul(h^c.charCodeAt(0),16777619);return(h^Math.round(x*7)^Math.round(y*13)^i.variant*2654435761)>>>0;}
 export function drawIslandSprite(ctx:CanvasRenderingContext2D,island:{look:string;variant:number;r:number;flip?:boolean},x:number,y:number){
   const sheet=load(islandSheetUrl(island.look));if(!ready(sheet))return false;
-  const size=island.r*2.36;ctx.save();ctx.translate(x,y);if(island.flip)ctx.scale(-1,1);
+  const seed=islandSeed(island,x,y),size=island.r*(2.18+(seed%19)/100),rot=((seed>>>8)%7-3)*.018;
+  ctx.save();ctx.translate(x,y);ctx.rotate(rot);if(island.flip!==!!(seed&1))ctx.scale(-1,1);
   const themes=['haven','coral','verdant','misty','ice','storm','abyss','lava'];
-  const frame=Math.max(0,themes.indexOf(island.look))*2+island.variant,cw=sheet.naturalWidth/4,ch=sheet.naturalHeight/4;
+  const base=Math.max(0,themes.indexOf(island.look))*2,frame=base+((island.variant+(seed>>>4))&1),cw=sheet.naturalWidth/4,ch=sheet.naturalHeight/4;
   ctx.drawImage(sheet,(frame%4)*cw,Math.floor(frame/4)*ch,cw,ch,-size/2,-size/2,size,size);ctx.restore();return true;
 }
 
