@@ -19,6 +19,7 @@ import {loadProfile,saveProfile,nickError,rankOf,NICK_CHANGE_COST,NICK_COOLDOWN_
 import {createChest,chestRewardText,CHEST_PICKUP_RADIUS,CHEST_CLICK_RADIUS,DRIFT_RESPAWN_SECONDS,type LootChest} from './loot';
 import {ELITE_SHIPS,eliteById,eliteDirFrame,type EliteShipId} from './elite-ships';
 import {SPECIAL_SHIPS,specialById,specialFacing} from './special-ships';
+import {spawnLightning,spawnFrost,updateAbilityFx,drawAbilityFx} from './abilityFx';
 
 type Vec = { x: number; y: number };
 type AmmoKind = 'iron'|'chain'|SpecialAmmo;
@@ -28,12 +29,12 @@ type CannonStock=Record<CannonKind,number>;
 type Shot = Vec & { vx:number; vy:number; life:number; owner:'player'|'enemy'; damage:number; hit:boolean; ammo:AmmoKind; target?:Target; slow?:number; splash?:number; visual?:'spit'; age?:number; flight?:number; arc?:number; trail?:number };
 type SalvoRound = { delay:number; target:Target; side:number; slot:number; damage:number; ammo:AmmoKind };
 type EnemyRole='light'|'heavy';
-type Enemy = Vec & { kind:'ship'; def?:NpcDef; boss?:BossDef; summoned?:boolean; escortsCalled?:boolean; burnTimer?:number; burnDps?:number; tower?:boolean; towerIndex?:number;  hitRadius?:number; fireRange?:number; rewardXp?:number; role:EnemyRole; angle:number; hp:number; maxHp:number; cooldown:number; speed:number; damage:number; reload:number; rewardGold:number; rewardFame:number; color:string; name:string; tier:number; aggro:boolean; wander:number; slowTimer:number; homeX:number; homeY:number; combatTimer:number };
+type Enemy = Vec & { kind:'ship'; frozen?:number; def?:NpcDef; boss?:BossDef; summoned?:boolean; escortsCalled?:boolean; burnTimer?:number; burnDps?:number; tower?:boolean; towerIndex?:number;  hitRadius?:number; fireRange?:number; rewardXp?:number; role:EnemyRole; angle:number; hp:number; maxHp:number; cooldown:number; speed:number; damage:number; reload:number; rewardGold:number; rewardFame:number; color:string; name:string; tier:number; aggro:boolean; wander:number; slowTimer:number; homeX:number; homeY:number; combatTimer:number };
 type ParticleKind='foam'|'smoke'|'spark'|'damage'|'flash'|'explosion'|'splash'|'splinter'|'bubble'|'plank'|'firePuff'|'target'|'poison'|'soul'|'shock';
 // z: su üstünden yükseklik (ekranda yukarı kayar); vz ile savrulan parçalar suya düşer
 type Particle = Vec & { vx:number; vy:number; life:number; maxLife:number; kind:ParticleKind; text?:string; z?:number; vz?:number; rot?:number; vr?:number; size?:number; variant?:number };
 type Wreck = Vec & { angle:number; sprite:string; span:number; t:number; bubble:number };
-type Monster = Vec & { kind:'monster'; def:MonsterDef; burnTimer?:number; burnDps?:number; phase:number; radius:number; name:string; hp:number; maxHp:number; cooldown:number; aggro:boolean; slowTimer:number; homeX:number; homeY:number; combatTimer:number };
+type Monster = Vec & { kind:'monster'; frozen?:number; def:MonsterDef; burnTimer?:number; burnDps?:number; phase:number; radius:number; name:string; hp:number; maxHp:number; cooldown:number; aggro:boolean; slowTimer:number; homeX:number; homeY:number; combatTimer:number };
 type Target = Enemy|Monster;
 type UpgradeKind = 'hull'|'damage'|'range'|'reload'|'speed'|'repair';
 type QuickItemId = 'iron'|'chain'|SpecialAmmo|'mine'|'powder'|'shield'|'repairkit'|'speed';
@@ -187,6 +188,8 @@ const abilityTimers:Record<AbilityId,{active:number;cooldown:number}>={speed:{ac
 const mines:{x:number;y:number;life:number;arm:number}[]=[];
 const abilityActive=(id:AbilityId)=>abilityTimers[id].active>0;
 const eliteAbility={active:0,cooldown:0};
+// Yetenek animasyon denemesi: hayalet geçişte adacıklardan geçilir; gemi yarı saydam ve arkasında hayalet izi
+let ghostTimer=0,ghostTrailClock=0;const ghostTrail:Vec[]=[];
 const eliteEnabled=()=>activeShip!=='starter';
 const eliteShip=()=>eliteById(activeEliteShip);
 // Seafight ölçeği: başlangıç gemisi 75.000 can ve 100 top yuvası. Elit seviyesi başına +5.000 can ve +25 yuva
@@ -464,6 +467,7 @@ function navigablePoint(point:Vec){
   return{x:clamp(point.x,25,WORLD_WIDTH-25),y:clamp(point.y,25,WORLD_HEIGHT-25)};
 }
 function resolveIslandCollision(){
+  if(ghostTimer>0)return;
   const fc=fleetCollision(player);if(!fc&&hasFleetIsland())fleetSafe={x:player.x,y:player.y};if(fc){const hard=!fleetSafe||(fc.x!==player.x&&fc.y!==player.y);player.x=fc.x;player.y=fc.y;player.speed*=hard?.5:.9;if(!routeTarget)destination=null;if(collisionNotice<=0){toast(fleetEnterable()?`${fc.name} karasına çıkılamaz — lagüne güneydeki kanaldan girilir`:`${fc.name} rakip filonun adası — içeri girilemez`);collisionNotice=2;}}
   for(const island of islands){const shore=island.r*.72+28,d=dist(player,island);if(d<shore){const a=d>.01?Math.atan2(player.y-island.y,player.x-island.x):player.angle-Math.PI/2;player.x=island.x+Math.cos(a)*shore;player.y=island.y+Math.sin(a)*shore;player.speed*=.28;destination=null;if(collisionNotice<=0){toast(`${island.name} kıyısına daha fazla yaklaşamazsın`);collisionNotice=2;}}}
 }
@@ -996,6 +1000,7 @@ function update(dt:number){
     }
     player.speed=clamp(player.speed,0,effectiveSpeed()+4);
     player.x=clamp(player.x+Math.sin(player.angle)*player.speed*dt,25,WORLD_WIDTH-25);player.y=clamp(player.y-Math.cos(player.angle)*player.speed*dt,25,WORLD_HEIGHT-25);resolveIslandCollision();
+  updateAbilityFx(dt);ghostTimer=Math.max(0,ghostTimer-dt);ghostTrailClock-=dt;if(ghostTimer>0&&ghostTrailClock<=0){ghostTrailClock=.07;ghostTrail.push({x:player.x,y:player.y});if(ghostTrail.length>6)ghostTrail.shift();}if(ghostTimer<=0)ghostTrail.length=0;
   player.cooldown=Math.max(0,player.cooldown-dt);eliteAbility.active=Math.max(0,eliteAbility.active-dt);eliteAbility.cooldown=Math.max(0,eliteAbility.cooldown-dt);state.invulnerable=Math.max(0,state.invulnerable-dt);collisionNotice=Math.max(0,collisionNotice-dt);{const f=cinematic.focus??player;camera.x+=(f.x-camera.x)*Math.min(1,dt*3);camera.y+=(f.y-camera.y)*Math.min(1,dt*3);}camera.zoom+=(camera.targetZoom-camera.zoom)*Math.min(1,dt*7);
   for(let i=salvoQueue.length-1;i>=0;i--){salvoQueue[i].delay-=dt;if(salvoQueue[i].delay<=0){releaseSalvo(salvoQueue[i]);salvoQueue.splice(i,1);}}
   if(state.repairing){state.hp=Math.min(effectiveMaxHp(),state.hp+effectiveMaxHp()*(.035+upgrades.repair*.008)*bonus.repair*dt);if(state.hp>=effectiveMaxHp()){state.repairing=false;saveAccount();ui('repair').classList.remove('active');toast('Gövde tamamen onarıldı');}}
@@ -1018,6 +1023,7 @@ function update(dt:number){
   player.angle=Math.atan2(Math.sin(player.angle),Math.cos(player.angle));
   for(const e of enemies){
     if(e.tower){updateTower(e,dt);continue;}
+    if((e.frozen??0)>0){e.frozen=Math.max(0,e.frozen!-dt);e.cooldown=Math.max(e.cooldown,.5);continue;}
     const d=dist(e,player);e.wander+=dt;e.slowTimer=Math.max(0,e.slowTimer-dt);if(e.aggro){e.combatTimer-=dt;if(e.combatTimer<=0||Math.hypot(e.x-e.homeX,e.y-e.homeY)>680)e.aggro=false;}
     const homeDistance=Math.hypot(e.x-e.homeX,e.y-e.homeY);
     const target=e.aggro?Math.atan2(player.y-e.y,player.x-e.x)+Math.PI/2:homeDistance>90?Math.atan2(e.homeY-e.y,e.homeX-e.x)+Math.PI/2:e.angle+Math.sin(e.wander*.35)*.008;
@@ -1335,10 +1341,12 @@ function shipDirectionFrame(angle:number){return SHIP_DIRECTION_FRAMES[shipCompa
 const eliteDirImages=new Map<string,HTMLImageElement>();
 function eliteDirImage(id:string){let im=eliteDirImages.get(id);if(!im){im=new Image();im.decoding='async';im.src=`/assets/elite-dir-${id}-v1.webp?r=${SHIP_ART_REV}`;eliteDirImages.set(id,im);}return im;}
 const ELITE_FRAME={w:221,h:256,scale:.56};
+let ghostFade=0;
+const shipAlpha=()=>ghostFade>0?ghostFade:ghostTimer>0?.55:1;
 function drawEliteDirectionalShip(s:Vec){
   const id=eliteShip().id,dir=eliteDirImage(id);
-  ctx.save();ctx.translate(s.x,s.y);ctx.globalAlpha=state.invulnerable&&Math.floor(performance.now()/120)%2?.55:1;
-  ctx.shadowColor='#000b';ctx.shadowBlur=13;ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+  ctx.save();ctx.translate(s.x,s.y);ctx.globalAlpha=(state.invulnerable&&Math.floor(performance.now()/120)%2?.55:1)*shipAlpha();if(ghostTimer>0){ctx.filter='saturate(.35) brightness(1.35)';ctx.shadowColor='#5fffd0';};
+  ctx.shadowColor=ghostTimer>0?'#5fffd0':'#000b';ctx.shadowBlur=13;ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
   if(dir.complete&&dir.naturalWidth){const {frame:f,mirror}=eliteDirFrame(id,shipCompass(player.angle)),{w,h,scale}=ELITE_FRAME;if(mirror)ctx.scale(-1,1);ctx.drawImage(dir,(f%4)*w,Math.floor(f/4)*h,w,h,-w*scale/2,-h*scale/2,w*scale,h*scale);ctx.restore();return true;}
   // Yön sayfası yüklenene kadar yan görünüş (sağa giderken aynalanır)
   const im=eliteArtImage(id);if(!im.complete||!im.naturalWidth){ctx.restore();return false;}
@@ -1351,7 +1359,7 @@ function drawSpecialShip(s:Vec){
   const sp=specialById(activeSkin);if(!sp)return false;
   const src=`${sp.dir??sp.art}?r=${SHIP_ART_REV}`;let im=specialImages.get(src);if(!im){im=new Image();im.decoding='async';im.src=src;specialImages.set(src,im);}
   if(!im.complete||!im.naturalWidth)return false;
-  ctx.save();ctx.translate(s.x,s.y);ctx.globalAlpha=state.invulnerable&&Math.floor(performance.now()/120)%2?.55:1;ctx.shadowColor='#000b';ctx.shadowBlur=13;
+  ctx.save();ctx.translate(s.x,s.y);ctx.globalAlpha=(state.invulnerable&&Math.floor(performance.now()/120)%2?.55:1)*shipAlpha();ctx.shadowColor='#000b';ctx.shadowBlur=13;if(ghostTimer>0){ctx.filter='saturate(.35) brightness(1.35)';ctx.shadowColor='#5fffd0';}
   if(sp.dir){const f=shipDirectionFrame(player.angle),c=im.naturalWidth/4;ctx.drawImage(im,(f%4)*c,Math.floor(f/4)*c,c,c,-80,-86,160,160);ctx.restore();return true;}
   specialFacingDir=specialFacing(player.angle,specialFacingDir);
   if(specialFacingDir>0)ctx.scale(-1,1);ctx.drawImage(im,-78,-96,156,156);ctx.restore();return true;
@@ -1365,7 +1373,7 @@ function drawPlayerShip(){
   if(!directionalShipImage.complete||!directionalShipImage.naturalWidth){
     if(!playerShipImage.complete||!playerShipImage.naturalWidth){drawShip(player,player.angle,'#173f48',1.1);return;}
   }
-  ctx.save();ctx.translate(s.x,s.y);ctx.shadowColor='#000b';ctx.shadowBlur=13;ctx.globalAlpha=state.invulnerable&&Math.floor(performance.now()/120)%2?.55:1;
+  ctx.save();ctx.translate(s.x,s.y);ctx.shadowColor='#000b';ctx.shadowBlur=13;ctx.globalAlpha=(state.invulnerable&&Math.floor(performance.now()/120)%2?.55:1)*shipAlpha();if(ghostTimer>0){ctx.filter='saturate(.35) brightness(1.35)';ctx.shadowColor='#5fffd0';};
   if(directionalShipImage.complete&&directionalShipImage.naturalWidth){
     const frame=shipDirectionFrame(player.angle),sx=(frame%4)*256,sy=Math.floor(frame/4)*256;
     ctx.drawImage(directionalShipImage,sx,sy,256,256,-80,-86,160,160);
@@ -1485,8 +1493,11 @@ function draw(){
   wakes.forEach((_,o)=>drawWake(o));
   [...enemies].sort((a,b)=>a.y-b.y).forEach(e=>{const s=worldToScreen(e);if(e.boss)drawBossAura(e,s);if(!e.tower)drawHullWater(e,hullLength(e),shipMoving(e));const raster=e.tower?drawBastion(ctx,e.towerIndex??0,s.x,s.y):e.def?drawNpcShip(ctx,e.def.sprite,e.def.span,s.x,s.y,e.angle,performance.now()):false;if(!raster)drawShip(e,e.angle,e.color);const top=raster?(e.tower?TOWER_LABEL_OFFSET:shipLabelOffset(e.def!.span)):-42;if(e.boss){drawBossFlag(s,top);drawBossPlate(e,s,top);return;}const bw=e.tower||e.role==='heavy'?72:56;drawHealthBar(s.x,s.y+top,bw,e.hp/e.maxHp,e.tower?'#f09a4f':e.role==='heavy'?'#f0584a':'#4fd0da');ctx.fillStyle='#e6dccb';ctx.font='600 10px Inter';ctx.textAlign='center';ctx.shadowColor='#000';ctx.shadowBlur=3;ctx.fillText(e.name,s.x,s.y+top-7);ctx.shadowBlur=0;});
   if(selected&&targetExists(selected)){const t=worldToScreen(selected);ctx.strokeStyle='#f1c662';ctx.lineWidth=2;ctx.beginPath();ctx.arc(t.x,t.y,selected.kind==='monster'?selected.radius+10:34,0,7);ctx.stroke();}
-  drawHullWater(player,hullLength(player),shipMoving(player));drawPlayerShip();drawPlayerLabel();
+  drawHullWater(player,hullLength(player),shipMoving(player));
+  if(ghostTimer>0){const px=player.x,py=player.y;ghostTrail.forEach((p,i)=>{ghostFade=(i+1)/(ghostTrail.length+1)*.35;player.x=p.x;player.y=p.y;drawPlayerShip();});ghostFade=0;player.x=px;player.y=py;}
+  drawPlayerShip();drawPlayerLabel();
   particles.forEach(p=>{if(!UNDER.has(p.kind))drawParticle(p);});shots.forEach(drawShotBall);
+  drawAbilityFx(ctx,worldToScreen,innerWidth,innerHeight);
   if(consumableOn.shield){const p=worldToScreen(player),t=performance.now()/1000,g=ctx.createRadialGradient(p.x,p.y,30,p.x,p.y,62);g.addColorStop(0,'#9fe8ff00');g.addColorStop(.75,'#9fe8ff30');g.addColorStop(1,'#d4a64c88');ctx.fillStyle=g;ctx.beginPath();ctx.arc(p.x,p.y,62,0,Math.PI*2);ctx.fill();ctx.strokeStyle=`rgba(212,166,76,${.55+Math.sin(t*6)*.25})`;ctx.lineWidth=2;ctx.beginPath();ctx.arc(p.x,p.y,62,0,Math.PI*2);ctx.stroke();}
   if(destination){const d=worldToScreen(destination),p=worldToScreen(player);ctx.strokeStyle='#e7cf8d55';ctx.setLineDash([3,8]);ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(d.x,d.y);ctx.stroke();ctx.setLineDash([]);ctx.strokeStyle='#e7cf8d';ctx.beginPath();ctx.arc(d.x,d.y,9,0,7);ctx.stroke();}
   const ps=worldToScreen(player);ctx.strokeStyle=selected?'#e8cf934d':'#e8cf9328';ctx.setLineDash([4,7]);ctx.beginPath();ctx.arc(ps.x,ps.y,selected?effectiveRange():115,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
@@ -1539,4 +1550,7 @@ function drawMinimap(){const W=170,H=125,sx=(x:number)=>x/WORLD_WIDTH*W,sy=(y:nu
 let manualClock=false;
 let last=performance.now();function loop(now:number){const dt=Math.min(.033,(now-last)/1000);last=now;if(!manualClock){update(dt);draw();}requestAnimationFrame(loop);}renderQuickSlots();updateUI();requestAnimationFrame(loop);
 // Yalnızca geliştirme sunucusunda: tarayıcı testleri için durum erişimi.
-if(import.meta.env.DEV)(window as any).__ky={treasure,rollTreasurePart,manual:(on:boolean)=>{manualClock=on;},step:(dt:number)=>{update(dt);draw();},noFade:()=>{mapFade=0;},cinematic,makeShip,NPCS,MONSTERS,state,player,camera,enemies,monsters,respawn,enterMap,mapDef,fleetOwner,lootChests,sparkles,sinkEnemy,shots,particles,wrecks,select:(t:Target)=>{selected=t;state.attacking=true;},route:(v:Vec)=>{routeTarget=navigablePoint(v);destination=routeVia(routeTarget);},fleetNav,get routeTarget(){return routeTarget;},get selected(){return selected;},get destination(){return destination;}};
+if(import.meta.env.DEV)(window as any).__ky={abilityDemo:(kind:'lightning'|'freeze'|'ghost')=>{
+    if(kind==='ghost'){ghostTimer=5;return;}const t=selected;if(!t)return;
+    if(kind==='lightning'){spawnLightning(player,t);const hit=5000;t.hp-=hit;damageText(t.x,t.y,hit);t.aggro=true;t.combatTimer=12;}
+    else{t.frozen=4;spawnFrost(t,4);}},treasure,rollTreasurePart,manual:(on:boolean)=>{manualClock=on;},step:(dt:number)=>{update(dt);draw();},noFade:()=>{mapFade=0;},cinematic,makeShip,NPCS,MONSTERS,state,player,camera,enemies,monsters,respawn,enterMap,mapDef,fleetOwner,lootChests,sparkles,sinkEnemy,shots,particles,wrecks,select:(t:Target)=>{selected=t;state.attacking=true;},route:(v:Vec)=>{routeTarget=navigablePoint(v);destination=routeVia(routeTarget);},fleetNav,get routeTarget(){return routeTarget;},get selected(){return selected;},get destination(){return destination;}};
