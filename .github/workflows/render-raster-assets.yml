@@ -3,8 +3,10 @@ name: Render 3D raster assets
 on:
   workflow_dispatch:
   push:
+    branches: [main]
     paths:
       - 'tools/asset-studio/**'
+      - '.github/workflows/render-raster-assets.yml'
 
 permissions:
   contents: write
@@ -27,10 +29,10 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Render island and fortress raster assets
         working-directory: tools/asset-studio
-        env:
-          CHROMIUM_PATH: /home/runner/.cache/ms-playwright/chromium-*/chrome-linux/chrome
         run: |
-          CHROME=$(find /home/runner/.cache/ms-playwright -type f -name chrome -o -name chromium | head -n 1)
+          CHROME=$(find /home/runner/.cache/ms-playwright -type f \( -name chrome -o -name chromium \) | head -n 1)
+          test -n "$CHROME"
+          echo "Using Chromium: $CHROME"
           CHROMIUM_PATH="$CHROME" node render.mjs islands-verdant islands-misty islands-coral islands-haven islands-crimson islands-storm islands-ice islands-toxic islands-lava islands-abyss fleet-base-verdant fleet-base-misty fleet-base-coral fleet-base-haven fleet-base-crimson fleet-base-storm fleet-base-ice fleet-base-toxic fleet-base-lava fleet-base-abyss
       - name: Commit generated WebP assets
         run: |
@@ -39,4 +41,5 @@ jobs:
           git add public/assets/islands-*.webp public/assets/fleet-base-*.webp
           git diff --cached --quiet && exit 0
           git commit -m "Render professional 3D island and fleet raster assets"
-          git push
+          git pull --rebase origin main
+          git push origin HEAD:main
