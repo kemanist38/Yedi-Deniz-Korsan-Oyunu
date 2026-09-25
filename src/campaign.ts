@@ -132,9 +132,10 @@ export function coordLabel(p:{x:number;y:number}){const g=gridCell(p);return`${c
 // Filo adası görseli (fleet-base-approved-v1, 1000 birim): güneyden kanalla girilen lagün kalesi. Seyir alanı src/fleetMask.ts
 // maskesinden gelir; kuleler görseldeki 8 sur kulesinin üzerindedir. lagoon: lagünün ortası (rota hedefi).
 export const FLEET={islandR:500,wallR:370,gap:.56,lagoon:{x:0,y:60,r:150},channelW:70,keep:{x:0,y:-280},
-  // Approved v1 base, 1000 world units. Preserve slot order for saved guild towers.
-  towers:[[-230,-360],[-364,-189],[-328,70],[-121,214],[146,214],[337,70],[361,-193],[242,-360]] as [number,number][],
-  base:{frame:1024,span:1000},tower:{frame:256,span:120,anchorY:0}};
+  // 512 px şeffaf 3B biyom kalesi 1000 dünya birimine oturur. Kule slotları raster kalenin dış savunma halkasına hizalıdır.
+  // Slot sırası kayıtlı filo kuleleriyle uyumluluk için korunur; yalnızca görsel oturma noktaları kaleye yaklaştırılmıştır.
+  towers:[[-218,-326],[-340,-170],[-315,58],[-116,205],[140,205],[322,58],[338,-174],[226,-326]] as [number,number][],
+  base:{frame:512,span:1000},tower:{frame:256,span:120,anchorY:0}};
 // Kuleler filo savaşı ölçeğinde: tek gemi yıkamaz, saldırı kesilince hızla onarılır.
 export const fleetTower=(tier:number)=>{return{hp:Math.round(150000*hpScale(tier)),damage:Math.round(1050*dmgScale(tier)),reload:2.2,range:460,ownDamage:Math.round(1500*hpScale(tier))};};
 export const fleetReward=(tier:number)=>({gold:300*tier,xp:Math.round(500*Math.pow(tier,1.2))});
