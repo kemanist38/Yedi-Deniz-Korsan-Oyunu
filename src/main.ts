@@ -264,6 +264,16 @@ ui('repair').onclick=toggleRepair;
 ui('ability-speed').onclick=()=>activateAbility('speed');ui('ability-mine').onclick=dropMine;ui('ability-elite').onclick=activateEliteAbility;
 function recenterShip(){camera.x=player.x;camera.y=player.y;destination=null;toast('Kamera gemiye ortalandı');}
 ui('recenterShip').onclick=recenterShip;
+// Minimap seyir kamerası: tıklanan dünya noktasına kamerayı yumuşakça taşır; geminin rotasını değiştirmez.
+const minimapCanvas=ui('minimap') as HTMLCanvasElement;
+minimapCanvas.style.cursor='crosshair';
+minimapCanvas.title='Haritada görmek istediğin bölgeye tıkla';
+minimapCanvas.addEventListener('pointerdown',e=>{
+  const r=minimapCanvas.getBoundingClientRect();
+  const x=Math.max(0,Math.min(WORLD_WIDTH,(e.clientX-r.left)/r.width*WORLD_WIDTH));
+  const y=Math.max(0,Math.min(WORLD_HEIGHT,(e.clientY-r.top)/r.height*WORLD_HEIGHT));
+  camera.x=x;camera.y=y;toast('Kamera mini haritada seçilen bölgeye taşındı');
+});
 ui('openWorldMap').onclick=openWorldMap;ui('closeWorldMap').onclick=closeWorldMap;
 ui('worldMapOverlay').addEventListener('pointerdown',e=>{if(e.target===ui('worldMapOverlay'))closeWorldMap();});
 ui('openCaptain').onclick=openCaptainProfile;
@@ -1630,10 +1640,12 @@ function drawMinimap(){const W=170,H=125,sx=(x:number)=>x/WORLD_WIDTH*W,sy=(y:nu
   for(const i of islands)drawIslandSprite(mini,i,i.x,i.y);
   if(hasFleetIsland()){const f=mapDef().fleet;drawFleetBase(mini,th.fleet,f.x,f.y);}
   mini.restore();
-  for(const m of monsters){mini.fillStyle='#b070ff';mini.beginPath();mini.arc(sx(m.x),sy(m.y),2.5,0,7);mini.fill();}
-  mini.fillStyle='#f4f8ff';for(const g of sparkles)mini.fillRect(sx(g.x)-.5,sy(g.y)-.5,1.5,1.5);
-  for(const c of lootChests){mini.fillStyle=c.kind==='gilded'?'#ffd46b':'#d9a95b';mini.fillRect(sx(c.x)-1,sy(c.y)-1,2,2);}
-  for(const e of enemies){if(e.tower)continue;mini.fillStyle=e.boss?'#f1c662':'#c34e3d';const r=e.boss?5:3;mini.fillRect(sx(e.x)-r/2,sy(e.y)-r/2,r,r);}
+  // Keşif görüşü: uzaktaki NPC/canavar/ganimet bilgisi minimapte bedava radar gibi görünmez.
+  const VISION=1150,visible=(p:Vec)=>dist(player,p)<=VISION;
+  for(const m of monsters){if(!visible(m))continue;mini.fillStyle='#b070ff';mini.beginPath();mini.arc(sx(m.x),sy(m.y),2.5,0,7);mini.fill();}
+  mini.fillStyle='#f4f8ff';for(const g of sparkles){if(visible(g))mini.fillRect(sx(g.x)-.5,sy(g.y)-.5,1.5,1.5);}
+  for(const c of lootChests){if(!visible(c))continue;mini.fillStyle=c.kind==='gilded'?'#ffd46b':'#d9a95b';mini.fillRect(sx(c.x)-1,sy(c.y)-1,2,2);}
+  for(const e of enemies){if(e.tower||!visible(e))continue;mini.fillStyle=e.boss?'#f1c662':'#c34e3d';const r=e.boss?5:3;mini.fillRect(sx(e.x)-r/2,sy(e.y)-r/2,r,r);}
   mini.fillStyle='#f4dd9d';mini.beginPath();mini.arc(sx(player.x),sy(player.y),3,0,7);mini.fill();}
 // manualClock (yalnızca geliştirme): tanıtım videosu kare kare çekilirken oyun dışarıdan adımlanır
 let manualClock=false;
