@@ -100,7 +100,9 @@ const rasterItemAssets:Partial<Record<QuickItemId,string>>={};
 (Object.keys(SPECIAL_AMMO) as SpecialAmmo[]).forEach(k=>{rasterItemAssets[k]=SPECIAL_AMMO[k].icon;});rasterItemAssets.mine=ABILITIES.mine.icon;rasterItemAssets.shield=CONSUMABLES.shield.icon;rasterItemAssets.powder=CONSUMABLES.powder.icon;rasterItemAssets.speed=ABILITIES.speed.icon;rasterItemAssets.repairkit='/assets/icon-repair-v1.webp';
 rasterItemAssets.iron='/assets/ammo-iron-v1.webp';rasterItemAssets.chain='/assets/ammo-chain-v1.webp';
 // Elit gemiler: tersane kartındaki tasarımın birebir aynısı, gemi başına temiz raster (384 px, pruva sol-aşağı).
-const eliteArtUrl=(id:string)=>`/assets/elite-${id}-art-v2.webp`;
+// Gemi görselleri aynı dosya adıyla yenilendiğinde tarayıcı önbelleği eskisini göstermesin diye sürüm eki (görsel değişince artır)
+const SHIP_ART_REV='3';
+const eliteArtUrl=(id:string)=>`/assets/elite-${id}-art-v2.webp?r=${SHIP_ART_REV}`;
 const eliteArtImages=new Map<string,HTMLImageElement>();
 function eliteArtImage(id:string){let im=eliteArtImages.get(id);if(!im){im=new Image();im.decoding='async';im.src=eliteArtUrl(id);eliteArtImages.set(id,im);}return im;}
 let eliteFacing=-1;
@@ -135,7 +137,8 @@ state.maxHp=BASE_HP+(state.level-1)*HP_PER_LEVEL+upgrades.hull*HP_PER_HULL;
 state.cannon=(Object.keys(mountedCannons) as CannonKind[]).reduce((sum,kind)=>sum+mountedCannons[kind],0);
 let elitePurchased=storedAccount?.elitePurchased===true;
 let activeEliteShip:EliteShipId=storedAccount?.eliteShip&&ELITE_SHIPS.some(s=>s.id===storedAccount!.eliteShip)?storedAccount.eliteShip:'phantom';
-let activeShip:ShipSelection=elitePurchased&&storedAccount?.activeShip&&storedAccount.activeShip!=='starter'?storedAccount.activeShip:'starter';
+// Test modunda elit satın alınmış sayılmaz; seçilen elit gemi yine de yeniden yüklemede korunur
+let activeShip:ShipSelection=(elitePurchased||ELITE_TEST_MODE)&&storedAccount?.activeShip&&ELITE_SHIPS.some(s=>s.id===storedAccount!.activeShip)?storedAccount.activeShip:'starter';
 let previewShip:ShipSelection=activeShip;
 // Özel gemiler (yalnızca görünüm): sahip olunanlar ve seçili görünüm; seçiliyken güç başlangıç gemisidir
 let specialOwned:string[]=Array.isArray(storedAccount?.specialOwned)?storedAccount!.specialOwned.filter(id=>!!specialById(id)):[];
@@ -710,11 +713,11 @@ function purchaseEliteOne(){
   state.pearls-=ELITE_ONE_PRICE;elitePurchased=true;activeEliteShip='phantom';activeShip='phantom';activeSkin=null;previewShip='phantom';eliteAbility.active=0;eliteAbility.cooldown=0;saveAccount();renderEliteShips();updateUI();rewardNotice('ELİT 1 AÇILDI   HAYALET KADIRGA');toast('Hayalet Kadırga satın alındı');
 }
 function renderSpecialShips(){
-  ui('eliteShipGrid').innerHTML=SPECIAL_SHIPS.map(sp=>{const owned=specialOwned.includes(sp.id);return`<button class="elite-card special-card ${activeSkin===sp.id?'active':''} ${previewSpecial===sp.id?'previewed':''}" data-special="${sp.id}"><span class="elite-level">ÖZEL</span><img class="elite-art" src="${sp.art}" alt="${sp.name}" draggable="false"/><strong>${sp.name}</strong><small>Özel görünüm</small>${owned?'':`<b>${sp.price.toLocaleString('tr-TR')} İnci</b>`}</button>`;}).join('');
+  ui('eliteShipGrid').innerHTML=SPECIAL_SHIPS.map(sp=>{const owned=specialOwned.includes(sp.id);return`<button class="elite-card special-card ${activeSkin===sp.id?'active':''} ${previewSpecial===sp.id?'previewed':''}" data-special="${sp.id}"><span class="elite-level">ÖZEL</span><img class="elite-art" src="${sp.art}?r=${SHIP_ART_REV}" alt="${sp.name}" draggable="false"/><strong>${sp.name}</strong><small>Özel görünüm</small>${owned?'':`<b>${sp.price.toLocaleString('tr-TR')} İnci</b>`}</button>`;}).join('');
   ui('eliteShipGrid').querySelectorAll<HTMLElement>('[data-special]').forEach(el=>el.onclick=()=>{previewSpecial=el.dataset.special!;renderEliteShips();});
   const sp=specialById(previewSpecial)??SPECIAL_SHIPS[0],owned=specialOwned.includes(sp.id),active=activeSkin===sp.id;
   const label=active?'AKTİF GEMİ':owned?'GEMİYİ SEÇ':ELITE_TEST_MODE?'TEST ET':`SATIN AL · ${sp.price.toLocaleString('tr-TR')} İNCİ`;
-  ui('eliteShipDetail').innerHTML=`<span class="eyebrow">Özel gemi</span><img class="elite-art elite-preview" src="${sp.art}" alt="${sp.name}" draggable="false"/><h3>${sp.name}</h3><em>${sp.english}</em><b>Yalnızca görünüm</b><dl><dt>Gemi</dt><dd>Başlangıç gemisi gücünde: ${BASE_HP.toLocaleString('tr-TR')} temel can · ${BASE_CANNONS} top yuvası</dd><dt>Açıklama</dt><dd>${sp.description}</dd><dt>Fiyat</dt><dd>${owned?'Satın alındı':`${sp.price.toLocaleString('tr-TR')} İnci (bir kez)`}</dd></dl><button id="equipSpecialShip" ${active?'disabled':''}>${label}</button>`;
+  ui('eliteShipDetail').innerHTML=`<span class="eyebrow">Özel gemi</span><img class="elite-art elite-preview" src="${sp.art}?r=${SHIP_ART_REV}" alt="${sp.name}" draggable="false"/><h3>${sp.name}</h3><em>${sp.english}</em><b>Yalnızca görünüm</b><dl><dt>Gemi</dt><dd>Başlangıç gemisi gücünde: ${BASE_HP.toLocaleString('tr-TR')} temel can · ${BASE_CANNONS} top yuvası</dd><dt>Açıklama</dt><dd>${sp.description}</dd><dt>Fiyat</dt><dd>${owned?'Satın alındı':`${sp.price.toLocaleString('tr-TR')} İnci (bir kez)`}</dd></dl><button id="equipSpecialShip" ${active?'disabled':''}>${label}</button>`;
   const button=document.getElementById('equipSpecialShip') as HTMLButtonElement|null;if(button&&!button.disabled)button.onclick=()=>equipSpecialShip(sp.id);
 }
 function equipSpecialShip(id:string){
@@ -1385,7 +1388,7 @@ function shipDirectionFrame(angle:number){return SHIP_DIRECTION_FRAMES[shipCompa
 // Elit gemiler de başlangıç gemisi gibi 8 yönlü çizilir: pruva gidilen yöne döner (elite-dir-<id>-v1.webp, 4 × 2 kare, 221 × 256).
 // Sayfalardaki yanlış yöne bakan kareler elite-ships.ts ELITE_DIR_SHOWS ile düzeltilir (gerekirse karşı yön aynalanır).
 const eliteDirImages=new Map<string,HTMLImageElement>();
-function eliteDirImage(id:string){let im=eliteDirImages.get(id);if(!im){im=new Image();im.decoding='async';im.src=`/assets/elite-dir-${id}-v1.webp`;eliteDirImages.set(id,im);}return im;}
+function eliteDirImage(id:string){let im=eliteDirImages.get(id);if(!im){im=new Image();im.decoding='async';im.src=`/assets/elite-dir-${id}-v1.webp?r=${SHIP_ART_REV}`;eliteDirImages.set(id,im);}return im;}
 const ELITE_FRAME={w:221,h:256,scale:.56};
 function drawEliteDirectionalShip(s:Vec){
   const id=eliteShip().id,dir=eliteDirImage(id);
@@ -1401,7 +1404,7 @@ function drawEliteDirectionalShip(s:Vec){
 const specialImages=new Map<string,HTMLImageElement>();
 function drawSpecialShip(s:Vec){
   const sp=specialById(activeSkin);if(!sp)return false;
-  const src=sp.dir??sp.art;let im=specialImages.get(src);if(!im){im=new Image();im.decoding='async';im.src=src;specialImages.set(src,im);}
+  const src=`${sp.dir??sp.art}?r=${SHIP_ART_REV}`;let im=specialImages.get(src);if(!im){im=new Image();im.decoding='async';im.src=src;specialImages.set(src,im);}
   if(!im.complete||!im.naturalWidth)return false;
   ctx.save();ctx.translate(s.x,s.y);ctx.globalAlpha=state.invulnerable&&Math.floor(performance.now()/120)%2?.55:1;ctx.shadowColor='#000b';ctx.shadowBlur=13;
   if(sp.dir){const f=shipDirectionFrame(player.angle),c=im.naturalWidth/4;ctx.drawImage(im,(f%4)*c,Math.floor(f/4)*c,c,c,-80,-86,160,160);ctx.restore();return true;}
