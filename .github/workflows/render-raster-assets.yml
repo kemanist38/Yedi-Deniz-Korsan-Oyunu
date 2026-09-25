@@ -33,12 +33,12 @@ jobs:
           CHROME=$(find /home/runner/.cache/ms-playwright -type f \( -name chrome -o -name chromium \) | head -n 1)
           test -n "$CHROME"
           echo "Using Chromium: $CHROME"
-          CHROMIUM_PATH="$CHROME" node render.mjs islands-verdant islands-misty islands-coral islands-haven islands-crimson islands-storm islands-ice islands-toxic islands-lava islands-abyss fleet-base-verdant fleet-base-misty fleet-base-coral fleet-base-haven fleet-base-crimson fleet-base-storm fleet-base-ice fleet-base-toxic fleet-base-lava fleet-base-abyss enemy-scout-v1 enemy-raider-v1 enemy-warship-v1 ammo-fire-v1 ammo-grape-v1 ammo-explosive-v1 ammo-breaker-v1 ammo-leech-v1 icon-mine-v1 icon-attack-v1 icon-repair-v1 icon-speed-v1 icon-shield-v1 icon-hat-v1 icon-chest-v1 icon-scroll-v1 icon-gear-v1 icon-anvil-v1 icon-market-v1 icon-menu-v1 icon-flag-v1 icon-powder-v2 icon-treasure-map-v2 icon-inventory-v2 equip-atlas-v2
+          CHROMIUM_PATH="$CHROME" node render.mjs islands-verdant islands-misty islands-coral islands-haven islands-crimson islands-storm islands-ice islands-toxic islands-lava islands-abyss fleet-base-verdant fleet-base-misty fleet-base-coral fleet-base-haven fleet-base-crimson fleet-base-storm fleet-base-ice fleet-base-toxic fleet-base-lava fleet-base-abyss enemy-scout-v1 enemy-raider-v1 enemy-warship-v1 ammo-fire-v1 ammo-grape-v1 ammo-explosive-v1 ammo-breaker-v1 ammo-leech-v1 icon-mine-v1 icon-attack-v1 icon-repair-v1 icon-speed-v1 icon-shield-v1 icon-hat-v1 icon-chest-v1 icon-scroll-v1 icon-gear-v1 icon-anvil-v1 icon-market-v1 icon-menu-v1 icon-flag-v1 icon-powder-v2 icon-treasure-map-v2 icon-inventory-v2 equip-atlas-v2 @ships @monsters
       - name: Commit generated WebP assets
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/assets/islands-*.webp public/assets/fleet-base-*.webp public/assets/enemy-*.webp public/assets/ammo-*.webp public/assets/icon-*.webp public/assets/equip-atlas-v2.webp
+          git add public/assets/islands-*.webp public/assets/fleet-base-*.webp public/assets/enemy-*.webp public/assets/ammo-*.webp public/assets/icon-*.webp public/assets/equip-atlas-v2.webp public/assets/ship-*.webp public/assets/monster-*.webp
           git diff --cached --quiet && exit 0
           git commit -m "Render professional 3D gameplay raster assets"
           git pull --rebase origin main
