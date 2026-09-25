@@ -107,6 +107,15 @@ export function buildShip(def,{heading=Math.PI*1.25}={}){
     const carriage=new THREE.Mesh(new THREE.BoxGeometry(1.35,.38,1.15),std({color:'#55351f',roughness:.86}));carriage.position.set(sx*(w-.15),y-.7,z);root.add(carriage);
     for(const dz of [-.38,.38]){const wheel=cyl(.32,.32,.16,mats.wood,10);wheel.rotation.z=Math.PI/2;wheel.position.set(sx*(w-.15),y-.9,z+dz);root.add(wheel);}
   }}}
+  // Gövde yan süsleri: su hattı üstünde trim şeritleri, sınıfa göre yoğunluğu değişen arma plakaları.
+  const trimBands=def.guns?.count>=8?3:def.guns?.count>=5?2:1;
+  for(const sx of [-1,1])for(let b=0;b<trimBands;b++){const pts=[];for(let i=1;i<15;i++){const t=.06+i*.061,w=S.w(t),y=S.top(t)-(1.45+b*.72),z=S.z(t);pts.push(new THREE.Vector3(sx*(w+.035),y,z));}
+    for(let i=0;i+1<pts.length;i++)root.add(between(pts[i],pts[i+1],.075+(trimBands-b)*.012,mats.trim));}
+  // Kıç aynalık rozeti: ağır NPC'lerde çift halka ve merkez kabartması, hafiflerde tek rozet.
+  {const sternY=(S.top(0)+S.bot(0))*.5+1.3,sternZ=S.z(0)-.08,radius=def.guns?.count>=8?1.45:1.05;
+    const med=new THREE.Mesh(new THREE.CylinderGeometry(radius,radius,.18,18),mats.trim);med.rotation.x=Math.PI/2;med.position.set(0,sternY,sternZ);root.add(med);
+    const core=new THREE.Mesh(new THREE.CylinderGeometry(radius*.55,radius*.55,.22,14),mats.iron);core.rotation.x=Math.PI/2;core.position.set(0,sternY,sternZ-.12);root.add(core);
+    if(def.guns?.count>=8){const ring=new THREE.Mesh(new THREE.TorusGeometry(radius*1.18,.13,7,20),mats.trim);ring.rotation.x=Math.PI/2;ring.position.set(0,sternY,sternZ-.18);root.add(ring);}}
   // Top mazgalları ve kapak çerçeveleri: namlular artık gövdeden "yapıştırılmış" görünmez.
   if(def.guns){const n=def.guns.count,portMat=std({color:def.hullPaint.portColor||'#120b08',roughness:.78}),lidMat=std({color:def.hullPaint.portLid||def.hullPaint.band||'#4d281d',roughness:.7});
     for(let i=0;i<n;i++){const t=.14+.72*(i+.5)/n,z=S.z(t),th=.39*Math.PI,w=S.w(t)*Math.pow(Math.sin(th),.55),y=S.top(t)-(S.top(t)-S.bot(t))*Math.pow(Math.cos(th),.75);
@@ -115,6 +124,10 @@ export function buildShip(def,{heading=Math.PI*1.25}={}){
   // Güverte korkulukları: ince dikmeler ve üst küpeşte, uzaktan gemi siluetini zenginleştirir.
   for(const sx of [-1,1]){const pts=[];for(let i=0;i<=8;i++){const t=.12+i*.095,x=sx*S.w(t)*.91,y=deckY(t)+1.35,z=S.z(t);pts.push(new THREE.Vector3(x,y,z));if(i>0&&i<8){const post=between(new THREE.Vector3(x,deckY(t)+.15,z),new THREE.Vector3(x,y,z),.09,mats.wood);root.add(post);}}
     for(let i=0;i+1<pts.length;i++)root.add(between(pts[i],pts[i+1],.11,mats.wood));}
+  // Sınıf silueti: ağır savaş gemilerinde kıçta iki küçük zırhlı nöbet platformu.
+  if((def.guns?.count||0)>=8){for(const sx of [-1,1]){const t=.18,x=sx*S.w(t)*.58,y=deckY(t)+1.15,z=S.z(t)-1.2;
+    const base=cyl(.85,1.05,.55,mats.wood,10);base.position.set(x,y,z);root.add(base);
+    const rim=new THREE.Mesh(new THREE.TorusGeometry(.88,.1,6,14),mats.trim);rim.rotation.x=Math.PI/2;rim.position.set(x,y+.3,z);root.add(rim);}}
   // Güverte yükü
   const r=T.rng(seed+3);
   for(let i=0;i<(def.cargo||0);i++){const t=.28+r()*.4,w=S.w(t)*.55,isCrate=r()<.5,crate=isCrate?new THREE.Mesh(new THREE.BoxGeometry(1.4,1.2,1.4),std({color:'#6e4a2c',roughness:.9})):cyl(.65,.65,1.4,std({color:'#5a3a22',roughness:.82}),12);crate.position.set((r()*2-1)*w,deckY(t)+.7,S.z(t));crate.rotation.y=r()*3;root.add(crate);if(!isCrate){for(const yy of [-.45,.45]){const band=new THREE.Mesh(new THREE.TorusGeometry(.66,.055,5,12),mats.iron);band.rotation.x=Math.PI/2;band.position.set(crate.position.x,crate.position.y+yy,crate.position.z);root.add(band);}}}
