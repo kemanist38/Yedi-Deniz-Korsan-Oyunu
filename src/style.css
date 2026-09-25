@@ -557,3 +557,8 @@ body.shop-open .market-overlay,body.shop-open .ship-overlay,body.shop-open .load
 @media (max-width:900px),(max-height:520px){:root{--dock-w:300px}.dock-status{grid-template-columns:1fr 38px 1fr;padding:3px 6px;gap:4px}.hud-dock .recenter#recenterShip{width:34px;height:34px;font-size:16px}.dock-status .status-line b{font-size:8px}}
 
 @media (max-width:560px){.hud-dock{left:6px;transform:none;width:calc(100vw - 150px)}.dock-status{grid-template-columns:1fr 32px 1fr;padding:3px 5px}.hud-dock .recenter#recenterShip{width:30px;height:30px;font-size:14px}.dock-status .status-line{grid-template-columns:16px 1fr}.dock-status .status-line b{left:18px;font-size:7px}}
+.ship-pages{display:flex;gap:6px;margin-top:8px}
+.ship-menu header .ship-pages button{width:auto;height:auto;font-size:10px;padding:6px 14px;border:1px solid #876a3d88;border-radius:5px;background:#0b2226;color:#bfa77a;font:700 10px Cinzel;letter-spacing:.08em;cursor:pointer}
+.ship-menu header .ship-pages button.active{border-color:#f1c662;background:linear-gradient(#3a2a12,#1c140a);color:#ffe2a0;box-shadow:0 0 10px #f1c66244}
+.special-card.previewed{border-color:#e3b85e}
+.elite-ship-grid{align-content:start}
