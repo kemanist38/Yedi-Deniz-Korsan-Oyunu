@@ -47,12 +47,19 @@ export function drawIslandSprite(ctx:CanvasRenderingContext2D,island:{look:strin
 }
 
 // Onaylı raster ada (1000 dünya birimi) ve bağımsız dört kule türü.
-export const fleetBaseUrl=(_theme:string)=>'/assets/fleet-base-approved-v1.webp';
+// Filo adası tabanı biyoma göre seçilir. Tema görseli henüz render edilmemişse drawFleetBase
+// eski onaylı tabana otomatik düşer; böylece kayıtlar ve seyir maskesi bozulmaz.
+const FLEET_BASES:Record<string,string>={
+  verdant:'/assets/fleet-base-approved-v1.webp',coral:'/assets/fleet-base-coral-v2.webp',misty:'/assets/fleet-base-misty-v2.webp',
+  crimson:'/assets/fleet-base-crimson-v2.webp',ice:'/assets/fleet-base-ice-v2.webp',toxic:'/assets/fleet-base-toxic-v2.webp',
+  lava:'/assets/fleet-base-lava-v2.webp',storm:'/assets/fleet-base-storm-v2.webp',abyss:'/assets/fleet-base-abyss-v2.webp'};
+export const fleetBaseUrl=(theme:string)=>FLEET_BASES[theme]??FLEET_BASES.verdant;
 export const fleetTowerUrl=(_theme:string)=>'/assets/fleet-towers-approved-v1.webp';
 export function drawFleetBase(ctx:CanvasRenderingContext2D,theme:string,x:number,y:number){
-  // Approved raster base: transparent sea/lagoon and eight empty foundations.
-  const sheet=load(fleetBaseUrl(theme));if(!ready(sheet))return false;
-  ctx.drawImage(sheet,x-500,y-500,1000,1000);return true;
+  const src=fleetBaseUrl(theme),sheet=load(src);
+  // Yeni biyom rasterı yoksa mevcut onaylı taban görünmeye devam eder.
+  const fallback=src===FLEET_BASES.verdant?sheet:load(FLEET_BASES.verdant),img=ready(sheet)?sheet:fallback;if(!ready(img))return false;
+  ctx.drawImage(img,x-500,y-500,1000,1000);return true;
 }
 // Rakip adanın varsayılan top kuleleri; oyuncu kuleleriyle aynı yerleşim.
 export function drawBastion(ctx:CanvasRenderingContext2D,slot:number,x:number,y:number,alpha=1){
