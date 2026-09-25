@@ -90,24 +90,15 @@ const canvas = document.querySelector<HTMLCanvasElement>('#sea')!;
 const ctx = canvas.getContext('2d')!;
 const minimap = document.querySelector<HTMLCanvasElement>('#minimap')!;
 const mini = minimap.getContext('2d')!;
-const playerShipImage=new Image();
-const shipChunks=['aa','ab','ac','ad','ae','af','ag','ah','ai'];
-Promise.all(shipChunks.map(part=>fetch(`/assets/player-flagship-game-v1.b64.${part}`).then(r=>r.text())))
-  .then(parts=>{playerShipImage.src=`data:image/png;base64,${parts.join('')}`;document.documentElement.style.setProperty('--starter-ship',`url("${playerShipImage.src}")`);})
-  .catch(()=>{playerShipImage.src='/assets/player-flagship-game-v1.png';document.documentElement.style.setProperty('--starter-ship',`url("${playerShipImage.src}")`);});
-const directionalShipImage=new Image();
-const directionalChunks=['aa','ab','ac','ad'];
-Promise.all(directionalChunks.map(part=>fetch(`/assets/player-flagship-directions-v1.b64.${part}`).then(r=>r.text())))
-  .then(parts=>{directionalShipImage.src=`data:image/webp;base64,${parts.join('')}`;})
-  .catch(()=>{directionalShipImage.src='/assets/player-flagship-directions-v1.webp';});
-Promise.all(['00','01','02','03'].map(part=>fetch(`/assets/pirate-ui-icons-v1.b64.${part}`).then(r=>r.text())))
-  .then(parts=>document.documentElement.style.setProperty('--pirate-icons',`url("data:image/webp;base64,${parts.join('')}")`));
-([['/assets/icon-world-v1.b64','worldMapIcon'],['/assets/icon-world-v1.b64','menuWorldIcon'],['/assets/icon-ship-nav-v1.b64','shipNavIcon']] as const).forEach(([path,id])=>fetch(path).then(r=>r.text()).then(data=>{const img=document.getElementById(id) as HTMLImageElement|null;if(img)img.src=`data:image/webp;base64,${data.trim()}`;}));
-const cannonAssetSources:Record<CannonKind,string>={cast:'',long:'',rapid:'',heavy:''};
-(Object.keys(cannonAssetSources) as CannonKind[]).forEach(kind=>fetch(`/assets/cannon-${kind}-v1.b64`).then(r=>r.text()).then(data=>{cannonAssetSources[kind]=`data:image/webp;base64,${data}`;if(document.getElementById('shipOverlay')?.classList.contains('open'))renderShipMenu();if(document.getElementById('cannonShopOverlay')?.classList.contains('open'))renderCannonShop();}));
+const playerShipImage=new Image();playerShipImage.src='/assets/player-flagship-game-v1.webp';
+document.documentElement.style.setProperty('--starter-ship',`url("${playerShipImage.src}")`);
+const directionalShipImage=new Image();directionalShipImage.src='/assets/player-flagship-directions-v1.webp';
+document.documentElement.style.setProperty('--pirate-icons','url("/assets/pirate-ui-icons-v1.webp")');
+([['/assets/icon-world-v1.webp','worldMapIcon'],['/assets/icon-world-v1.webp','menuWorldIcon'],['/assets/icon-ship-nav-v1.webp','shipNavIcon']] as const).forEach(([src,id])=>{const img=document.getElementById(id) as HTMLImageElement|null;if(img)img.src=src;});
+const cannonAssetSources:Record<CannonKind,string>={cast:'/assets/cannon-cast-v1.webp',long:'/assets/cannon-long-v1.webp',rapid:'/assets/cannon-rapid-v1.webp',heavy:'/assets/cannon-heavy-v1.webp'};
 const rasterItemAssets:Partial<Record<QuickItemId,string>>={};
 (Object.keys(SPECIAL_AMMO) as SpecialAmmo[]).forEach(k=>{rasterItemAssets[k]=SPECIAL_AMMO[k].icon;});rasterItemAssets.mine=ABILITIES.mine.icon;rasterItemAssets.shield=CONSUMABLES.shield.icon;rasterItemAssets.powder=CONSUMABLES.powder.icon;rasterItemAssets.speed=ABILITIES.speed.icon;rasterItemAssets.repairkit='/assets/icon-repair-v1.webp';
-(['iron','chain'] as QuickItemId[]).forEach(id=>fetch(`/assets/ammo-${id}-v1.b64`).then(r=>r.text()).then(data=>{rasterItemAssets[id]=`data:image/webp;base64,${data}`;renderQuickSlots();}));
+rasterItemAssets.iron='/assets/ammo-iron-v1.webp';rasterItemAssets.chain='/assets/ammo-chain-v1.webp';
 // Elit gemiler: tersane kartındaki tasarımın birebir aynısı, gemi başına temiz raster (384 px, pruva sol-aşağı).
 const eliteArtUrl=(id:string)=>`/assets/elite-${id}-art-v2.webp`;
 const eliteArtImages=new Map<string,HTMLImageElement>();

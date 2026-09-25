@@ -17,18 +17,13 @@ const jobs={
   'enemy-warship-v1':()=>page.evaluate(()=>renderShipSheet('warship')),
   'leviathan-v1':()=>page.evaluate(()=>renderLeviathan()),
   'loot-chests-v1':()=>page.evaluate(()=>renderChests()),
-  'npc-portraits-v1':()=>page.evaluate(()=>renderPortraits()),
-  'enemy-ghost-v1':()=>page.evaluate(()=>renderShipSheet('ghost')),
-  'fort-v1':()=>page.evaluate(()=>renderFort()),
   'leviathan-storm-v1':()=>page.evaluate(()=>renderLeviathan({look:'storm'})),
-  'portal-v1':()=>page.evaluate(()=>renderPortal()),
   'sea-tile-v1':()=>page.evaluate(()=>renderSeaTile()),
-  'world-chart-v1':()=>page.evaluate(()=>renderWorldChart()),
   'vfx-atlas-v1':()=>page.evaluate(()=>renderVfxAtlas()),
   'world-scroll-v1':()=>page.evaluate(()=>renderWorldScroll()),
   'sea-sparkle-v1':()=>page.evaluate(()=>renderSeaSparkle()),
 };
-for(const name of ['ammo-fire','ammo-grape','ammo-explosive','ammo-breaker','ammo-leech','icon-mine','icon-attack','icon-repair','icon-speed','icon-shield','icon-hat','icon-chest','officer-gunner','officer-helmsman','officer-carpenter','officer-lookout','officer-quartermaster','officer-surgeon','ui-ring','ui-ring-attack','ui-slot','icon-scroll','icon-gear','icon-anvil','gunner-vignette','icon-market','icon-menu','captain-bust','icon-flag'])jobs[`${name}-v1`]=()=>page.evaluate(n=>renderIcon(n),name);
+for(const name of ['ammo-fire','ammo-grape','ammo-explosive','ammo-breaker','ammo-leech','icon-mine','icon-attack','icon-repair','icon-speed','icon-shield','icon-hat','icon-chest','officer-helmsman','officer-carpenter','officer-lookout','officer-quartermaster','officer-surgeon','ui-ring','ui-ring-attack','ui-slot','icon-scroll','icon-gear','icon-anvil','gunner-vignette','icon-market','icon-menu','captain-bust','icon-flag'])jobs[`${name}-v1`]=()=>page.evaluate(n=>renderIcon(n),name);
 jobs['equip-atlas-v2']=()=>page.evaluate(()=>renderEquipAtlas());
 jobs['icon-powder-v2']=()=>page.evaluate(()=>renderItem('powder'));
 jobs['icon-treasure-map-v2']=()=>page.evaluate(()=>renderItem('treasure'));
@@ -41,7 +36,7 @@ for(const b of BOSSES)jobs[b.id]=()=>page.evaluate(id=>renderCatalogShip(id,{fra
 jobs['boss-portraits-v1']=()=>page.evaluate(ids=>renderPortraitsV2(ids,{cols:8}),BOSSES.map(b=>b.id));
 for(const sp of SHIPS)jobs[`ship-${sp.id}`]=()=>page.evaluate(id=>renderCatalogShip(id),sp.id);
 for(const m of MONSTERS)jobs[`monster-${m.id}`]=()=>page.evaluate(id=>renderCatalogMonster(id),m.id);
-{const src=fs.readFileSync(path.resolve(here,'../../src/campaign.ts'),'utf8');const npcIds=[...src.matchAll(/npc\('(n\d-\d-(?:light|heavy))'/g)].map(m=>m[1]),monIds=[...src.matchAll(/mon\('(m\d-\d)'/g)].map(m=>m[1]);jobs['portraits-v2']=()=>page.evaluate(order=>renderPortraitsV2(order),[...npcIds,...monIds,'boss']);}
+{const src=fs.readFileSync(path.resolve(here,'../../src/campaign.ts'),'utf8');const npcIds=[...src.matchAll(/npc\('(n\d-\d-(?:light|heavy))'/g)].map(m=>m[1]),monIds=[...src.matchAll(/mon\('(m\d-\d)'/g)].map(m=>m[1]);jobs['portraits-v2']=()=>page.evaluate(order=>renderPortraitsV2(order),[...npcIds,...monIds]);}
 for(const [name,job] of Object.entries(jobs)){
   if(only.length&&!only.includes(name))continue;
   const t=Date.now(),r=await job();

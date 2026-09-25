@@ -66,9 +66,6 @@ export function drawBuiltTower(ctx:CanvasRenderingContext2D,frame:number,slot:nu
 }
 // Kuleler adanın görselinden bağımsızdır: surdaki yuvarlak kaidelerin üstüne dikilir (200 px çizim).
 export const TOWER_LABEL_OFFSET=-135;
-export function drawFleetTower(ctx:CanvasRenderingContext2D,_theme:string,_owner:'npc'|'player',x:number,y:number,alpha=1){
-  return drawBuiltTower(ctx,0,0,x,y,alpha);
-}
 
 // Ganimet sandıkları: 2 kare (tahta, yaldızlı), 128 px.
 const CHEST={frame:128,anchorX:64,anchorY:70.8,size:46};
@@ -108,4 +105,3 @@ export function portraitStyle(atlas:string,index:number,count:number,cols:number
   const rows=Math.ceil(count/cols),c=index%cols,r=Math.floor(index/cols);
   return`background-image:url(${atlas});background-size:${cols*100}% ${rows*100}%;background-position:${cols>1?c/(cols-1)*100:0}% ${rows>1?r/(rows-1)*100:0}%`;
 }
-export const WORLD_CHART='/assets/world-chart-v1.webp';
