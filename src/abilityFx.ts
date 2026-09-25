@@ -60,7 +60,8 @@ function drawBolt(ctx:CanvasRenderingContext2D,b:Fx,w2s:(v:Vec)=>Vec){
   const r=rng(b.seed+Math.floor(b.t/.045)*97),src={x:a.x,y:a.y-(b.ship?38:0)},len=Math.hypot(c.x-src.x,c.y-src.y);
   const main=jag(src,c,r,Math.min(90,len*.28),6);
   ctx.save();ctx.globalCompositeOperation='lighter';ctx.lineCap='round';ctx.lineJoin='round';ctx.globalAlpha=alpha;
-  stroke(ctx,main,12,'rgba(90,140,255,.35)',24);stroke(ctx,main,5,'rgba(150,200,255,.8)',12);stroke(ctx,main,2,'#ffffff',6);
+  // Dış elektrik aurası + mavi enerji gövdesi + beyaz sıcak çekirdek.
+  stroke(ctx,main,20,'rgba(55,95,255,.16)',34);stroke(ctx,main,12,'rgba(90,140,255,.35)',24);stroke(ctx,main,5,'rgba(150,200,255,.8)',12);stroke(ctx,main,2,'#ffffff',6);
   for(let i=0;i<3;i++){const p=main[4+Math.floor(r()*(main.length-8))],ang=Math.atan2(c.y-src.y,c.x-src.x)+(r()-.5)*1.8,l=30+r()*50;
     const br=jag(p,{x:p.x+Math.cos(ang)*l,y:p.y+Math.sin(ang)*l},r,22,3);stroke(ctx,br,3,'rgba(150,200,255,.7)',8);stroke(ctx,br,1.2,'#fff',0);}
   ctx.shadowBlur=0;glow(ctx,c.x,c.y,70,`rgba(220,235,255,${.9*alpha})`,'rgba(80,120,255,0)');
@@ -77,7 +78,7 @@ function shard(ctx:CanvasRenderingContext2D,x:number,y:number,h:number,ang:numbe
 function drawFrost(ctx:CanvasRenderingContext2D,f:Fx,w2s:(v:Vec)=>Vec){
   const s=w2s(f.a!),r=rng(f.seed),t=f.t,grow=Math.min(1,t/.35),fade=Math.min(1,(f.dur-t)/.5),a=grow*fade;
   ctx.save();
-  if(t<.6){const rr=40+t*260;ctx.strokeStyle=`rgba(200,240,255,${(1-t/.6)*.8})`;ctx.lineWidth=6;ctx.beginPath();ctx.ellipse(s.x,s.y+6,rr,rr*.62,0,0,TAU);ctx.stroke();}
+  if(t<.6){const rr=40+t*260;ctx.strokeStyle=`rgba(200,240,255,${(1-t/.6)*.8})`;ctx.lineWidth=6;ctx.beginPath();ctx.ellipse(s.x,s.y+6,rr,rr*.62,0,0,TAU);ctx.stroke();ctx.strokeStyle=`rgba(120,205,255,${(1-t/.6)*.35})`;ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(s.x,s.y+6,rr*1.22,rr*.62*1.22,0,0,TAU);ctx.stroke();}
   const g=ctx.createRadialGradient(s.x,s.y,10,s.x,s.y,78);g.addColorStop(0,`rgba(190,235,255,${.55*a})`);g.addColorStop(.7,`rgba(120,200,245,${.35*a})`);g.addColorStop(1,'rgba(120,200,245,0)');
   ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(s.x,s.y,78,56,0,0,TAU);ctx.fill();
   ctx.globalAlpha=a;
@@ -93,7 +94,7 @@ function drawMeteor(ctx:CanvasRenderingContext2D,f:Fx,w2s:(v:Vec)=>Vec){
   if(t<.45){const k=t/.45,x=s.x+(1-k)*140,y=s.y-(1-k)*420;
     const g=ctx.createLinearGradient(x+60,y-180,x,y);g.addColorStop(0,'rgba(255,120,20,0)');g.addColorStop(1,'rgba(255,190,60,.9)');
     ctx.strokeStyle=g;ctx.lineWidth=10;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(x+60,y-180);ctx.lineTo(x,y);ctx.stroke();
-    glow(ctx,x,y,22,'rgba(255,255,200,1)','rgba(255,90,10,0)');
+    glow(ctx,x,y,34,'rgba(255,255,220,1)','rgba(255,70,5,0)');ctx.strokeStyle='rgba(255,190,80,.35)';ctx.lineWidth=3;ctx.beginPath();ctx.arc(x,y,28+Math.sin(t*30)*4,0,TAU);ctx.stroke();
     ctx.strokeStyle='rgba(0,0,0,.25)';ctx.lineWidth=1;ctx.beginPath();ctx.ellipse(s.x,s.y+8,18*k,8*k,0,0,TAU);ctx.stroke();}
   else{const k=(t-.45)/.25;ctx.globalAlpha=Math.max(0,1-k);glow(ctx,s.x,s.y,40+k*80,'rgba(255,230,140,1)','rgba(255,70,0,0)');
     const r=rng(f.seed);for(let i=0;i<12;i++){const ang=r()*TAU,d=k*(60+r()*50);ctx.fillStyle=i%2?'#ffb040':'#ff5a14';ctx.beginPath();ctx.arc(s.x+Math.cos(ang)*d,s.y+Math.sin(ang)*d*.6-k*20,3,0,TAU);ctx.fill();}}
@@ -145,7 +146,9 @@ function drawDome(ctx:CanvasRenderingContext2D,f:Fx,w2s:(v:Vec)=>Vec){
   ctx.save();ctx.globalAlpha=a;
   const g=ctx.createRadialGradient(s.x-20,s.y-30,10,s.x,s.y,R);g.addColorStop(0,'rgba(200,255,250,.12)');g.addColorStop(.8,'rgba(80,220,220,.22)');g.addColorStop(1,'rgba(160,255,250,.55)');
   ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(s.x,s.y-6,R,R*.82,0,0,TAU);ctx.fill();
-  ctx.strokeStyle='rgba(190,255,250,.8)';ctx.lineWidth=2.5;ctx.beginPath();ctx.ellipse(s.x,s.y-6,R,R*.82,0,0,TAU);ctx.stroke();
+  ctx.strokeStyle='rgba(190,255,250,.8)';ctx.lineWidth=2.5;ctx.shadowColor='#8ffff0';ctx.shadowBlur=14;ctx.beginPath();ctx.ellipse(s.x,s.y-6,R,R*.82,0,0,TAU);ctx.stroke();ctx.shadowBlur=0;
+  // Kubbe yüzeyinde dönen enerji düğümleri, kalkanın hacmini daha okunur yapar.
+  for(let i=0;i<8;i++){const q=i/8*TAU+t*.65,px=s.x+Math.cos(q)*R*.88,py=s.y-6+Math.sin(q)*R*.82;ctx.fillStyle='rgba(220,255,250,.65)';ctx.beginPath();ctx.arc(px,py,2.2,0,TAU);ctx.fill();}
   for(let i=0;i<3;i++){ctx.strokeStyle=`rgba(220,255,255,${.35-i*.1})`;ctx.lineWidth=1.5;ctx.beginPath();ctx.ellipse(s.x,s.y-6,R*(.55+i*.14)+Math.sin(t*3+i)*3,R*.8*(.55+i*.14),0,Math.PI*1.1,Math.PI*1.9);ctx.stroke();}
   ctx.fillStyle='rgba(255,255,255,.6)';ctx.beginPath();ctx.ellipse(s.x-R*.4,s.y-R*.5,R*.16,R*.07,-.6,0,TAU);ctx.fill();
   if(end<.4){const k=1-end/.4,r=rng(f.seed);for(let i=0;i<14;i++){const ang=r()*TAU;ctx.fillStyle='rgba(180,240,255,.8)';ctx.beginPath();ctx.arc(s.x+Math.cos(ang)*R*(1+k*.6),s.y-6+Math.sin(ang)*R*.8*(1+k*.6),3,0,TAU);ctx.fill();}}
@@ -217,7 +220,8 @@ function drawVortex(ctx:CanvasRenderingContext2D,f:Fx,w2s:(v:Vec)=>Vec){
   ctx.save();ctx.globalAlpha=a;
   const g=ctx.createRadialGradient(s.x,s.y,4,s.x,s.y,R);g.addColorStop(0,'rgba(0,0,0,1)');g.addColorStop(.3,'rgba(40,0,70,.9)');g.addColorStop(.7,'rgba(140,60,220,.45)');g.addColorStop(1,'rgba(90,20,160,0)');
   ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(s.x,s.y,R,R*.62,0,0,TAU);ctx.fill();
-  for(let arm=0;arm<4;arm++){ctx.strokeStyle=`rgba(${190+arm*10},140,255,.7)`;ctx.lineWidth=3;ctx.beginPath();for(let i=0;i<=30;i++){const u=i/30,ang=arm/4*TAU+t*4+u*5,rr=R*(1-u);const x=s.x+Math.cos(ang)*rr,y=s.y+Math.sin(ang)*rr*.62;i?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.stroke();}
+  glow(ctx,s.x,s.y,Math.max(12,R*.32),'rgba(190,120,255,.28)','rgba(90,20,160,0)');
+  for(let arm=0;arm<5;arm++){ctx.strokeStyle=`rgba(${180+arm*12},${125+arm*6},255,.72)`;ctx.lineWidth=arm===0?5:3;ctx.beginPath();for(let i=0;i<=30;i++){const u=i/30,ang=arm/4*TAU+t*4+u*5,rr=R*(1-u);const x=s.x+Math.cos(ang)*rr,y=s.y+Math.sin(ang)*rr*.62;i?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.stroke();}
   for(let i=0;i<30;i++){const ph=(t*.8+r())%1,ang=r()*TAU+t*3,rr=R*1.4*(1-ph);ctx.fillStyle=`rgba(220,190,255,${ph})`;ctx.fillRect(s.x+Math.cos(ang)*rr,s.y+Math.sin(ang)*rr*.62,2,2);}
   if(f.dur-t<.35){const k=1-(f.dur-t)/.35;ctx.strokeStyle=`rgba(200,150,255,${1-k})`;ctx.lineWidth=8;ctx.beginPath();ctx.ellipse(s.x,s.y,R*(.3+k*1.6),R*.62*(.3+k*1.6),0,0,TAU);ctx.stroke();}
   ctx.restore();
