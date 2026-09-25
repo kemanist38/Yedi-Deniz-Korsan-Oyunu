@@ -1616,9 +1616,11 @@ function drawSeaGlints(w:number,h:number){const t=performance.now()/1000,C=70,vw
 function draw(){
   const w=innerWidth,h=innerHeight,map=mapDef(),th=theme();const sea=ctx.createLinearGradient(0,0,0,h);sea.addColorStop(0,th.sea[0]);sea.addColorStop(1,th.sea[1]);ctx.fillStyle=sea;ctx.fillRect(0,0,w,h);
   ctx.save();ctx.translate(w/2,h/2);ctx.scale(camera.zoom,camera.zoom);ctx.translate(-w/2,-h/2);
-  const pattern=seaTilePattern(ctx);if(pattern){const vw=w/camera.zoom,vh=h/camera.zoom;pattern.setTransform(new DOMMatrix().translateSelf(-camera.x+w/2+Math.sin(performance.now()/5200)*14,-camera.y+h/2+performance.now()/260%1024).scaleSelf(2,2));ctx.globalAlpha=.2;ctx.fillStyle=pattern;ctx.fillRect(w/2-vw/2,h/2-vh/2,vw,vh);
-    // İkinci dalga katmanı: farklı ölçek ve ters yönde akış; iki katmanın girişimi denize canlı bir kıpırtı verir
-    const t=performance.now();pattern.setTransform(new DOMMatrix().translateSelf(-camera.x*1.04+w/2-t/190%1536,-camera.y*1.04+h/2+Math.cos(t/4100)*20).scaleSelf(3.1,3.1).rotateSelf(24));ctx.globalAlpha=.12;ctx.fillRect(w/2-vw/2,h/2-vh/2,vw,vh);ctx.globalAlpha=1;}
+  const pattern=seaTilePattern(ctx);if(pattern){const vw=w/camera.zoom,vh=h/camera.zoom,t=performance.now();
+    // Tek, düşük kontrastlı su yüzeyi: ikinci çapraz katman kaldırıldı. Böylece mavi "damar" girişimi oluşmaz
+    // ve gemi/NPC rasterları denizden daha net ayrılır. Hareket yalnızca çok yavaş doku sürüklenmesidir.
+    pattern.setTransform(new DOMMatrix().translateSelf(-camera.x+w/2+Math.sin(t/7600)*10,-camera.y+h/2+t/520%1024).scaleSelf(2.55,2.55));
+    ctx.globalAlpha=.105;ctx.fillStyle=pattern;ctx.fillRect(w/2-vw/2,h/2-vh/2,vw,vh);ctx.globalAlpha=1;}
   drawSeaGlints(w,h);
   ctx.globalAlpha=.12;ctx.fillStyle=th.label;ctx.font='700 42px Cinzel';ctx.textAlign='center';for(const label of map.labels){const p=worldToScreen(label);ctx.fillText(label.text,p.x,p.y);}ctx.globalAlpha=1;
   drawCoordGrid();drawMapEdges();islands.forEach(drawIsland);drawFleetIsland();
