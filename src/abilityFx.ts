@@ -152,7 +152,10 @@ function drawDome(ctx:CanvasRenderingContext2D,f:Fx,w2s:(v:Vec)=>Vec){
   ctx.restore();
 }
 function drawRipple(ctx:CanvasRenderingContext2D,f:Fx,w2s:(v:Vec)=>Vec){
-  const s=w2s(f.b!),k=f.t/f.dur;ctx.save();ctx.strokeStyle=`rgba(200,255,255,${1-k})`;ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(s.x,s.y,10+k*40,(10+k*40)*.6,0,0,TAU);ctx.stroke();ctx.restore();
+  const s=w2s(f.b!),k=f.t/f.dur,a=1-k;ctx.save();ctx.globalCompositeOperation='lighter';
+  // Tek çizgi yerine üç katmanlı su şok halkası: merkez köpüğü + ana halka + dış kırınım.
+  for(let i=0;i<3;i++){const kk=Math.max(0,Math.min(1,k-i*.08)),r=12+kk*(58+i*16);ctx.strokeStyle=`rgba(${205+i*12},255,255,${a*(.62-i*.13)})`;ctx.lineWidth=4-i;ctx.beginPath();ctx.ellipse(s.x,s.y,r,r*.55,0,0,TAU);ctx.stroke();}
+  glow(ctx,s.x,s.y,38+k*42,`rgba(220,255,255,${a*.22})`,'rgba(100,220,255,0)');ctx.restore();
 }
 function drawScythe(ctx:CanvasRenderingContext2D,f:Fx,w2s:(v:Vec)=>Vec){
   const s=w2s(targetOrLast(f)),k=f.t/f.dur,a=life(f,.15,.25),swing=-1.4+Math.min(1,k/.6)*2.6;
@@ -165,9 +168,11 @@ function drawScythe(ctx:CanvasRenderingContext2D,f:Fx,w2s:(v:Vec)=>Vec){
 }
 function targetOrLast(f:Fx){if(f.a){f.b={x:f.a.x,y:f.a.y};}return f.b!;}
 function drawSoul(ctx:CanvasRenderingContext2D,f:Fx,w2s:(v:Vec)=>Vec){
-  const k=Math.min(1,f.t/f.dur),from=w2s(f.b!),to=w2s(f.a!),x=from.x+(to.x-from.x)*k,y=from.y+(to.y-from.y)*k-Math.sin(k*Math.PI)*80;
-  ctx.save();ctx.globalAlpha=1-k*.6;glow(ctx,x,y,22,'rgba(200,255,230,1)','rgba(80,255,170,0)');
-  ctx.fillStyle='rgba(220,255,240,.9)';ctx.beginPath();ctx.arc(x,y-4,7,0,TAU);ctx.fill();ctx.restore();
+  const k=Math.min(1,f.t/f.dur),from=w2s(f.b!),to=w2s(f.a!),x=from.x+(to.x-from.x)*k,y=from.y+(to.y-from.y)*k-Math.sin(k*Math.PI)*80,r=rng(f.seed);
+  ctx.save();ctx.globalAlpha=1-k*.55;ctx.globalCompositeOperation='lighter';glow(ctx,x,y,34,'rgba(225,255,240,.95)','rgba(50,255,160,0)');
+  // Ruh çekirdeği + arkada kıvrılan iki enerji kuyruğu.
+  ctx.strokeStyle='rgba(120,255,190,.45)';ctx.lineCap='round';for(let j=0;j<2;j++){ctx.lineWidth=5-j*2;ctx.beginPath();for(let i=0;i<8;i++){const q=Math.max(0,k-i*.035),xx=from.x+(to.x-from.x)*q,yy=from.y+(to.y-from.y)*q-Math.sin(q*Math.PI)*80+Math.sin(f.t*9+i+j)*7*(i/8);i?ctx.lineTo(xx,yy):ctx.moveTo(xx,yy);}ctx.stroke();}
+  ctx.fillStyle='rgba(235,255,245,.96)';ctx.beginPath();ctx.arc(x,y-4,7,0,TAU);ctx.fill();for(let i=0;i<7;i++){const a=r()*TAU,d=12+r()*24;ctx.fillStyle='rgba(150,255,205,.7)';ctx.fillRect(x+Math.cos(a)*d,y+Math.sin(a)*d,2,2);}ctx.restore();
 }
 function drawBanner(ctx:CanvasRenderingContext2D,f:Fx,w2s:(v:Vec)=>Vec){
   const s=w2s(f.a!),a=life(f,.3,.5),t=f.t,rise=Math.min(1,t/.5),x=s.x+22,top=s.y-150;
@@ -241,8 +246,10 @@ function drawSun(ctx:CanvasRenderingContext2D,f:Fx,w2s:(v:Vec)=>Vec){
   ctx.restore();
 }
 function drawBlind(ctx:CanvasRenderingContext2D,f:Fx,w2s:(v:Vec)=>Vec){
-  const s=w2s(f.a!),a=life(f,.1,.3),t=f.t;ctx.save();ctx.globalAlpha=a;ctx.translate(s.x,s.y-70);ctx.rotate(t*2);
-  ctx.fillStyle='#ffd24a';ctx.strokeStyle='#8a5a10';ctx.lineWidth=1.5;ctx.beginPath();for(let i=0;i<16;i++){const rr=i%2?7:13,g=i/16*TAU;i?ctx.lineTo(Math.cos(g)*rr,Math.sin(g)*rr):ctx.moveTo(Math.cos(g)*rr,Math.sin(g)*rr);}ctx.closePath();ctx.fill();ctx.stroke();ctx.restore();
+  const s=w2s(f.a!),a=life(f,.1,.3),t=f.t,pulse=.85+Math.sin(t*8)*.15;ctx.save();ctx.globalAlpha=a;ctx.globalCompositeOperation='lighter';
+  glow(ctx,s.x,s.y-70,52*pulse,'rgba(255,235,130,.42)','rgba(255,185,40,0)');ctx.translate(s.x,s.y-70);ctx.rotate(t*2);
+  ctx.fillStyle='#ffe27a';ctx.strokeStyle='#fff2b0';ctx.shadowColor='#ffc33a';ctx.shadowBlur=16;ctx.lineWidth=2;ctx.beginPath();for(let i=0;i<24;i++){const rr=i%2?8:17,g=i/24*TAU;i?ctx.lineTo(Math.cos(g)*rr,Math.sin(g)*rr):ctx.moveTo(Math.cos(g)*rr,Math.sin(g)*rr);}ctx.closePath();ctx.fill();ctx.stroke();
+  ctx.strokeStyle='rgba(255,238,150,.55)';ctx.lineWidth=2;for(let i=0;i<8;i++){const g=i/8*TAU;ctx.beginPath();ctx.moveTo(Math.cos(g)*22,Math.sin(g)*22);ctx.lineTo(Math.cos(g)*(38+8*pulse),Math.sin(g)*(38+8*pulse));ctx.stroke();}ctx.restore();
 }
 const UNDER=new Set<Kind>(['lava','vortex','coral','ripple']);
 const DRAW:Record<Kind,(ctx:CanvasRenderingContext2D,f:Fx,w2s:(v:Vec)=>Vec)=>void>={bolt:drawBolt,frost:drawFrost,meteor:drawMeteor,lava:drawLava,tentacle:drawTentacles,steam:drawSteam,moon:drawMoon,dome:drawDome,ripple:drawRipple,
