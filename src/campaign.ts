@@ -156,7 +156,16 @@ function sea(key:MapKey,name:string,description:string,opts:{islands:[number,num
 }
 export const MAPS:Record<MapKey,MapDef>={
   '1/1':{...sea('1/1','Sığınak Koyu','Savaşa kapalı başlangıç denizi. Filo adanın lagününde gövde kendiliğinden onarılır; buradaki gemiler sen saldırmadıkça ateş açmaz.',
-    {islands:[[640,700,170,'Martı Kayası',1],[2520,820,190,'Yosunlu Burun',0,true],[2560,2560,160,'Sakin Resif',1]],fleet:[1500,1900,'Sığınak Filo Adası'],labels:[['SAKİN SULAR',1600,700]],safe:true,count:6,heavy:.25}),islands:[I(640,700,170,'Martı Kayası','haven',1),I(2520,820,190,'Yosunlu Burun','verdant',0,true),I(2560,2560,160,'Sakin Resif','coral',1)]},
+    {islands:[[640,700,170,'Martı Kayası',0],[2520,820,190,'Yosunlu Burun',1,true],[2560,2560,160,'Sakin Resif',2]],fleet:[1500,1900,'Sığınak Filo Adası'],labels:[['SAKİN SULAR',1600,700]],safe:true,count:6,heavy:.25}),
+    // Başlangıç denizi de altı farklı 3B ada silueti kullanır; ilk üç adanın özel biyom kimliği korunur.
+    islands:[
+      I(640,700,170,'Martı Kayası','haven',0),
+      I(2520,820,190,'Yosunlu Burun','verdant',1,true),
+      I(2560,2560,160,'Sakin Resif','coral',2),
+      I(4300,720,145,'Sığınak Kuzey Kayalığı','haven',3,true),
+      I(4550,3000,165,'Sığınak Dış Resifi','coral',4),
+      I(3350,3350,135,'Sığınak Yalnız Kayası','verdant',5)
+    ]},
   '1/2':sea('1/2','Martı Kıyıları','Kaçakçıların ve Yağmacıların ilk av sahası. Kıyı Yılanı sığlıklarda dolaşır.',{safe:true,islands:[[700,650,180,'Fırtına Burnu',0],[2500,700,210,'Ölü Adam Adası',1],[650,2500,200,'Sis Kayalıkları',0,true]],fleet:[2150,2150,'Martı Filo Adası'],labels:[['KIYI SULARI',1400,1000]]}),
   '2/1':sea('2/1','Mercan Geçidi','Mercan resifleri arasında savaş gemileri devriye gezer. Derinlik Leviathanı buradadır.',{islands:[[650,700,190,'Mercan Kalesi',0],[2550,600,160,'Pembe Resif',1],[600,2550,170,'Deniz Kabuğu',1,true]],fleet:[2050,2100,'Mercan Filo Adası'],labels:[['MERCAN GEÇİDİ',1300,900]]}),
   '2/2':sea('2/2','İnci Resifleri','İnci dalgıçlarının ve resif fırkateynlerinin sığ, parlak suları.',{islands:[[2550,700,180,'İnci Adası',1],[700,650,200,'Lagün Adası',0,true],[2600,2550,150,'Midye Kayası',0]],fleet:[1150,2100,'İnci Filo Adası'],labels:[['İNCİ SIĞLIĞI',1900,1000]]}),
