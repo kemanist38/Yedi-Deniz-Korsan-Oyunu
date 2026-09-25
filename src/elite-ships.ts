@@ -29,12 +29,12 @@ export const eliteById=(id:string)=>ELITE_SHIPS.find(ship=>ship.id===id)??ELITE_
 export const COMPASS=['N','NE','E','SE','S','SW','W','NW'] as const;
 export type Compass=typeof COMPASS[number];
 const DEFAULT_SHOWS='S SW W NE N SE E NW';
-// Kemik Biçici (bone) sayfası kullanıcı çizimi: G, GB, GD ve K görünümleri var; B/D karelerinde GB/GD, KD/KB karelerinde K
-// görünümü geçici olarak kullanılır (eksik dört açı gelince aynı karelere konur).
+// Kemik Biçici (bone) ve Kadim Atlantis Muhafızı (atlantean) sayfalarında kuzey açısı çizimde yoktu; K karesinde geçici
+// olarak KB görünümü durur (kemikte D, B'nin aynasıdır). Gerçek K görünümü gelince aynı kareye konur.
 export const ELITE_DIR_SHOWS:Partial<Record<EliteShipId,string>>={
-  atlantean:'S SW W NE N SE E SE',crimson:'S SW W NE N SE E SE',plague:'S SW W NE N SE E SE',
+  plague:'S SW W NE N SE E SE',
   sovereign:'S SW W NE N SE E SE',tempest:'S SW W NE N SE E SE',void:'S SW W NE N SE E SE',
-  ironclad:'S SW W NW N SE E NE',ragnarok:'S NE W NE N SE E NW',jade:'S SE E NW N SE W NW',
+  ragnarok:'S NE W NE N SE E NW',jade:'S SE E NW N SE W NW',
 };
 // Pusula dizini (0 = kuzey, saat yönünde 45°) için {kare, ayna}
 export function eliteDirFrame(id:EliteShipId,compass:number):{frame:number;mirror:boolean}{
