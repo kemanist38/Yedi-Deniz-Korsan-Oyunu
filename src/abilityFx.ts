@@ -105,6 +105,7 @@ function drawLava(ctx:CanvasRenderingContext2D,f:Fx,w2s:(v:Vec)=>Vec){
   ctx.save();ctx.globalAlpha=a;
   const g=ctx.createRadialGradient(s.x,s.y,6,s.x,s.y,120);g.addColorStop(0,'rgba(255,210,90,.95)');g.addColorStop(.45,'rgba(240,80,20,.8)');g.addColorStop(.85,'rgba(90,20,10,.55)');g.addColorStop(1,'rgba(40,10,5,0)');
   ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(s.x,s.y,120,74,0,0,TAU);ctx.fill();
+  ctx.globalCompositeOperation='lighter';for(let j=0;j<3;j++){const rr=38+j*27+Math.sin(t*2.4+j)*5;ctx.strokeStyle=`rgba(255,${115+j*35},25,${.34-j*.07})`;ctx.lineWidth=5-j;ctx.beginPath();ctx.ellipse(s.x,s.y,rr,rr*.58,t*.15,0,TAU);ctx.stroke();}ctx.globalCompositeOperation='source-over';
   for(let i=0;i<9;i++){const ang=r()*TAU,d=r()*90,ph=(t*1.6+r())%1;ctx.fillStyle=`rgba(255,${190+r()*50},90,${(1-ph)*.9})`;ctx.beginPath();ctx.arc(s.x+Math.cos(ang)*d,s.y+Math.sin(ang)*d*.6,3+ph*7,0,TAU);ctx.fill();}
   for(let i=0;i<5;i++){const ph=(t*.5+i/5)%1,x=s.x+(r()-.5)*140;ctx.fillStyle=`rgba(60,50,50,${.35*(1-ph)})`;ctx.beginPath();ctx.arc(x,s.y-ph*90,8+ph*18,0,TAU);ctx.fill();}
   ctx.restore();
@@ -120,6 +121,8 @@ function drawTentacles(ctx:CanvasRenderingContext2D,f:Fx,w2s:(v:Vec)=>Vec){
   ctx.save();ctx.globalAlpha=a;
   const g=ctx.createRadialGradient(s.x,s.y+12,5,s.x,s.y+12,90);g.addColorStop(0,'rgba(60,10,70,.7)');g.addColorStop(1,'rgba(60,10,70,0)');ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(s.x,s.y+12,90,52,0,0,TAU);ctx.fill();
   ctx.strokeStyle=`rgba(200,140,230,.5)`;ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(s.x,s.y+12,70+Math.sin(t*6)*6,40,t,0,TAU);ctx.stroke();
+  // Kraken çıkışında köpük ve mor biyolüminesan su halkaları.
+  for(let j=0;j<2;j++){const rr=62+j*28+Math.sin(t*5+j)*5;ctx.strokeStyle=`rgba(${150+j*35},${115+j*20},220,${.28-j*.07})`;ctx.lineWidth=4-j;ctx.beginPath();ctx.ellipse(s.x,s.y+15,rr,rr*.52,0,0,TAU);ctx.stroke();}
   for(let i=0;i<4;i++){const ang=i/4*TAU+.4,bx=s.x+Math.cos(ang)*70,by=s.y+12+Math.sin(ang)*40,tx=s.x+Math.cos(ang)*18,ty=s.y-10-rise*30;
     tentacle(ctx,bx,by,bx+(tx-bx)*rise,by+(ty-by)*rise,Math.sin(t*4+i)*18,12);}
   ctx.restore();
@@ -127,6 +130,7 @@ function drawTentacles(ctx:CanvasRenderingContext2D,f:Fx,w2s:(v:Vec)=>Vec){
 function drawSteam(ctx:CanvasRenderingContext2D,f:Fx,w2s:(v:Vec)=>Vec){
   const s=w2s(f.a!),a=life(f,.2,.6),r=rng(f.seed),t=f.t;
   ctx.save();ctx.globalAlpha=a;
+  glow(ctx,s.x,s.y-38,82,'rgba(255,175,70,.16)','rgba(255,90,20,0)');
   for(let i=0;i<14;i++){const ph=(t*.7+i/14)%1,x=s.x+(r()-.5)*30+Math.sin(ph*6+i)*10,y=s.y-40-ph*110;ctx.fillStyle=`rgba(235,238,240,${.55*(1-ph)})`;ctx.beginPath();ctx.arc(x,y,10+ph*26,0,TAU);ctx.fill();}
   for(let i=0;i<8;i++){const ph=(t*1.8+r())%1,ang=r()*TAU;ctx.fillStyle=`rgba(255,${150+r()*80},40,${1-ph})`;ctx.fillRect(s.x+Math.cos(ang)*40*ph,s.y-10-ph*40+Math.sin(ang)*15,2.5,2.5);}
   // Dönen dişliler
@@ -137,7 +141,7 @@ function drawSteam(ctx:CanvasRenderingContext2D,f:Fx,w2s:(v:Vec)=>Vec){
 function drawMoon(ctx:CanvasRenderingContext2D,f:Fx,w2s:(v:Vec)=>Vec){
   const s=w2s(f.a!),a=life(f,.4,.6),x=s.x,y=s.y-120+Math.sin(f.t*2)*4;
   ctx.save();ctx.globalAlpha=a;glow(ctx,x,y,60,'rgba(255,60,60,.55)','rgba(255,0,0,0)');
-  ctx.fillStyle='#ff3b3b';ctx.shadowColor='#ff2020';ctx.shadowBlur=24;ctx.beginPath();ctx.arc(x,y,22,0,TAU);ctx.fill();
+  ctx.fillStyle='#ff3b3b';ctx.shadowColor='#ff2020';ctx.shadowBlur=30;ctx.beginPath();ctx.arc(x,y,22,0,TAU);ctx.fill();ctx.strokeStyle='rgba(255,80,80,.3)';ctx.lineWidth=3;for(let i=0;i<3;i++){const rr=34+i*14+Math.sin(f.t*3+i)*4;ctx.beginPath();ctx.arc(x,y,rr,0,TAU);ctx.stroke();}
   ctx.globalCompositeOperation='destination-out';ctx.shadowBlur=0;ctx.beginPath();ctx.arc(x+9,y-5,19,0,TAU);ctx.fill();
   ctx.restore();
 }
@@ -206,7 +210,7 @@ function drawBreath(ctx:CanvasRenderingContext2D,f:Fx,w2s:(v:Vec)=>Vec){
 function drawRage(ctx:CanvasRenderingContext2D,f:Fx,w2s:(v:Vec)=>Vec){
   const s=w2s(f.a!),a=life(f,.2,.4),t=f.t,r=rng(f.seed);
   ctx.save();ctx.globalAlpha=a;ctx.globalCompositeOperation='lighter';
-  glow(ctx,s.x,s.y-20,110,'rgba(255,120,30,.35)','rgba(255,30,0,0)');
+  glow(ctx,s.x,s.y-20,125,'rgba(255,120,30,.38)','rgba(255,30,0,0)');ctx.strokeStyle='rgba(255,175,70,.38)';ctx.lineWidth=4;for(let j=0;j<2;j++){const rr=62+j*24+Math.sin(t*5+j)*5;ctx.beginPath();ctx.ellipse(s.x,s.y+4,rr,rr*.52,0,0,TAU);ctx.stroke();}
   for(let i=0;i<16;i++){const ang=i/16*TAU,ph=(t*2+r())%1,x=s.x+Math.cos(ang)*(56+Math.sin(t*5+i)*6),y=s.y+Math.sin(ang)*34-ph*50;ctx.fillStyle=`rgba(255,${80+r()*120},20,${(1-ph)*.85})`;ctx.beginPath();ctx.ellipse(x,y,6*(1-ph)+2,12*(1-ph)+3,0,0,TAU);ctx.fill();}
   ctx.restore();
 }
@@ -235,7 +239,7 @@ function coralBranch(ctx:CanvasRenderingContext2D,x:number,y:number,h:number,col
 function drawCoral(ctx:CanvasRenderingContext2D,f:Fx,w2s:(v:Vec)=>Vec){
   const s=w2s(f.a!),a=life(f,.3,.6),grow=Math.min(1,f.t/.6),t=f.t;
   ctx.save();ctx.globalAlpha=a;
-  glow(ctx,s.x,s.y+6,150,'rgba(60,220,200,.18)','rgba(60,220,200,0)');
+  glow(ctx,s.x,s.y+6,165,'rgba(60,220,200,.22)','rgba(60,220,200,0)');ctx.strokeStyle='rgba(100,255,220,.28)';ctx.lineWidth=3;for(let j=0;j<2;j++){const rr=78+j*34+Math.sin(t*2+j)*4;ctx.beginPath();ctx.ellipse(s.x,s.y+12,rr,rr*.58,0,0,TAU);ctx.stroke();}
   const r=rng(f.seed);
   for(let i=0;i<9;i++){const ang=i/9*TAU+.3,rx=s.x+Math.cos(ang)*(95+r()*20),ry=s.y+10+Math.sin(ang)*(58+r()*12);coralBranch(ctx,rx,ry,(10+r()*10)*grow,i%2?'#ff7a3a':'#3ad6c8',rng(f.seed+i));}
   for(let i=0;i<12;i++){const ph=(t*.6+i/12)%1,x=s.x+Math.sin(i*2.1)*50;ctx.fillStyle=`rgba(120,255,160,${(1-ph)*.9})`;ctx.font='700 16px sans-serif';ctx.fillText('+',x,s.y-10-ph*80);}
