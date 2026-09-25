@@ -23,3 +23,21 @@ export const ELITE_SHIPS:EliteShip[]=[
 {id:'void',level:15,name:'Hiçlik Hükümdarı',english:'Void Monarch',role:'Hibrit / Hükmedici',passive:'%15 hasar, %15 Can, %10 isabet ve %10 hız',ability:'Tekillik',abilityDescription:'3 saniye boyunca düşmanları merkeze çeken ve hasar veren kara delik açar.',asset:'/assets/elite-void-v1.webp'}
 ];
 export const eliteById=(id:string)=>ELITE_SHIPS.find(ship=>ship.id===id)??ELITE_SHIPS[0];
+// Yön sayfaları (elite-dir-<id>-v1.webp, 4 × 2 kare): her karenin gerçekte gösterdiği pusula yönü. Varsayılan düzen
+// G, GB, B, KD, K, GD, D, KB; bazı sayfalarda kareler yanlış yöne bakar (ör. kuzeybatı karesi güneydoğuyu gösterir).
+// Bir yönün karesi yoksa karşı yönün (D↔B, KD↔KB, GD↔GB) karesi yatay aynalanır.
+export const COMPASS=['N','NE','E','SE','S','SW','W','NW'] as const;
+export type Compass=typeof COMPASS[number];
+const DEFAULT_SHOWS='S SW W NE N SE E NW';
+export const ELITE_DIR_SHOWS:Partial<Record<EliteShipId,string>>={
+  atlantean:'S SW W NE N SE E SE',bone:'S SW W NE N SE E SE',crimson:'S SW W NE N SE E SE',plague:'S SW W NE N SE E SE',
+  sovereign:'S SW W NE N SE E SE',tempest:'S SW W NE N SE E SE',void:'S SW W NE N SE E SE',
+  ironclad:'S SW W NW N SE E NE',ragnarok:'S NE W NE N SE E NW',jade:'S SE E NW N SE W NW',
+};
+// Pusula dizini (0 = kuzey, saat yönünde 45°) için {kare, ayna}
+export function eliteDirFrame(id:EliteShipId,compass:number):{frame:number;mirror:boolean}{
+  const shows=(ELITE_DIR_SHOWS[id]??DEFAULT_SHOWS).split(' '),want=COMPASS[compass],opposite=COMPASS[(8-compass)%8];
+  const pick=(dir:string)=>{const preferred=DEFAULT_SHOWS.split(' ').indexOf(dir);return shows[preferred]===dir?preferred:shows.indexOf(dir);};
+  const direct=pick(want);if(direct>=0)return{frame:direct,mirror:false};
+  const mirrored=pick(opposite);return mirrored>=0?{frame:mirrored,mirror:true}:{frame:DEFAULT_SHOWS.split(' ').indexOf(want),mirror:false};
+}
