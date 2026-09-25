@@ -4,7 +4,6 @@
 export type SpecialShip={id:string;name:string;english:string;price:number;art:string;description:string;dir?:string};
 export const SPECIAL_SHIPS:SpecialShip[]=[
   {id:'ak-kadirga',name:'Ak Kadırga',english:'White Galley',price:500,art:'/assets/special-galley-v1.webp',dir:'/assets/special-galley-dir-v1.webp',description:'Pruvasında ikiz top taşıyan, kürekli beyaz savaş kadırgası; kemik haçlı yelkenleriyle tanınır.'},
-  {id:'sovalye-kalyonu',name:'Şövalye Kalyonu',english:'Knight Galleon',price:800,art:'/assets/special-galleon-v1.webp',dir:'/assets/special-galleon-dir-v1.webp',description:'Altın yaldızlı küpeşteleri ve haç işlemeli yelkenleriyle üç direkli heybetli kalyon.'},
   {id:'kizil-anka',name:'Kızıl Anka',english:'Crimson Phoenix',price:1000,art:'/assets/special-phoenix-v1.webp',dir:'/assets/special-phoenix-dir-v1.webp',description:'Altın anka kuşu işlemeli kızıl yelkenleri ve yaldızlı kıç köşküyle dört direkli asil kalyon.'},
 ];
 export const specialById=(id:string|null|undefined)=>SPECIAL_SHIPS.find(s=>s.id===id);
