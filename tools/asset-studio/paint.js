@@ -1,4 +1,4 @@
-// Yedi Deniz Korsan Oyunu — 2B raster boyamalar: tekrarlanan deniz dokusu ve parşömen dünya haritası.
+// Yedi Deniz Korsan Oyunu — 2B raster boyamalar: tekrarlanan deniz dokusu.
 import {canvas,rng,grain,blotches,noise2} from './textures.js';
 
 // 512 px, dört kenarı kesintisiz birleşen deniz ışıltısı. Oyunda deniz renginin üstüne biner.
@@ -16,45 +16,6 @@ export function paintSeaTile(){
   const r=rng(4242);
   for(let i=0;i<46;i++){const cx=r()*W,cy=r()*W,rad=18+r()*46,a0=r()*TAU,len=.6+r()*1.2;
     for(const ox of [-W,0,W])for(const oy of [-W,0,W]){x.strokeStyle=`rgba(225,250,245,${.08+r()*.1})`;x.lineWidth=1.2+r()*1.3;x.beginPath();x.arc(cx+ox,cy+oy,rad,a0,a0+len);x.stroke();}}
-  return c;
-}
-
-// Dünya haritası: 1200×760 parşömen. Düğüm konumları src/world.ts içindeki chart değerleriyle aynıdır.
-export const CHART_NODES={haven:[.17,.68],shadows:[.4,.4],crimson:[.64,.64],storm:[.84,.3]};
-const CHART_ROUTES=[['haven','shadows'],['shadows','crimson'],['crimson','storm']];
-const WASH={haven:'#3f8f7a',shadows:'#2c5f6a',crimson:'#9a3a2a',storm:'#4a4468'};
-export function paintWorldChart(){
-  const W=1200,H=760,[c,x]=canvas(W,H),r=rng(777),n=noise2(99);
-  // Parşömen
-  const img=x.createImageData(W,H),d=img.data;
-  for(let py=0;py<H;py++)for(let px=0;px<W;px++){const t=n(px*.006,py*.006,5),t2=n(px*.03+9,py*.03,3);const k=.88+t*.12+t2*.05;const i=(py*W+px)*4;d[i]=228*k;d[i+1]=208*k;d[i+2]=165*k;d[i+3]=255;}
-  x.putImageData(img,0,0);
-  grain(x,W,H,r,{alpha:.08,count:5000,light:'#fff5dc',dark:'#6b4c2a'});
-  blotches(x,W,H,r,{alpha:.08,count:90,colors:['#8a6a3e','#6b4c2a']});
-  // Bölge boyaları
-  for(const [id,[u,v]] of Object.entries(CHART_NODES)){const g=x.createRadialGradient(u*W,v*H,10,u*W,v*H,190);g.addColorStop(0,WASH[id]+'88');g.addColorStop(1,WASH[id]+'00');x.fillStyle=g;x.fillRect(0,0,W,H);}
-  // Enlem boylam
-  x.strokeStyle='#6b4c2a33';x.lineWidth=1;for(let gx=60;gx<W;gx+=120){x.beginPath();x.moveTo(gx,0);x.lineTo(gx,H);x.stroke();}for(let gy=40;gy<H;gy+=120){x.beginPath();x.moveTo(0,gy);x.lineTo(W,gy);x.stroke();}
-  // Dalga işaretleri
-  x.strokeStyle='#5b4a3a55';x.lineWidth=1.6;for(let i=0;i<70;i++){const px=r()*W,py=r()*H;x.beginPath();x.arc(px,py,7,Math.PI*1.1,Math.PI*1.9);x.arc(px+13,py,7,Math.PI*1.1,Math.PI*1.9);x.stroke();}
-  // Ada kıyı çizimleri
-  for(const [,[u,v]] of Object.entries(CHART_NODES)){for(let k=0;k<4;k++){const a=r()*Math.PI*2,dd=90+r()*60,cx=u*W+Math.cos(a)*dd,cy=v*H+Math.sin(a)*dd*.7,rad=12+r()*22;
-    x.fillStyle='#b99b64aa';x.strokeStyle='#4a3522aa';x.lineWidth=1.5;x.beginPath();for(let s=0;s<=24;s++){const b=s/24*Math.PI*2,rr=rad*(1+.25*n(Math.cos(b)*2+cx,Math.sin(b)*2+cy,2));const X=cx+Math.cos(b)*rr,Y=cy+Math.sin(b)*rr*.75;s?x.lineTo(X,Y):x.moveTo(X,Y);}x.closePath();x.fill();x.stroke();}}
-  // Rotalar
-  x.setLineDash([10,9]);x.lineWidth=3;x.strokeStyle='#7a2a1ecc';
-  for(const [a,b] of CHART_ROUTES){const [u1,v1]=CHART_NODES[a],[u2,v2]=CHART_NODES[b];const mx=(u1+u2)/2*W,my=(v1+v2)/2*H-50;x.beginPath();x.moveTo(u1*W,v1*H);x.quadraticCurveTo(mx,my,u2*W,v2*H);x.stroke();}
-  x.setLineDash([]);
-  // Pusula gülü
-  const cx=W*.1,cy=H*.2;x.save();x.translate(cx,cy);x.strokeStyle='#4a3522';x.lineWidth=2;x.beginPath();x.arc(0,0,58,0,7);x.stroke();x.beginPath();x.arc(0,0,48,0,7);x.stroke();
-  for(let i=0;i<16;i++){const a=i*Math.PI/8,len=i%4===0?70:i%2===0?46:34,w=i%4===0?10:6;x.save();x.rotate(a);x.fillStyle=i%2?'#c9a35e':'#7a2a1e';x.beginPath();x.moveTo(0,-len);x.lineTo(w,0);x.lineTo(0,w*.4);x.lineTo(-w,0);x.closePath();x.fill();x.stroke();x.restore();}
-  x.fillStyle='#4a3522';x.font='700 18px serif';x.textAlign='center';x.fillText('K',0,-76);x.restore();
-  // Deniz canavarı süsü (fırtına bölgesinin yanında)
-  x.save();x.translate(W*.9,H*.62);x.strokeStyle='#4a3522cc';x.fillStyle='#6a5a7a55';x.lineWidth=2.5;
-  for(let k=0;k<3;k++){x.beginPath();x.arc(k*34-34,0,15,Math.PI,0);x.fill();x.stroke();}x.beginPath();x.moveTo(-64,0);x.quadraticCurveTo(-84,-26,-70,-36);x.stroke();x.restore();
-  // Yanık kenarlar
-  const v=x.createRadialGradient(W/2,H/2,Math.min(W,H)*.35,W/2,H/2,Math.max(W,H)*.62);v.addColorStop(0,'#0000');v.addColorStop(.75,'#5a3a1a55');v.addColorStop(1,'#2a1606ee');x.fillStyle=v;x.fillRect(0,0,W,H);
-  x.globalCompositeOperation='destination-out';for(let i=0;i<260;i++){const t=r(),side=Math.floor(r()*4),p=side%2?t*H:t*W,rad=4+r()*12;const X=side===0?p:side===1?W:side===2?p:0,Y=side===0?0:side===1?p:side===2?H:p;x.beginPath();x.arc(X,Y,rad,0,7);x.fill();}
-  x.globalCompositeOperation='source-over';
   return c;
 }
 

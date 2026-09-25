@@ -112,11 +112,6 @@ export const SHIPS=[
   ship('n8-1-heavy','frigate',{plank:'#1a2030',plankDark:'#0c1018',trim:'#f0d040',band:'#243050',portLid:'#34426a',sail:'#2a3450',sail2:'#323e5c',sail3:'#3a4868',border:'#f0d040',emblem:'bolt',emblemColor:'#f0d040',flag:'#1a2030',flagMark:'diamond',flagColor:'#f0d040',glow:'#6a8aff',glass:'#bfd0ff'}),
   ship('n8-2-light','brig',{plank:'#30343c',plankDark:'#1a1c22',trim:'#a0aac0',band:'#44485a',portLid:'#5a6078',sail:'#8a92a4',sail2:'#9aa2b2',sail3:'#a8b0c0',hstripes:4,stripeColor:'#5a6278',emblem:'spiral',emblemColor:'#2a2e3a',flag:'#44485a',flagMark:'cross',flagColor:'#d0d8e8'}),
   ship('n8-2-heavy','galleon',{plank:'#141a2a',plankDark:'#0a0e18',trim:'#e0b24e',band:'#1a2a50',portLid:'#2a3a6a',sail:'#1e2a4a',sail2:'#243258',sail3:'#2a3a64',border:'#e0b24e',emblem:'bolt',emblemColor:'#e0b24e',flag:'#e0b24e',flagMark:'dot',flagColor:'#1a2a50',glow:'#4a6aff',glass:'#ffd070'}),
-  // 9 · Derinlik
-  ship('n9-1-light','caravel',{plank:'#1a1422',plankDark:'#0c0812',trim:'#b070ff',band:'#2a1a40',sail:'#3a2a5a',sail2:'#342650',emblem:'crescent',emblemColor:'#c890ff',flag:'#1a1422',flagColor:'#c890ff',glow:'#9a4aff',glass:'#d0a0ff'}),
-  ship('n9-1-heavy','junk',{plank:'#140e1c',plankDark:'#08060e',trim:'#c890ff',band:'#2a1440',portLid:'#4a2270',portColor:'#c890ff',sail:'#2a1840',sail2:'#241438',sail3:'#1e1030',emblem:'eye',emblemColor:'#d8a8ff',flag:'#140e1c',flagMark:'diamond',flagColor:'#c890ff',glow:'#8a3aff',glass:'#d0a0ff'}),
-  ship('n9-2-light','frigate',{plank:'#101014',plankDark:'#060608',trim:'#c0c0c8',band:'#1a1a22',portLid:'#2a2a34',sail:'#18181e',sail2:'#202028',sail3:'#282830',border:'#6a6a78',emblem:'skull',emblemColor:'#c0c0c8',flag:'#101014',flagMark:'cross',flagColor:'#c0c0c8'}),
-  ship('n9-2-heavy','galleon',{plank:'#0c0a0e',plankDark:'#040306',trim:'#f0c04a',band:'#1a1020',portLid:'#3a2240',portColor:'#f0c04a',sail:'#14101a',sail2:'#1a1422',sail3:'#201a2a',border:'#f0c04a',emblem:'crown',emblemColor:'#f0c04a',flag:'#0c0a0e',flagMark:'diamond',flagColor:'#f0c04a',glow:'#7a3aff',glass:'#ffd070'}),
 ];
 
 // ---------------------------------------------------------------- Canavarlar (tür + palet)
@@ -160,6 +155,4 @@ export const MONSTERS=[
   {id:'m7-1',kind:'crab',pal:{base:'#2a1a16',dark:'#0e0806',light:'#5a3a2a',spots:'#ff8a2a',eye:['#fff0a0','#ff6a10'],limb:'#3a2418',lava:'#ff5a10'}},
   {id:'m7-2',kind:'serpent',pal:{base:'#3a1a10',dark:'#140806',light:'#c8481a',spots:'#ffb040',eye:['#fff0a0','#ff6a10'],fin:'#ff7a1a',lava:'#ff5a10'}},
   {id:'m8-2',kind:'jelly',pal:{dome:'#8ab0ff',glow:'#4a7aff',tentacle:'#d0e0ff',core:'#ffffff'}},
-  {id:'m9-1',kind:'kraken',pal:{look:'abyss'}},
-  {id:'m9-2',kind:'hydra',pal:{base:'#2a2030',dark:'#0e0a12',light:'#6a5a78',spots:'#f0c04a',eye:['#fff0a0','#f0a020'],horn:'#f0c04a'}},
 ];

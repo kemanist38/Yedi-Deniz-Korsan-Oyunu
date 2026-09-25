@@ -4,8 +4,8 @@
 <body style="margin:0;background:#0e3b48">
 <script type="module">
 import * as THREE from 'three';
-import {buildShip,buildLeviathan,buildChest,buildPortal,buildFort,FLEET} from './models.js';
-import {paintSeaTile,paintWorldChart,paintSeaSparkle} from './paint.js';
+import {buildShip,buildLeviathan,buildChest,FLEET} from './models.js';
+import {paintSeaTile,paintSeaSparkle} from './paint.js';
 import {paintVfxAtlas} from './vfx.js';
 import {paintWorldScroll} from './ui-paint.js';
 import {buildIcon} from './icons.js';
@@ -50,19 +50,10 @@ function sheet(frames,cols){
 function anchorOf(cam,frame,p=new THREE.Vector3()){const v=p.clone().project(cam);return{x:+((v.x+1)/2*frame).toFixed(1),y:+((1-v.y)/2*frame).toFixed(1)};}
 function exportCanvas(c){return{webp:c.toDataURL('image/webp',.9),png:c.toDataURL('image/png')};}
 
-window.renderShipSheet=(key,{dirs=16,frame=192,span=104,lookY=9}=({ghost:{frame:240,span:130,lookY:11}})[key]||{})=>{
+window.renderShipSheet=(key,{dirs=16,frame=192,span=104,lookY=9}={})=>{
   const cam=camera(span,lookY),frames=[];
   for(let i=0;i<dirs;i++){const h=i*Math.PI*2/dirs,scene=stage(),ship=buildShip(FLEET[key],{heading:h});prepare(ship);ship.rotation.y=Math.PI-h;scene.add(ship);frames.push(shot(scene,cam,frame));}
   return{...exportCanvas(sheet(frames,dirs/2)),frame,dirs,anchor:anchorOf(cam,frame)};
-};
-window.renderPortraits=({frame=128}={})=>{
-  const frames=[];
-  for(const key of ['scout','raider','warship']){const scene=stage(),ship=buildShip(FLEET[key]);prepare(ship);ship.rotation.y=Math.PI-Math.PI*1.25;scene.add(ship);
-    const span={scout:52,raider:64,warship:78}[key];frames.push(shot(scene,camera(span,{scout:9,raider:11,warship:13}[key]),frame));}
-  {const scene=stage(),m=buildLeviathan(.6);prepare(m);scene.add(m);frames.push(shot(scene,camera(78,4),frame));}
-  {const scene=stage(),ship=buildShip(FLEET.ghost);prepare(ship);ship.rotation.y=Math.PI-Math.PI*1.25;scene.add(ship);frames.push(shot(scene,camera(88,15),frame));}
-  {const scene=stage(),f=buildFort('npc');prepare(f);scene.add(f);frames.push(shot(scene,camera(100,14),frame));}
-  return{...exportCanvas(sheet(frames,6)),frame};
 };
 window.renderLeviathan=({count=8,frame=256,span=132,look='deep'}={})=>{
   const cam=camera(span,2),frames=[];
@@ -75,9 +66,7 @@ window.renderChests=({frame=128,span=28}={})=>{
   return{...exportCanvas(sheet(frames,2)),frame,anchor:anchorOf(cam,frame)};
 };
 function cameraAt(span,elevDeg){const e=elevDeg*Math.PI/180,c=new THREE.OrthographicCamera(-span/2,span/2,span/2,-span/2,1,1200);c.position.set(0,Math.sin(e)*500,Math.cos(e)*500);c.lookAt(0,0,0);c.updateMatrixWorld();c.updateProjectionMatrix();return c;}
-window.renderPortal=({count=8,frame=256,span=150}={})=>{const cam=camera(span,6),frames=[];for(let i=0;i<count;i++){const scene=stage(),p=buildPortal(i,count);prepare(p);scene.add(p);frames.push(shot(scene,cam,frame));}return{...exportCanvas(sheet(frames,4)),frame,count,anchor:anchorOf(cam,frame)};};
 window.renderSeaTile=()=>exportCanvas(paintSeaTile());
-window.renderWorldChart=()=>exportCanvas(paintWorldChart());
 window.renderVfxAtlas=()=>({...exportCanvas(paintVfxAtlas()),cell:128,cols:8,rows:6});
 window.renderWorldScroll=()=>exportCanvas(paintWorldScroll());
 window.renderSeaSparkle=()=>({...exportCanvas(paintSeaSparkle()),frame:128,frames:8});
@@ -101,14 +90,10 @@ function iconShot(icon,frame,margin=.8){const scene=stage();scene.add(icon);icon
 window.renderEquipAtlas=({cell=192}={})=>{const frames=[];for(let r=0;r<3;r++)for(const sl of ['sail','figure','armor','carriage'])frames.push(iconShot(buildEquip(sl,r),cell,.84));return{...exportCanvas(sheet(frames,4)),cell};};
 window.renderItem=(name,{frame=256}={})=>({...exportCanvas(iconShot(({powder:buildPowderKeg,treasure:buildTreasureMap,inventory:buildInventoryPlaque})[name](),frame,.82)),frame});
 // Önizleme: seçili gemileri tek açıdan (güneybatıya bakış) büyük karede, deniz zeminli çeker
-window.renderShipPreview=(ids,{frame=256,cols=4}={})=>{const frames=ids.map(id=>{const spec=ALL_SHIPS.find(x=>x.id===id),cam=camera(spec.span,spec.span*.087),scene=stage(),ship=buildShip(spec.def,{heading:Math.PI*1.25});prepare(ship);ship.rotation.y=Math.PI-Math.PI*1.25;scene.add(ship);
-  const c=shot(scene,cam,frame),o=document.createElement('canvas');o.width=o.height=frame;const x=o.getContext('2d');x.fillStyle='#14566e';x.fillRect(0,0,frame,frame);x.drawImage(c,0,0);return o;});return{...exportCanvas(sheet(frames,cols)),frame};};
-// Başarım madalyaları atlası: list = [[amblem, 0|1|2], …]
 window.renderMedalAtlas=(list,{cell=192,cols=6}={})=>({...exportCanvas(sheet(list.map(([n,t])=>iconShot(buildMedal(n,t),cell,.86)),cols)),cell,cols});
 window.renderMineSprite=({frame=128,span=18}={})=>{const scene=stage(),m=buildIcon('icon-mine');m.userData.waterline=2.6;prepare(m);scene.add(m);
   const foam=new THREE.Mesh(new THREE.PlaneGeometry(16,16),new THREE.MeshBasicMaterial({map:T.foamTexture({seed:12,color:'220,245,240',strength:.7,inner:.3}),transparent:true,depthWrite:false}));foam.rotation.x=-Math.PI/2;foam.position.y=2.65;scene.add(foam);
   const cam=camera(span,3.5);return{...exportCanvas(shot(scene,cam,frame)),frame,anchor:anchorOf(cam,frame,new THREE.Vector3(0,2.6,0))};};
-window.renderFort=({frame=320,span=150}={})=>{const cam=camera(span,10),frames=['npc','player'].map(o=>{const scene=stage(),f=buildFort(o);prepare(f);scene.add(f);return shot(scene,cam,frame);});return{...exportCanvas(sheet(frames,2)),frame,anchor:anchorOf(cam,frame)};};
 window.renderCatalogShip=(id,{dirs=16,frame=192}={})=>{const spec=ALL_SHIPS.find(x=>x.id===id),span=spec.span,cam=camera(span,span*.087),frames=[];
   for(let i=0;i<dirs;i++){const h=i*Math.PI*2/dirs,scene=stage(),ship=buildShip(spec.def,{heading:h});prepare(ship);ship.rotation.y=Math.PI-h;scene.add(ship);frames.push(shot(scene,cam,frame));}
   return{...exportCanvas(sheet(frames,dirs/2)),frame,dirs,span,anchor:anchorOf(cam,frame)};};
@@ -117,7 +102,7 @@ window.renderCatalogMonster=(id,{count=8,frame=256,span=140}={})=>{const spec=MO
   for(let i=0;i<count;i++){const scene=stage(),m=MONSTER_BUILDERS[spec.kind](spec.pal,i/count*Math.PI*2);prepare(m);scene.add(m);frames.push(shot(scene,cam,frame));}
   return{...exportCanvas(sheet(frames,4)),frame,count,span,anchor:anchorOf(cam,frame)};};
 // Portre atlası v2: src/campaign.ts sırası (36 NPC, 18 canavar, boss). 10 sütun, 96 px.
-window.renderPortraitsV2=(order,{cell=96,cols=10}={})=>{const legacy={'n1-2-light':'scout','n1-2-heavy':'raider','n2-1-heavy':'warship',boss:'ghost'},legacyMon={'m2-1':'deep','m8-1':'storm'};
+window.renderPortraitsV2=(order,{cell=96,cols=10}={})=>{const legacy={'n1-2-light':'scout','n1-2-heavy':'raider','n2-1-heavy':'warship'},legacyMon={'m2-1':'deep','m8-1':'storm'};
   const frames=order.map(id=>{const scene=stage();let cam;
     if(id.startsWith('m')){let m;if(legacyMon[id])m=buildLeviathan(.6,legacyMon[id]);else{const spec=MONSTERS.find(x=>x.id===id);m=MONSTER_BUILDERS[spec.kind](spec.pal,.6);}prepare(m);scene.add(m);cam=camera(92,10);}
     else{const def=legacy[id]?FLEET[legacy[id]]:ALL_SHIPS.find(x=>x.id===id).def,ship=buildShip(def,{heading:Math.PI*1.25});prepare(ship);ship.rotation.y=Math.PI-Math.PI*1.25;scene.add(ship);const L=def.hull.L;cam=camera(L*1.12,L*.19);}

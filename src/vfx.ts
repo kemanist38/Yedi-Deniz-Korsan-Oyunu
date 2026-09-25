@@ -8,7 +8,6 @@ export const VFX={
 } as const;
 export type VfxName=keyof typeof VFX;
 // Sayısı birden fazla olan kareler (aynı satırda yan yana)
-export const VFX_VARIANTS:Partial<Record<VfxName,number>>={smoke:4,splinter:3,foam:2};
 export const EXPLOSION_ROW=1,SPLASH_ROW=2,ANIM_FRAMES=8;
 export const vfxReady=()=>atlas.complete&&atlas.naturalWidth>0;
 // size: ekranda karenin kenar uzunluğu (px); kare merkezi (x,y) noktasına oturur

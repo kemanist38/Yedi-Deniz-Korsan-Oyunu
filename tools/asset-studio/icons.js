@@ -139,15 +139,6 @@ export function buildIcon(name){
     const feather=new THREE.Mesh(new THREE.ConeGeometry(.8,6,8),std({color:'#e9e1cc',roughness:.9,metalness:0}));feather.scale.z=.3;feather.rotation.set(-.2,0,-1.1);feather.position.set(3,3.4,-.5);root.add(feather);
     root.userData.cam={pos:[0,8,13],look:[0,1.6,0]};
   }
-  if(name==='officer-gunner'){
-    const wood=std({map:T.chestWoodTexture({seed:101,wood:'#7a4a2a',dark:'#4a2a16'}),roughness:.8,metalness:0});
-    const keg=new THREE.Mesh(new THREE.CylinderGeometry(2.6,2.6,5,24),wood);keg.scale.set(1,1,1);const kp=keg.geometry.attributes.position;for(let i=0;i<kp.count;i++){const y=kp.getY(i),f=1+.16*Math.cos(y/2.5*Math.PI/2);kp.setX(i,kp.getX(i)*f);kp.setZ(i,kp.getZ(i)*f);}keg.geometry.computeVertexNormals();keg.position.y=2.5;root.add(keg);
-    for(const [y,rr] of [[.35,2.68],[2.5,3.04],[4.65,2.68]]){const hoop=new THREE.Mesh(new THREE.TorusGeometry(rr,.16,8,32),iron(102));hoop.rotation.x=Math.PI/2;hoop.position.y=y;root.add(hoop);}
-    const rod=new THREE.Mesh(new THREE.CylinderGeometry(.18,.18,10,8),std({color:'#8a5a30',roughness:.8,metalness:0}));rod.rotation.z=-.5;rod.position.set(1.8,4.4,1.8);root.add(rod);
-    const sponge=new THREE.Mesh(new THREE.CylinderGeometry(.55,.55,1.4,12),std({color:'#3a2a20',roughness:1,metalness:0}));sponge.rotation.z=-.5;sponge.position.set(4.3,8.7,1.8);root.add(sponge);
-    for(let i=0;i<3;i++){const b=new THREE.Mesh(new THREE.SphereGeometry(.9,20,16),iron(103+i));b.position.set(-3.2+i*1.1,.9,2.4-i*.4);root.add(b);}
-    root.userData.cam={pos:[0,6,14],look:[0,3.5,0]};
-  }
   if(name==='officer-helmsman'){
     const wood=std({color:'#7a4a28',roughness:.7,metalness:0}),brass=std({color:'#d4a64c',metalness:.9,roughness:.3});
     const rim=new THREE.Mesh(new THREE.TorusGeometry(4.2,.42,12,48),wood);root.add(rim);const inner=new THREE.Mesh(new THREE.TorusGeometry(2.2,.3,10,32),wood);root.add(inner);

@@ -41,7 +41,6 @@ export const THEMES:Record<number,Theme>={
   6:{name:'Fırtına Denizi',sea:['#1d3546','#0a1c2b'],tint:'#9fb4e0',look:'storm',fleet:'toxic',weather:'storm',label:'#c8d4f0'},
   7:{name:'Karanlık Uçurum Denizi',sea:['#202737','#090f1e'],tint:'#a79bdb',look:'abyss',fleet:'lava',weather:'motes',label:'#d8c0ff'},
   8:{name:'Alev Denizi',sea:['#343d3e','#121e24'],tint:'#ff8a3a',look:'lava',fleet:'storm',weather:'embers',label:'#ffc090'},
-  9:{name:'Karanlık Derinlikler',sea:['#1f1633','#06030e'],tint:'#b070ff',look:'abyss',fleet:'abyss',weather:'motes',label:'#d8c0ff'},
 };
 
 // ---------------------------------------------------------------- NPC gemileri
@@ -76,8 +75,6 @@ const NPC_LIST:Omit<NpcDef,'portrait'>[]=[
   npc('n7-2-light','Ateş Kayığı','light',7),npc('n7-2-heavy','Lav Ejderi','heavy',7),
   npc('n8-1-light','Fırtına Avcısı','light',8),npc('n8-1-heavy','Şimşek Fırkateyni','heavy',8),
   npc('n8-2-light','Kasırga Brigi','light',8,undefined,104),npc('n8-2-heavy','Gök Gürültüsü Kalyonu','heavy',8,undefined,124),
-  npc('n9-1-light','Gölge Kayığı','light',9),npc('n9-1-heavy','Uçurum Ejderi','heavy',9),
-  npc('n9-2-light','Kara Muhafız','light',9,undefined,112),npc('n9-2-heavy','Karanlık Kalyon','heavy',9,undefined,124),
 ];
 export const NPCS:Record<string,NpcDef>=Object.fromEntries(NPC_LIST.map((n,i)=>[n.id,{...n,portrait:i}]));
 
@@ -95,12 +92,10 @@ const MONSTER_LIST:Omit<MonsterDef,'portrait'>[]=[
   mon('m6-1','Zehir Denizanası',6,54),mon('m6-2','Bataklık Hidrası',6,60),
   mon('m7-1','Magma Yengeci',7,58),mon('m7-2','Alev Yılanı',7,62),
   mon('m8-1','Fırtına Leviathanı',8,62,'/assets/leviathan-storm-v1.webp',132,130.9),mon('m8-2','Kasırga Denizanası',8,58),
-  mon('m9-1','Uçurum Krakeni',9,64),mon('m9-2','Kadim Hidra',9,66),
 ];
 export const MONSTERS:Record<string,MonsterDef>=Object.fromEntries(MONSTER_LIST.map((m,i)=>[m.id,{...m,portrait:NPC_LIST.length+i}]));
 // Portre atlasının son karesi (eski Hayalet Amiral) şimdilik kullanılmıyor; yeni boss eklenince kullanılabilir.
-export const BOSS_PORTRAIT=NPC_LIST.length+MONSTER_LIST.length;
-export const PORTRAIT_COUNT=BOSS_PORTRAIT+1;
+export const PORTRAIT_COUNT=NPC_LIST.length+MONSTER_LIST.length;
 export const PORTRAIT_COLS=10;
 export const PORTRAIT_ATLAS='/assets/portraits-v2.webp';
 

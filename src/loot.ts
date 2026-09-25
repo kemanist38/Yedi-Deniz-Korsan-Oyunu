@@ -13,7 +13,6 @@ export const LOOT_TABLES:Record<LootSource,LootTable>={
 };
 export const CHEST_PICKUP_RADIUS=46;
 export const CHEST_CLICK_RADIUS=32;
-export const MAX_DRIFT_CHESTS=4;
 export const DRIFT_RESPAWN_SECONDS=22;
 
 const roll=([min,max]:Range)=>min+Math.floor(Math.random()*(max-min+1));
