@@ -564,7 +564,11 @@ function respawn(){
 }
 // Vuruş: patlama animasyonu, savrulup suya düşen tahta kıymıkları, korlar ve yükselen duman
 function burst(x:number,y:number,large=false){
-  const R=Math.random,TAU=Math.PI*2;particles.push({x,y,vx:0,vy:0,life:large?.95:.6,maxLife:large?.95:.6,kind:'explosion',size:large?250:150});
+  const R=Math.random,TAU=Math.PI*2;
+  // İsabet anında sıcak merkez ve basınç halkası; ağır patlamalarda ikinci bir gecikmesiz şok katmanı.
+  particles.push({x,y,vx:0,vy:0,life:large?.95:.6,maxLife:large?.95:.6,kind:'explosion',size:large?250:150});
+  particles.push({x,y,vx:0,vy:0,life:large?.42:.26,maxLife:large?.42:.26,kind:'shock',size:large?230:118});
+  particles.push({x,y,vx:0,vy:0,life:.14,maxLife:.14,kind:'flash',size:large?105:66,rot:R()*TAU});
   for(let n=0;n<(large?10:4);n++){const a=R()*TAU,sp=40+R()*(large?130:70);particles.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp*.6,life:1+R()*.8,maxLife:1.8,kind:'splinter',z:8,vz:90+R()*(large?170:110),rot:R()*6,vr:(R()-.5)*16,size:32+R()*16,variant:n%3});}
   for(let n=0;n<(large?12:5);n++){const a=R()*TAU,sp=50+R()*(large?150:90);particles.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp*.6,life:.4+R()*.5,maxLife:.9,kind:'spark',z:10,vz:60+R()*140,size:20});}
   for(let n=0;n<(large?4:2);n++)particles.push({x:x+(R()-.5)*20,y:y+(R()-.5)*14,vx:(R()-.5)*14,vy:-10-R()*10,life:1.2+R()*.8,maxLife:2,kind:'smoke',z:14,size:large?80:52,variant:n%4,rot:R()*6});
@@ -573,7 +577,13 @@ function burst(x:number,y:number,large=false){
 // Iska: suya düşen güllenin su sütunu ve köpük halkası
 // Oyuncuya uzaklığa göre ses seviyesi (0..1)
 function earGain(p:Vec){return Math.max(0,Math.min(1,1.15-dist(p,player)/900));}
-function splashAt(x:number,y:number,size=110){const eg=earGain({x,y});if(eg>.05)playSplash(eg*.8);particles.push({x,y,vx:0,vy:0,life:.75,maxLife:.75,kind:'splash',size});for(let n=0;n<3;n++)particles.push({x:x+(Math.random()-.5)*18,y:y+(Math.random()-.5)*10,vx:(Math.random()-.5)*16,vy:(Math.random()-.5)*10,life:.9,maxLife:.9,kind:'foam',size:34,variant:n%2});}
+function splashAt(x:number,y:number,size=110){const eg=earGain({x,y});if(eg>.05)playSplash(eg*.8);
+  // Ana su sütunu + dışa kaçan köpük parçaları + kısa yüzey şok halkası. Parçacık sayısı sınırlı tutulur.
+  particles.push({x,y,vx:0,vy:0,life:.78,maxLife:.78,kind:'splash',size});
+  particles.push({x,y,vx:0,vy:0,life:.46,maxLife:.46,kind:'shock',size:size*.92});
+  for(let n=0;n<6;n++){const a=Math.random()*Math.PI*2,sp=14+Math.random()*34;particles.push({x:x+(Math.random()-.5)*12,y:y+(Math.random()-.5)*8,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp*.58,life:.7+Math.random()*.45,maxLife:1.15,kind:'foam',size:22+Math.random()*20,variant:n%2});}
+  for(let n=0;n<3;n++){const a=Math.random()*Math.PI*2;particles.push({x,y,vx:Math.cos(a)*(18+Math.random()*28),vy:Math.sin(a)*18,life:.55,maxLife:.55,kind:'bubble',size:10+Math.random()*8});}
+}
 // Özel güllelerin isabet etkisi: patlayıcı çevreye alan hasarı, can emici oyuncuyu onarır
 function ammoImpact(s:Shot,target:Target,hit:number){
   if(s.owner!=='player')return;
@@ -1109,7 +1119,9 @@ function update(dt:number){
   for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.97;p.vy*=.97;p.life-=dt;if(p.vr)p.rot=(p.rot??0)+p.vr*dt;
     if(p.vz!==undefined){p.z=(p.z??0)+p.vz*dt;p.vz-=340*dt;if(p.z<=0){p.z=0;p.vz=undefined;p.vx*=.25;p.vy*=.25;p.vr=(p.vr??0)*.1;if(p.kind==='splinter')particles.push({x:p.x,y:p.y,vx:0,vy:0,life:.4,maxLife:.4,kind:'foam',size:20,variant:0});}}
     if(p.life<=0)particles.splice(i,1);}
-  for(let i=wrecks.length-1;i>=0;i--){const w=wrecks[i];w.t+=dt;w.bubble-=dt;if(w.bubble<=0){w.bubble=.07+Math.random()*.07;const a=Math.random()*Math.PI*2,r=Math.random()*38;particles.push({x:w.x+Math.cos(a)*r,y:w.y+Math.sin(a)*r*.6,vx:(Math.random()-.5)*8,vy:-8-Math.random()*8,life:.8,maxLife:.8,kind:Math.random()<.62?'bubble':'foam',size:12+Math.random()*16,variant:0});}if(w.t<1.65&&Math.random()<dt*2.5){const a=Math.random()*Math.PI*2,r=Math.random()*w.span*.22;particles.push({x:w.x+Math.cos(a)*r,y:w.y+Math.sin(a)*r*.45,vx:0,vy:0,life:.55,maxLife:.55,kind:'explosion',size:80+Math.random()*70});}if(w.t>=WRECK_TIME)wrecks.splice(i,1);}
+  for(let i=wrecks.length-1;i>=0;i--){const w=wrecks[i];w.t+=dt;w.bubble-=dt;if(w.bubble<=0){w.bubble=.07+Math.random()*.07;const a=Math.random()*Math.PI*2,r=Math.random()*38;particles.push({x:w.x+Math.cos(a)*r,y:w.y+Math.sin(a)*r*.6,vx:(Math.random()-.5)*8,vy:-8-Math.random()*8,life:.8,maxLife:.8,kind:Math.random()<.62?'bubble':'foam',size:12+Math.random()*16,variant:0});}if(w.t<1.65&&Math.random()<dt*2.5){const a=Math.random()*Math.PI*2,r=Math.random()*w.span*.22;particles.push({x:w.x+Math.cos(a)*r,y:w.y+Math.sin(a)*r*.45,vx:0,vy:0,life:.55,maxLife:.55,kind:'explosion',size:80+Math.random()*70});}
+    if(w.t>.55&&w.t<2.35&&Math.random()<dt*3.4){const a=Math.random()*Math.PI*2,r=18+Math.random()*w.span*.28;particles.push({x:w.x+Math.cos(a)*r,y:w.y+Math.sin(a)*r*.42,vx:(Math.random()-.5)*12,vy:-8-Math.random()*8,life:1.2,maxLife:1.2,kind:'smoke',z:10+Math.random()*14,size:38+Math.random()*34,variant:Math.floor(Math.random()*4),rot:Math.random()*6});}
+    if(w.t>=WRECK_TIME){splashAt(w.x,w.y,135);wrecks.splice(i,1);}}
   let need=xpNeed(state.level);while(state.fame>=need){state.fame-=need;state.level++;setAch('level',state.level);state.maxHp=baseMaxHp();state.hp=effectiveMaxHp();saveAccount();playLevelUp();rewardNotice(`SEVİYE ${state.level}   +${HP_PER_LEVEL.toLocaleString('tr-TR')} Azami Gövde   +1 Yetenek Puanı   ${state.level}/1 AÇILDI`);toast(`Seviye ${state.level}! Yeni denizler açıldı`);need=xpNeed(state.level);}
   if(state.level>=MAX_LEVEL)state.fame=Math.min(state.fame,0);
   if(toastTimer>0){toastTimer-=dt;if(toastTimer<=0)ui('toast').classList.remove('show');}if(rewardTimer>0){rewardTimer-=dt;if(rewardTimer<=0){ui('rewardToast').classList.remove('show');const next=rewardQueue.shift();if(next)setTimeout(()=>showReward(next),220);}} updateUI();
