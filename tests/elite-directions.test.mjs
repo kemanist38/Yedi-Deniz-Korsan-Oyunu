@@ -15,7 +15,8 @@ test('every elite ship shows the travelled direction in all eight headings',()=>
 });
 
 test('correct sheets keep their original frames without mirroring',()=>{
+  // Karşı yön aynası: kuzeybatı karesi olmayan bir sayfa kuzeydoğuyu aynalar
+  E.ELITE_DIR_SHOWS.magma='S SW W NE N SE E SE';assert.deepEqual(E.eliteDirFrame('magma',7),{frame:3,mirror:true});delete E.ELITE_DIR_SHOWS.magma;
   const map=[4,3,6,5,0,1,2,7];
   for(let c=0;c<8;c++)assert.deepEqual(E.eliteDirFrame('magma',c),{frame:map[c],mirror:false});
-  assert.deepEqual(E.eliteDirFrame('sand',7),{frame:3,mirror:true},'kuzeybatı = aynalanmış kuzeydoğu');
 });
