@@ -19,6 +19,7 @@ import {loadProfile,saveProfile,nickError,rankOf,NICK_CHANGE_COST,NICK_COOLDOWN_
 import {createChest,chestRewardText,CHEST_PICKUP_RADIUS,CHEST_CLICK_RADIUS,DRIFT_RESPAWN_SECONDS,type LootChest} from './loot';
 import {ELITE_SHIPS,eliteById,eliteDirFrame,type EliteShipId} from './elite-ships';
 import {SPECIAL_SHIPS,specialById,specialFacing} from './special-ships';
+import {spawnLightning,spawnFrost,spawnMeteor,spawnLavaPool,spawnTentacles,spawnSteam,spawnBloodMoon,spawnDome,spawnRipple,spawnScythe,spawnSoul,spawnBanner,spawnCoins,spawnBreath,spawnRage,spawnText,spawnVortex,spawnCoral,spawnSun,spawnBlind,screenTint,updateAbilityFx,drawAbilityFxUnder,drawAbilityFx} from './abilityFx';
 
 type Vec = { x: number; y: number };
 type AmmoKind = 'iron'|'chain'|SpecialAmmo;
@@ -28,12 +29,12 @@ type CannonStock=Record<CannonKind,number>;
 type Shot = Vec & { vx:number; vy:number; life:number; owner:'player'|'enemy'; damage:number; hit:boolean; ammo:AmmoKind; target?:Target; slow?:number; splash?:number; visual?:'spit'; age?:number; flight?:number; arc?:number; trail?:number };
 type SalvoRound = { delay:number; target:Target; side:number; slot:number; damage:number; ammo:AmmoKind };
 type EnemyRole='light'|'heavy';
-type Enemy = Vec & { kind:'ship'; def?:NpcDef; boss?:BossDef; summoned?:boolean; escortsCalled?:boolean; burnTimer?:number; burnDps?:number; tower?:boolean; towerIndex?:number;  hitRadius?:number; fireRange?:number; rewardXp?:number; role:EnemyRole; angle:number; hp:number; maxHp:number; cooldown:number; speed:number; damage:number; reload:number; rewardGold:number; rewardFame:number; color:string; name:string; tier:number; aggro:boolean; wander:number; slowTimer:number; homeX:number; homeY:number; combatTimer:number };
+type Enemy = Vec & { kind:'ship'; frozen?:number; def?:NpcDef; boss?:BossDef; summoned?:boolean; escortsCalled?:boolean; burnTimer?:number; burnDps?:number; tower?:boolean; towerIndex?:number;  hitRadius?:number; fireRange?:number; rewardXp?:number; role:EnemyRole; angle:number; hp:number; maxHp:number; cooldown:number; speed:number; damage:number; reload:number; rewardGold:number; rewardFame:number; color:string; name:string; tier:number; aggro:boolean; wander:number; slowTimer:number; homeX:number; homeY:number; combatTimer:number };
 type ParticleKind='foam'|'smoke'|'spark'|'damage'|'flash'|'explosion'|'splash'|'splinter'|'bubble'|'plank'|'firePuff'|'target'|'poison'|'soul'|'shock';
 // z: su üstünden yükseklik (ekranda yukarı kayar); vz ile savrulan parçalar suya düşer
 type Particle = Vec & { vx:number; vy:number; life:number; maxLife:number; kind:ParticleKind; text?:string; z?:number; vz?:number; rot?:number; vr?:number; size?:number; variant?:number };
 type Wreck = Vec & { angle:number; sprite:string; span:number; t:number; bubble:number };
-type Monster = Vec & { kind:'monster'; def:MonsterDef; burnTimer?:number; burnDps?:number; phase:number; radius:number; name:string; hp:number; maxHp:number; cooldown:number; aggro:boolean; slowTimer:number; homeX:number; homeY:number; combatTimer:number };
+type Monster = Vec & { kind:'monster'; frozen?:number; def:MonsterDef; burnTimer?:number; burnDps?:number; phase:number; radius:number; name:string; hp:number; maxHp:number; cooldown:number; aggro:boolean; slowTimer:number; homeX:number; homeY:number; combatTimer:number };
 type Target = Enemy|Monster;
 type UpgradeKind = 'hull'|'damage'|'range'|'reload'|'speed'|'repair';
 type QuickItemId = 'iron'|'chain'|SpecialAmmo|'mine'|'powder'|'shield'|'repairkit'|'speed';
@@ -187,6 +188,13 @@ const abilityTimers:Record<AbilityId,{active:number;cooldown:number}>={speed:{ac
 const mines:{x:number;y:number;life:number;arm:number}[]=[];
 const abilityActive=(id:AbilityId)=>abilityTimers[id].active>0;
 const eliteAbility={active:0,cooldown:0};
+// Elit yetenek durumları. Hayalet geçişte adacıklardan geçilir; gemi yarı saydam ve arkasında hayalet izi
+const ELITE_COOLDOWN=45;
+let ghostTimer=0,ghostTrailClock=0;const ghostTrail:Vec[]=[];
+let domeTimer=0,steamTimer=0,moonTimer=0,bannerTimer=0,rageTimer=0,coralTimer=0,stealthTimer=0,playerHitClock=99;
+const abilityQueue:{t:number;fn:()=>void}[]=[];
+const lavaPools:{x:number;y:number;life:number;tick:number;dps:number}[]=[];
+let krakenHold:{target:Target;time:number}|null=null,voidHole:{x:number;y:number;time:number;damage:number}|null=null;
 const eliteEnabled=()=>activeShip!=='starter';
 const eliteShip=()=>eliteById(activeEliteShip);
 // Seafight ölçeği: başlangıç gemisi 75.000 can ve 100 top yuvası. Elit seviyesi başına +5.000 can ve +25 yuva
@@ -354,7 +362,7 @@ function defeatBoss(e:Enemy){
   rewardNotice(`${b.name.toLocaleUpperCase('tr')} BATIRILDI   +${b.xp.toLocaleString('tr-TR')} TP   +${b.pearls} İnci`);toast(`${b.name} denizin dibine gönderildi!`);
 }
 function populateMap(){
-  stopBossMusic();
+  stopBossMusic();lavaPools.length=0;abilityQueue.length=0;krakenHold=null;voidHole=null;
   const map=mapDef();islands.splice(0,islands.length,...map.islands.map(i=>({...i})));
   enemies.length=0;shots.length=0;salvoQueue.length=0;particles.length=0;lootChests.length=0;sparkles.length=0;sparkleQueue.length=0;mines.length=0;driftClock=DRIFT_RESPAWN_SECONDS;weatherParticles.length=0;
   preload([...(hasFleetIsland()?[fleetBaseUrl(theme().fleet),fleetTowerUrl(theme().fleet)]:[]),...map.npcs.map(id=>NPCS[id].sprite),MONSTERS[map.monster].sprite,...new Set(map.islands.map(i=>islandSheetUrl(i.look)))]);
@@ -464,6 +472,7 @@ function navigablePoint(point:Vec){
   return{x:clamp(point.x,25,WORLD_WIDTH-25),y:clamp(point.y,25,WORLD_HEIGHT-25)};
 }
 function resolveIslandCollision(){
+  if(ghostTimer>0)return;
   const fc=fleetCollision(player);if(!fc&&hasFleetIsland())fleetSafe={x:player.x,y:player.y};if(fc){const hard=!fleetSafe||(fc.x!==player.x&&fc.y!==player.y);player.x=fc.x;player.y=fc.y;player.speed*=hard?.5:.9;if(!routeTarget)destination=null;if(collisionNotice<=0){toast(fleetEnterable()?`${fc.name} karasına çıkılamaz — lagüne güneydeki kanaldan girilir`:`${fc.name} rakip filonun adası — içeri girilemez`);collisionNotice=2;}}
   for(const island of islands){const shore=island.r*.72+28,d=dist(player,island);if(d<shore){const a=d>.01?Math.atan2(player.y-island.y,player.x-island.x):player.angle-Math.PI/2;player.x=island.x+Math.cos(a)*shore;player.y=island.y+Math.sin(a)*shore;player.speed*=.28;destination=null;if(collisionNotice<=0){toast(`${island.name} kıyısına daha fazla yaklaşamazsın`);collisionNotice=2;}}}
 }
@@ -486,14 +495,14 @@ function toggleRepair(){
 }
 function fireAtTarget(){
   const cannon=CANNONS[state.cannonType];
-  if(!selected||player.cooldown>0||dist(player,selected)>effectiveRange())return;
+  if(!selected||ghostTimer>0||player.cooldown>0||dist(player,selected)>effectiveRange())return;
   if(state.ammo==='chain'&&state.chainAmmo<=0){state.ammo='iron';toast('Zincir güllesi tükendi');}
   if(isSpecial(state.ammo)&&arsenal[state.ammo]<=0){toast(`${SPECIAL_AMMO[state.ammo].name} tükendi`);state.ammo='iron';renderQuickSlots();}
   // Seafight mantığı: her top 1 gülle harcar. Stok top sayısından azsa kalan toplar demir gülle atar.
   const stock=state.ammo==='chain'?state.chainAmmo:isSpecial(state.ammo)?arsenal[state.ammo]:Infinity,loaded=Math.min(state.cannon,stock);
   const ammoMult=state.ammo==='chain'?CHAIN_FACTOR:isSpecial(state.ammo)?SPECIAL_AMMO[state.ammo].damage:1,mix=state.cannon>0?(loaded*ammoMult+(state.cannon-loaded))/state.cannon:1;
   const fx=Math.sin(player.angle),fy=-Math.cos(player.angle),tx=selected.x-player.x,ty=selected.y-player.y;
-  const side=fx*ty-fy*tx>0?-1:1,damage=state.cannon*BALL_DAMAGE*(1+upgrades.damage*.11)*cannon.damage*bonus.damage*mix*(1+equipBonus().damage+achBonus().damage)*useConsumable('powder');
+  const side=fx*ty-fy*tx>0?-1:1,damage=state.cannon*BALL_DAMAGE*(1+upgrades.damage*.11)*cannon.damage*bonus.damage*mix*(1+equipBonus().damage+achBonus().damage)*eliteDamageMult(selected)*useConsumable('powder');
   salvoQueue.push({delay:0,target:selected,side,slot:0,damage,ammo:state.ammo});
   if(state.ammo==='chain'){state.chainAmmo-=loaded;saveAccount();}
   else if(isSpecial(state.ammo)){arsenal[state.ammo]-=loaded;saveArsenal(arsenal);renderQuickSlots();gainElitePoints(loaded*ELITE_POINTS_PER_BALL[state.ammo]);bumpAch('eliteBalls',loaded);}
@@ -519,11 +528,12 @@ function releaseSalvo(round:SalvoRound){
   muzzleFlash(x,y,Math.atan2(muzzle.y,muzzle.x));
 }
 function enemyFire(e:Enemy){
+  if(stealthTimer>0){e.cooldown=Math.max(e.cooldown,.4);return;}
   if(e.boss){bossFire(e);return;}
   const a=Math.atan2(player.y-e.y,player.x-e.x);playEnemyCannon(dist(e,player),(e.x-player.x)/600);
   shots.push({x:e.x,y:e.y,vx:Math.cos(a)*260,vy:Math.sin(a)*260,life:2.2,owner:'enemy',damage:e.damage*(.85+Math.random()*.3),hit:false,ammo:'iron'}); e.cooldown=e.reload+Math.random()*.55;muzzleFlash(e.x+Math.cos(a)*16,e.y+Math.sin(a)*16,a,54);
 }
-function monsterFire(m:Monster){const a=Math.atan2(player.y-m.y,player.x-m.x);playSplash();for(const off of m.def.tier>=5?[-.12,0,.12]:[0])shots.push({x:m.x,y:m.y,vx:Math.cos(a+off)*210,vy:Math.sin(a+off)*210,life:2.4,owner:'enemy',damage:m.def.damage*(.85+Math.random()*.3),hit:false,ammo:'iron',visual:'spit'});m.cooldown=m.def.reload;}
+function monsterFire(m:Monster){if(stealthTimer>0){m.cooldown=Math.max(m.cooldown,.4);return;}const a=Math.atan2(player.y-m.y,player.x-m.x);playSplash();for(const off of m.def.tier>=5?[-.12,0,.12]:[0])shots.push({x:m.x,y:m.y,vx:Math.cos(a+off)*210,vy:Math.sin(a+off)*210,life:2.4,owner:'enemy',damage:m.def.damage*(.85+Math.random()*.3),hit:false,ammo:'iron',visual:'spit'});m.cooldown=m.def.reload;}
 // Batınca bulunduğun denizde, düşmanlardan uzak rastgele bir noktada %10 gövdeyle yeniden doğ.
 function respawn(){
   const deathMap=currentMap;
@@ -570,8 +580,8 @@ function showReward(msg:string){ui('rewardToast').textContent=msg;ui('rewardToas
 function rewardNotice(msg:string){if(rewardTimer>0){rewardQueue.push(msg);return;}showReward(msg);}
 function saveQuestState(){localStorage.setItem(QUEST_STORAGE,JSON.stringify({active:state.activeQuest,progress:questProgress,cooldowns:questCooldownUntil}));}
 function saveAccount(){localStorage.setItem(ACCOUNT_STORAGE,JSON.stringify({pearls:state.pearls,gold:state.gold,fame:state.fame,level:state.level,maxHp:state.maxHp,hp:state.hp,chainAmmo:state.chainAmmo,elitePoints:state.elitePoints,battlePoints:state.battlePoints,cannonType:state.cannonType,cannonInventory,mountedCannons,equipOwned,equipped,quickSlots,upgrades,eliteShip:activeEliteShip,specialOwned,activeSkin,activeShip,elitePurchased,currentMap}));try{localStorage.setItem(WORLD_STORAGE,currentMap);}catch{}}
-function effectiveRange(){return(CANNONS[state.cannonType].range+upgrades.range*18+bonus.range+equipBonus().range)*(state.ammo==='grape'?SPECIAL_AMMO.grape.rangeFactor:1);}
-function effectiveSpeed(){return(128+upgrades.speed*5)*bonus.speed*(1+equipBonus().speed)*(abilityActive('speed')?SPEED_BOOST:1);}
+function effectiveRange(){return(CANNONS[state.cannonType].range+upgrades.range*18+bonus.range+equipBonus().range+(elitePassive('jade')?20:0))*(state.ammo==='grape'?SPECIAL_AMMO.grape.rangeFactor:1);}
+function effectiveSpeed(){return(128+upgrades.speed*5)*bonus.speed*(1+equipBonus().speed)*(abilityActive('speed')?SPEED_BOOST:1)*(elitePassive('tempest')?1.05:1)*(elitePassive('sand')?1.1:1)*(stealthTimer>0?1.3:1);}
 function cannonCapacity(){return BASE_CANNONS+upgrades.hull*CANNONS_PER_HULL+(eliteEnabled()?eliteShip().level*CANNONS_PER_ELITE:0);}
 function mountedCannonCount(){return (Object.keys(mountedCannons) as CannonKind[]).reduce((sum,kind)=>sum+mountedCannons[kind],0);}
 function cannonAsset(kind:CannonKind){
@@ -711,7 +721,7 @@ function renderEliteShips(){
     const button=document.getElementById('equipStarter') as HTMLButtonElement|null;if(button&&!button.disabled)button.onclick=equipStarterShip;return;
   }
   const ship=eliteById(previewShip),locked=ship.level>unlocked;
-  ui('eliteShipDetail').innerHTML=`<span class="eyebrow">Elit ${ship.level}</span><img class="elite-art elite-preview" src="${eliteArtUrl(ship.id)}" alt="${ship.name}" draggable="false"/><h3>${ship.name}</h3><em>${ship.english}</em><dl><dt>Gemi</dt><dd>${(BASE_HP+ship.level*HP_PER_ELITE).toLocaleString('tr-TR')} temel can · ${BASE_CANNONS+ship.level*CANNONS_PER_ELITE} top yuvası</dd><dt>Özel yetenek</dt><dd>Yeniden tasarlanıyor — yakında</dd></dl><button id="equipEliteShip" ${ship.level>1&&locked||activeShip===ship.id?'disabled':''}>${activeShip===ship.id?'AKTİF GEMİ':ELITE_TEST_MODE?'TEST ET':ship.level===1&&!elitePurchased?`SATIN AL · ${ELITE_ONE_PRICE} İNCİ`:locked?'KİLİTLİ':'GEMİYİ SEÇ'}</button>`;
+  ui('eliteShipDetail').innerHTML=`<span class="eyebrow">Elit ${ship.level}</span><img class="elite-art elite-preview" src="${eliteArtUrl(ship.id)}" alt="${ship.name}" draggable="false"/><h3>${ship.name}</h3><em>${ship.english}</em><dl><dt>Gemi</dt><dd>${(BASE_HP+ship.level*HP_PER_ELITE).toLocaleString('tr-TR')} temel can · ${BASE_CANNONS+ship.level*CANNONS_PER_ELITE} top yuvası</dd><dt>Rol</dt><dd>${ship.role}</dd><dt>Pasif</dt><dd>${ship.passive}</dd><dt>Özel yetenek</dt><dd><b>${ship.ability}</b> — ${ship.abilityDescription} <small>(${ELITE_COOLDOWN} sn bekleme)</small></dd></dl><button id="equipEliteShip" ${ship.level>1&&locked||activeShip===ship.id?'disabled':''}>${activeShip===ship.id?'AKTİF GEMİ':ELITE_TEST_MODE?'TEST ET':ship.level===1&&!elitePurchased?`SATIN AL · ${ELITE_ONE_PRICE} İNCİ`:locked?'KİLİTLİ':'GEMİYİ SEÇ'}</button>`;
   const equip=document.getElementById('equipEliteShip') as HTMLButtonElement|null;if(equip&&!equip.disabled)equip.onclick=()=>{if(ship.level===1&&!elitePurchased&&!ELITE_TEST_MODE){purchaseEliteOne();return;}const oldMax=effectiveMaxHp();activeEliteShip=ship.id;activeShip=ship.id;activeSkin=null;state.hp=Math.min(effectiveMaxHp(),Math.max(1,state.hp*effectiveMaxHp()/oldMax));fitCannonsToCapacity();eliteAbility.active=0;eliteAbility.cooldown=0;saveAccount();renderEliteShips();updateUI();toast(`${ship.name} amiral gemisi seçildi`);};
 }
 function openDevelopment(){pendingUpgrade=null;renderUpgrades();ui('developmentOverlay').classList.add('open');}
@@ -959,7 +969,7 @@ function updateUI(){
   ui('reloadText').textContent=player.cooldown>0?`${player.cooldown.toFixed(1)} sn`:'HAZIR';ui('attack').classList.toggle('reloading',player.cooldown>0);
   ui('attackLabel').textContent=state.attacking?'SALDIRIYI İPTAL ET':'SALDIR';ui('attack').classList.toggle('active',state.attacking);
   ui('repair').classList.toggle('active',state.repairing);
-  const elite=eliteShip(),eliteButton=ui('ability-elite');eliteButton.classList.toggle('ship-hidden',true);ui('eliteAbilityName').textContent='ELİT GEMİ';ui('eliteAbilityTime').textContent=eliteAbility.active>0?`${Math.ceil(eliteAbility.active)} SN`:eliteAbility.cooldown>0?`${Math.ceil(eliteAbility.cooldown)}`:'HAZIR';eliteButton.classList.toggle('active',eliteAbility.active>0);eliteButton.style.setProperty('--cd',Math.min(1,eliteAbility.cooldown/45).toFixed(3));const eliteIcon=ui('eliteAbilityIcon') as HTMLElement,iconUrl=`url(${eliteArtUrl(elite.id)})`;if(eliteIcon.style.getPropertyValue('--elite-img')!==iconUrl)eliteIcon.style.setProperty('--elite-img',iconUrl);
+  const elite=eliteShip(),eliteButton=ui('ability-elite');eliteButton.classList.toggle('ship-hidden',!eliteEnabled());eliteButton.title=`${elite.ability} — ${elite.abilityDescription}`;ui('eliteAbilityName').textContent=elite.ability.toLocaleUpperCase('tr');ui('eliteAbilityTime').textContent=eliteAbility.active>0?`${Math.ceil(eliteAbility.active)} SN`:eliteAbility.cooldown>0?`${Math.ceil(eliteAbility.cooldown)}`:'HAZIR';eliteButton.classList.toggle('active',eliteAbility.active>0);eliteButton.style.setProperty('--cd',Math.min(1,eliteAbility.cooldown/(ELITE_COOLDOWN*bonus.cooldown)).toFixed(3));const eliteIcon=ui('eliteAbilityIcon') as HTMLElement,iconUrl=`url(${eliteArtUrl(elite.id)})`;if(eliteIcon.style.getPropertyValue('--elite-img')!==iconUrl)eliteIcon.style.setProperty('--elite-img',iconUrl);
   renderCombatTargets();
 }
 
@@ -996,11 +1006,12 @@ function update(dt:number){
     }
     player.speed=clamp(player.speed,0,effectiveSpeed()+4);
     player.x=clamp(player.x+Math.sin(player.angle)*player.speed*dt,25,WORLD_WIDTH-25);player.y=clamp(player.y-Math.cos(player.angle)*player.speed*dt,25,WORLD_HEIGHT-25);resolveIslandCollision();
-  player.cooldown=Math.max(0,player.cooldown-dt);eliteAbility.active=Math.max(0,eliteAbility.active-dt);eliteAbility.cooldown=Math.max(0,eliteAbility.cooldown-dt);state.invulnerable=Math.max(0,state.invulnerable-dt);collisionNotice=Math.max(0,collisionNotice-dt);{const f=cinematic.focus??player;camera.x+=(f.x-camera.x)*Math.min(1,dt*3);camera.y+=(f.y-camera.y)*Math.min(1,dt*3);}camera.zoom+=(camera.targetZoom-camera.zoom)*Math.min(1,dt*7);
+  updateAbilityFx(dt);ghostTimer=Math.max(0,ghostTimer-dt);ghostTrailClock-=dt;if(ghostTimer>0&&ghostTrailClock<=0){ghostTrailClock=.07;ghostTrail.push({x:player.x,y:player.y});if(ghostTrail.length>6)ghostTrail.shift();}if(ghostTimer<=0)ghostTrail.length=0;
+  player.cooldown=Math.max(0,player.cooldown-dt*(steamTimer>0?2:1));updateEliteAbilities(dt);eliteAbility.active=Math.max(0,eliteAbility.active-dt);eliteAbility.cooldown=Math.max(0,eliteAbility.cooldown-dt);state.invulnerable=Math.max(0,state.invulnerable-dt);collisionNotice=Math.max(0,collisionNotice-dt);{const f=cinematic.focus??player;camera.x+=(f.x-camera.x)*Math.min(1,dt*3);camera.y+=(f.y-camera.y)*Math.min(1,dt*3);}camera.zoom+=(camera.targetZoom-camera.zoom)*Math.min(1,dt*7);
   for(let i=salvoQueue.length-1;i>=0;i--){salvoQueue[i].delay-=dt;if(salvoQueue[i].delay<=0){releaseSalvo(salvoQueue[i]);salvoQueue.splice(i,1);}}
-  if(state.repairing){state.hp=Math.min(effectiveMaxHp(),state.hp+effectiveMaxHp()*(.035+upgrades.repair*.008)*bonus.repair*dt);if(state.hp>=effectiveMaxHp()){state.repairing=false;saveAccount();ui('repair').classList.remove('active');toast('Gövde tamamen onarıldı');}}
+  if(state.repairing){state.hp=Math.min(effectiveMaxHp(),state.hp+effectiveMaxHp()*(.035+upgrades.repair*.008)*bonus.repair*(elitePassive('coral')&&playerHitClock>5?2:1)*dt);if(state.hp>=effectiveMaxHp()){state.repairing=false;saveAccount();ui('repair').classList.remove('active');toast('Gövde tamamen onarıldı');}}
   wakeClock-=dt;if(Math.abs(player.speed)>8&&wakeClock<=0){wakeClock=.1;particles.push({x:player.x-Math.sin(player.angle)*22,y:player.y+Math.cos(player.angle)*22,vx:-Math.sin(player.angle)*8,vy:Math.cos(player.angle)*8,life:.75,maxLife:.75,kind:'foam'});}
-  monsters.forEach(m=>{m.phase+=dt;m.cooldown-=dt;m.slowTimer=Math.max(0,m.slowTimer-dt);if(m.aggro){m.combatTimer-=dt;if(m.combatTimer<=0||Math.hypot(m.x-m.homeX,m.y-m.homeY)>720)m.aggro=false;}if(m.aggro&&dist(m,player)<430&&m.cooldown<=0)monsterFire(m);});
+  monsters.forEach(m=>{if((m.frozen??0)>0){m.frozen=Math.max(0,m.frozen!-dt);m.cooldown=Math.max(m.cooldown,.5);return;}m.phase+=dt;m.cooldown-=dt;m.slowTimer=Math.max(0,m.slowTimer-dt);if(m.aggro){m.combatTimer-=dt;if(m.combatTimer<=0||Math.hypot(m.x-m.homeX,m.y-m.homeY)>720)m.aggro=false;}if(m.aggro&&dist(m,player)<430&&m.cooldown<=0)monsterFire(m);});
   // Saldırı: kaptan hareket etse de hedef menzildeyken ateş sürer; hedef menzilden çıkınca saldırı durur
   // ve menzile tekrar girildiğinde SALDIR'a yeniden basmak gerekir.
   if(state.attacking&&selected){
@@ -1018,6 +1029,7 @@ function update(dt:number){
   player.angle=Math.atan2(Math.sin(player.angle),Math.cos(player.angle));
   for(const e of enemies){
     if(e.tower){updateTower(e,dt);continue;}
+    if((e.frozen??0)>0){e.frozen=Math.max(0,e.frozen!-dt);e.cooldown=Math.max(e.cooldown,.5);continue;}
     const d=dist(e,player);e.wander+=dt;e.slowTimer=Math.max(0,e.slowTimer-dt);if(e.aggro){e.combatTimer-=dt;if(e.combatTimer<=0||Math.hypot(e.x-e.homeX,e.y-e.homeY)>680)e.aggro=false;}
     const homeDistance=Math.hypot(e.x-e.homeX,e.y-e.homeY);
     const target=e.aggro?Math.atan2(player.y-e.y,player.x-e.x)+Math.PI/2:homeDistance>90?Math.atan2(e.homeY-e.y,e.homeX-e.x)+Math.PI/2:e.angle+Math.sin(e.wander*.35)*.008;
@@ -1040,21 +1052,26 @@ function update(dt:number){
     if(s.owner==='player'){
       for(let j=enemies.length-1;j>=0&&s.life>0;j--){
         const e=enemies[j];
-        if(dist(s,e)<(e.hitRadius??25)){const hit=s.damage*(s.ammo==='breaker'&&e.tower?SPECIAL_AMMO.breaker.towerFactor:1);s.hit=true;if(s.slow)e.slowTimer=Math.max(e.slowTimer,s.slow);if(s.splash)towerSplash(s,e);e.aggro=true;e.combatTimer=12;if(s.ammo==='chain')e.slowTimer=3;if(s.ammo==='fire'){e.burnTimer=SPECIAL_AMMO.fire.burnSeconds;e.burnDps=Math.max(e.burnDps??0,hit*FIRE_DOT_SHARE*bonus.burn/SPECIAL_AMMO.fire.burnSeconds);}e.hp-=hit;damageText(e.x,e.y,hit);burst(e.x,e.y);playHit();ammoImpact(s,e,hit);s.life=0;
+        if(dist(s,e)<(e.hitRadius??25)){const hit=eliteOnHit(e,s.damage*(s.ammo==='breaker'&&e.tower?SPECIAL_AMMO.breaker.towerFactor:1));s.hit=true;if(s.slow)e.slowTimer=Math.max(e.slowTimer,s.slow);if(s.splash)towerSplash(s,e);e.aggro=true;e.combatTimer=12;if(s.ammo==='chain')e.slowTimer=3;if(s.ammo==='fire'){e.burnTimer=SPECIAL_AMMO.fire.burnSeconds;e.burnDps=Math.max(e.burnDps??0,hit*FIRE_DOT_SHARE*bonus.burn/SPECIAL_AMMO.fire.burnSeconds);}e.hp-=hit;damageText(e.x,e.y,hit);burst(e.x,e.y);playHit();ammoImpact(s,e,hit);s.life=0;
           if(e.hp<=0)sinkEnemy(e);
         }
       }
       for(let j=monsters.length-1;j>=0&&s.life>0;j--){
         const m=monsters[j];
-        if(dist(s,m)<m.radius){const hit=s.damage;s.hit=true;if(s.slow)m.slowTimer=Math.max(m.slowTimer,s.slow);if(s.splash)towerSplash(s,m);if(eliteEnabled()&&activeEliteShip==='magma'&&Math.random()<.2)m.burnTimer=3;m.aggro=true;m.combatTimer=12;if(s.ammo==='chain')m.slowTimer=3;if(s.ammo==='fire'){m.burnTimer=SPECIAL_AMMO.fire.burnSeconds;m.burnDps=Math.max(m.burnDps??0,hit*FIRE_DOT_SHARE*bonus.burn/SPECIAL_AMMO.fire.burnSeconds);}m.hp-=hit;damageText(m.x,m.y,hit);burst(m.x,m.y);playHit();ammoImpact(s,m,hit);s.life=0;
+        if(dist(s,m)<m.radius){const hit=eliteOnHit(m,s.damage);s.hit=true;if(s.slow)m.slowTimer=Math.max(m.slowTimer,s.slow);if(s.splash)towerSplash(s,m);m.aggro=true;m.combatTimer=12;if(s.ammo==='chain')m.slowTimer=3;if(s.ammo==='fire'){m.burnTimer=SPECIAL_AMMO.fire.burnSeconds;m.burnDps=Math.max(m.burnDps??0,hit*FIRE_DOT_SHARE*bonus.burn/SPECIAL_AMMO.fire.burnSeconds);}m.hp-=hit;damageText(m.x,m.y,hit);burst(m.x,m.y);playHit();ammoImpact(s,m,hit);s.life=0;
           if(m.hp<=0)defeatMonster(m);
         }
       }
-    }else if(state.invulnerable<=0&&dist(s,player)<22){
-      s.hit=true;
-      state.repairing=false;
-      const taken=s.damage*bonus.taken*useConsumable('shield');
-      state.hp-=taken;damageText(player.x,player.y,Math.round(taken));playHit(true);burst(player.x,player.y);s.life=0;
+    }else if(state.invulnerable<=0&&ghostTimer<=0&&dist(s,player)<22){
+      s.hit=true;s.life=0;
+      // Su Kubbesi hasarı tamamen emer; Hayalet Kadırga pasifi %10 ihtimalle gülleyi savuşturur
+      if(domeTimer>0)spawnRipple(s);
+      else if(elitePassive('phantom')&&Math.random()<.1)spawnText(player,'SAVUŞTURDU','#7fffe0');
+      else{
+      state.repairing=false;playerHitClock=0;
+      const taken=s.damage*bonus.taken*useConsumable('shield')*eliteTakenMult();
+      state.hp-=taken;if(rageTimer>0)state.hp=Math.max(1,state.hp);damageText(player.x,player.y,Math.round(taken));playHit(true);burst(player.x,player.y);
+      }
       if(state.hp<=0){
         respawn();
         // Respawn empties shots. Stop reading this volley, then finish UI/draw normally.
@@ -1083,13 +1100,13 @@ function sinkEnemy(e:Enemy){
   if(e.tower){destroyTower();return;}
   if(e.boss){defeatBoss(e);return;}
   // NPC ve canavar yalnızca tecrübe puanı ve altın verir (Seafight'taki gibi); savaş puanı sadece rakip oyuncu batırınca gelir.
-  const eliteLoot=1;
+  const eliteLoot=eliteLootMult();if(bannerTimer>0)spawnCoins(e,player);
   const goldGain=goldGainAch(e.rewardGold*(1+bonus.bounty)*eliteLoot),fame=xpGain(e.rewardFame);state.gold+=goldGain;state.fame+=fame;saveAccount();bumpAch('npc');if(e.role==='heavy')bumpAch('heavy');
   rewardNotice(`+${goldGain} Altın   +${fame} TP`);toast(`${e.name} batırıldı`);if(e.def)recordQuestProgress('npc',e.def.id);countBossKill(e);if(!e.summoned)setTimeout(spawnEnemy,1800);
 }
 function defeatMonster(m:Monster){
   playExplosion();const d=m.def;
-  const eliteLoot=1;
+  const eliteLoot=eliteLootMult();if(bannerTimer>0)spawnCoins(m,player);
   const goldGain=goldGainAch(d.gold*(1+bonus.bounty)*eliteLoot),fame=xpGain(d.xp);state.gold+=goldGain;state.fame+=fame;saveAccount();bumpAch('monster');
   rewardNotice(`+${goldGain} Altın   +${fame} TP`);recordQuestProgress('monster',d.id);
   const p=randomSeaPoint(900);m.hp=m.maxHp;m.aggro=false;m.burnTimer=0;m.x=p.x;m.y=p.y;m.homeX=m.x;m.homeY=m.y;m.combatTimer=0;selected=null;state.attacking=false;toast(`${m.name} yenildi`);
@@ -1098,7 +1115,7 @@ function updateTower(e:Enemy,dt:number){
   const d=dist(e,player);e.cooldown-=dt;e.combatTimer=Math.max(0,e.combatTimer-dt);e.slowTimer=0;e.burnTimer=Math.max(0,(e.burnTimer??0));
   e.aggro=!mapDef().safe&&(d<(e.fireRange??460)+30||e.combatTimer>0);
   if(e.hp<e.maxHp)e.hp=Math.min(e.maxHp,e.hp+e.maxHp*(e.aggro?.004:.02)*dt);
-  if(e.aggro&&d<(e.fireRange??460)&&e.cooldown<=0&&state.invulnerable<=0){const muzzle=towerMuzzle(e),tx=muzzle.x,ty=muzzle.y,a=Math.atan2(player.y-ty,player.x-tx);
+  if(e.aggro&&d<(e.fireRange??460)&&e.cooldown<=0&&state.invulnerable<=0&&stealthTimer<=0){const muzzle=towerMuzzle(e),tx=muzzle.x,ty=muzzle.y,a=Math.atan2(player.y-ty,player.x-tx);
     muzzleFlash(tx,ty,a,60);for(const off of [-.05,.05])shots.push({x:tx,y:ty,vx:Math.cos(a+off)*320,vy:Math.sin(a+off)*320,life:2.2,owner:'enemy',damage:e.damage,hit:false,ammo:theme().fleet==='lava'?'fire':'iron'});
     playEnemyCannon(d,(e.x-player.x)/600);e.cooldown=e.reload+Math.random()*.4;}
 }
@@ -1168,7 +1185,85 @@ function drawWeather(){
   if(tint){ctx.fillStyle=tint;ctx.fillRect(0,0,W,H);}
 }
 // Elit özel yetenekleri yeniden tasarlanıyor; onaylanan yetenekler buraya eklenecek
-function activateEliteAbility(){toast('Elit gemilerin özel yetenekleri yakında');}
+// ---------------------------------------------------------------- Elit gemi pasifleri ve özel yetenekler
+function elitePassive(id:EliteShipId){return eliteEnabled()&&activeEliteShip===id;}
+// Bir salvonun çıplak gücü; yetenek hasarları bunun katı olarak ölçeklenir
+function salvoPower(){return Math.max(1,state.cannon)*BALL_DAMAGE*(1+upgrades.damage*.11)*CANNONS[state.cannonType].damage*bonus.damage*(1+equipBonus().damage+achBonus().damage);}
+function eliteDamageMult(t:Target|null){
+  let m=(bannerTimer>0?1.2:1)*(rageTimer>0?1.3:1);
+  if(elitePassive('ragnarok'))m*=1+.03*Math.floor(Math.max(0,1-state.hp/effectiveMaxHp())*10);
+  if(t&&elitePassive('kraken')&&dist(player,t)<200)m*=1.1;
+  if(t&&elitePassive('bone')&&t.hp<t.maxHp*.25)m*=1.2;
+  return m;
+}
+function eliteTakenMult(){return(elitePassive('ironclad')?.9:1)*(steamTimer>0?.8:1)*(elitePassive('atlantean')&&consumableOn.shield?.9:1);}
+function eliteLootMult(){return(elitePassive('sovereign')?1.1:1)*(bannerTimer>0?2:1);}
+function eliteLeech(dmg:number){const r=(moonTimer>0?.25:0)+(elitePassive('crimson')?.03:0);if(r>0&&state.hp>0)state.hp=Math.min(effectiveMaxHp(),state.hp+dmg*r);}
+// Gülle isabetinde çalışan pasifler: kritik, yanma, yavaşlatma, can emme
+function eliteOnHit(t:Target,hit:number){
+  if(!eliteEnabled())return hit;
+  if(elitePassive('void')&&Math.random()<.05){hit*=2;spawnText(t,'KRİTİK','#c9a0ff');}
+  if(elitePassive('magma')&&Math.random()<.15){t.burnTimer=3;t.burnDps=Math.max(t.burnDps??0,hit*FIRE_DOT_SHARE/3);}
+  if(elitePassive('glacial'))t.slowTimer=Math.max(t.slowTimer,2);
+  eliteLeech(hit);return hit;
+}
+function abilityHit(t:Target,dmg:number,raw=false){
+  if(!targetExists(t))return;const hit=Math.round(raw?dmg:dmg*eliteDamageMult(t));
+  t.hp-=hit;t.aggro=true;t.combatTimer=12;damageText(t.x,t.y,hit);burst(t.x,t.y);eliteLeech(hit);
+  if(t.hp<=0){if(t.kind==='ship')sinkEnemy(t);else defeatMonster(t);}
+}
+function targetsNear(p:Vec,r:number){const out:Target[]=[];enemies.forEach(e=>{if(dist(e,p)<r+(e.hitRadius??25))out.push(e);});monsters.forEach(m=>{if(dist(m,p)<r+m.radius)out.push(m);});return out;}
+const immovable=(t:Target)=>t.kind==='ship'&&(!!t.tower||!!t.boss);
+function freezeTarget(t:Target,sec:number){if(t.kind==='ship'&&t.tower)return;const s=t.kind==='ship'&&t.boss?sec/2:sec;t.frozen=Math.max(t.frozen??0,s);spawnFrost(t,s);}
+function later(t:number,fn:()=>void){abilityQueue.push({t,fn});}
+function updateEliteAbilities(dt:number){
+  domeTimer=Math.max(0,domeTimer-dt);steamTimer=Math.max(0,steamTimer-dt);moonTimer=Math.max(0,moonTimer-dt);bannerTimer=Math.max(0,bannerTimer-dt);
+  rageTimer=Math.max(0,rageTimer-dt);coralTimer=Math.max(0,coralTimer-dt);stealthTimer=Math.max(0,stealthTimer-dt);playerHitClock+=dt;
+  for(let i=abilityQueue.length-1;i>=0;i--){const q=abilityQueue[i];q.t-=dt;if(q.t<=0){abilityQueue.splice(i,1);q.fn();}}
+  for(let i=lavaPools.length-1;i>=0;i--){const l=lavaPools[i];l.life-=dt;l.tick-=dt;if(l.tick<=0){l.tick=.5;targetsNear(l,80).forEach(t=>abilityHit(t,l.dps*.5,true));}if(l.life<=0)lavaPools.splice(i,1);}
+  if(krakenHold){const k=krakenHold,t=k.target;k.time-=dt;
+    if(k.time<=0||!targetExists(t))krakenHold=null;
+    else{const d=Math.max(1,dist(player,t)),want={x:player.x+(t.x-player.x)/d*110,y:player.y+(t.y-player.y)/d*110};t.x+=(want.x-t.x)*Math.min(1,dt*5);t.y+=(want.y-t.y)*Math.min(1,dt*5);t.frozen=Math.max(t.frozen??0,.1);}}
+  if(voidHole){const v=voidHole;v.time-=dt;
+    for(const t of targetsNear(v,400))if(!immovable(t)){const d=Math.max(1,dist(t,v)),pull=Math.min(d,160*dt);t.x-=(t.x-v.x)/d*pull;t.y-=(t.y-v.y)/d*pull;}
+    if(v.time<=0){voidHole=null;targetsNear(v,150).forEach(t=>abilityHit(t,v.damage));burst(v.x,v.y,true);playExplosion();}}
+  if(coralTimer>0){state.hp=Math.min(effectiveMaxHp(),state.hp+effectiveMaxHp()*.05*dt);targetsNear(player,300).forEach(t=>{t.slowTimer=Math.max(t.slowTimer,.5);});}
+}
+function activateEliteAbility(){
+  if(!eliteEnabled()){toast('Elit yetenek için TERSANE\'den bir elit gemi seç');return;}
+  const ship=eliteShip();
+  if(eliteAbility.cooldown>0){toast(`${ship.ability} ${Math.ceil(eliteAbility.cooldown)} sn sonra hazır`);return;}
+  const t=selected&&targetExists(selected)?selected:null;
+  if(ship.needsTarget){if(!t){toast(`${ship.ability} için önce bir hedef seç`);return;}if(dist(player,t)>effectiveRange()+150){toast('Hedef yetenek menzilinin dışında');return;}}
+  const P=salvoPower();let active=.8;
+  switch(ship.id){
+    case 'phantom':ghostTimer=5;active=5;spawnText(player,'HAYALET GEÇİŞ','#7fffe0');playWind();break;
+    case 'magma':{const c={x:t!.x,y:t!.y};
+      for(let i=0;i<5;i++){const d=i*.14,at=i?{x:c.x+(Math.random()-.5)*150,y:c.y+(Math.random()-.5)*100}:c;spawnMeteor(at,d);later(d+.45,()=>{targetsNear(at,70).forEach(x=>abilityHit(x,P*.5));burst(at.x,at.y,true);playExplosion();});}
+      later(1.1,()=>{spawnLavaPool(c,4);lavaPools.push({x:c.x,y:c.y,life:4,tick:0,dps:P*.15});});screenTint(.25,'255,90,20');break;}
+    case 'glacial':abilityHit(t!,P*.5);if(targetExists(t!)){if(t!.kind==='ship'&&t!.tower)toast('Kuleler dondurulamaz');else freezeTarget(t!,4);}break;
+    case 'kraken':spawnTentacles(t!,3);abilityHit(t!,P*.8);if(targetExists(t!)){if(immovable(t!)){if(!(t!.kind==='ship'&&t!.tower))t!.frozen=Math.max(t!.frozen??0,1.5);}else krakenHold={target:t!,time:3};}playSplash();break;
+    case 'ironclad':steamTimer=6;active=6;spawnSteam(player,6);playWind();break;
+    case 'crimson':moonTimer=8;active=8;spawnBloodMoon(player,8);screenTint(.35,'150,20,30');break;
+    case 'atlantean':domeTimer=5;active=5;spawnDome(player,5);playSplash();break;
+    case 'bone':{const tg=t!;spawnScythe(tg);later(.35,()=>{if(!targetExists(tg))return;
+      if(!immovable(tg)&&tg.hp<tg.maxHp*.2){spawnText(tg,'İNFAZ','#d9f7ff');spawnSoul(tg,player);abilityHit(tg,tg.hp+1,true);}
+      else{spawnSoul(tg,player);abilityHit(tg,P*2.5);}});break;}
+    case 'tempest':{const chain:Target[]=[t!];
+      for(let j=0;j<2;j++){const last=chain[chain.length-1];let best:Target|null=null,bd=380;[...enemies,...monsters].forEach(x=>{if(chain.includes(x))return;const d=dist(x,last);if(d<bd){bd=d;best=x;}});if(best)chain.push(best);else break;}
+      spawnLightning(player,chain[0]);abilityHit(chain[0],P*1.5);
+      for(let j=1;j<chain.length;j++){const a=chain[j-1],b=chain[j],from={x:a.x,y:a.y};later(j*.15,()=>{if(!targetExists(b))return;spawnLightning(from,b,.55,false);abilityHit(b,P*(1.5-j*.3));});}
+      break;}
+    case 'sovereign':bannerTimer=10;active=10;spawnBanner(player,10);playLevelUp();break;
+    case 'jade':{const ang=Math.atan2(t!.y-player.y,t!.x-player.x),len=effectiveRange()+40,dx=Math.cos(ang),dy=Math.sin(ang),o={x:player.x,y:player.y};spawnBreath(player,ang,len,1.2);
+      later(.2,()=>{[...enemies,...monsters].forEach(x=>{const rx=x.x-o.x,ry=x.y-o.y,along=rx*dx+ry*dy,side=Math.abs(rx*dy-ry*dx),r=x.kind==='ship'?(x.hitRadius??25):x.radius;if(along>0&&along<len&&side<55+r){x.burnTimer=3;x.burnDps=Math.max(x.burnDps??0,P*.1);abilityHit(x,P*2);}});});break;}
+    case 'ragnarok':rageTimer=4;active=4;spawnRage(player,4);screenTint(.3,'200,30,10');break;
+    case 'void':voidHole={x:t!.x,y:t!.y,time:3,damage:P*2};spawnVortex(voidHole,3);active=3;break;
+    case 'coral':coralTimer=6;active=6;spawnCoral(player,6);break;
+    case 'sand':stealthTimer=5;active=5;spawnSun(player,5);targetsNear(player,350).forEach(x=>{x.cooldown=Math.max(x.cooldown,2);spawnBlind(x,2);});playWind();break;
+  }
+  eliteAbility.active=active;eliteAbility.cooldown=ELITE_COOLDOWN*bonus.cooldown;
+}
 function toggleConsumable(id:ConsumableId){
   const c=CONSUMABLES[id];if(!consumableOn[id]&&arsenal[id]<=0){toast(`${c.name} kalmadı — MALZEMELER'den alabilirsin`);return;}
   consumableOn[id]=!consumableOn[id];if(consumableOn[id]&&id==='shield')playShield();toast(`${c.name} ${consumableOn[id]?'açıldı':'kapatıldı'}`);renderQuickSlots();
@@ -1335,10 +1430,12 @@ function shipDirectionFrame(angle:number){return SHIP_DIRECTION_FRAMES[shipCompa
 const eliteDirImages=new Map<string,HTMLImageElement>();
 function eliteDirImage(id:string){let im=eliteDirImages.get(id);if(!im){im=new Image();im.decoding='async';im.src=`/assets/elite-dir-${id}-v1.webp?r=${SHIP_ART_REV}`;eliteDirImages.set(id,im);}return im;}
 const ELITE_FRAME={w:221,h:256,scale:.56};
+let ghostFade=0;
+const shipAlpha=()=>ghostFade>0?ghostFade:ghostTimer>0?.55:stealthTimer>0?.4:1;
 function drawEliteDirectionalShip(s:Vec){
   const id=eliteShip().id,dir=eliteDirImage(id);
-  ctx.save();ctx.translate(s.x,s.y);ctx.globalAlpha=state.invulnerable&&Math.floor(performance.now()/120)%2?.55:1;
-  ctx.shadowColor='#000b';ctx.shadowBlur=13;ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+  ctx.save();ctx.translate(s.x,s.y);ctx.globalAlpha=(state.invulnerable&&Math.floor(performance.now()/120)%2?.55:1)*shipAlpha();if(ghostTimer>0){ctx.filter='saturate(.35) brightness(1.35)';ctx.shadowColor='#5fffd0';};
+  ctx.shadowColor=ghostTimer>0?'#5fffd0':'#000b';ctx.shadowBlur=13;ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
   if(dir.complete&&dir.naturalWidth){const {frame:f,mirror}=eliteDirFrame(id,shipCompass(player.angle)),{w,h,scale}=ELITE_FRAME;if(mirror)ctx.scale(-1,1);ctx.drawImage(dir,(f%4)*w,Math.floor(f/4)*h,w,h,-w*scale/2,-h*scale/2,w*scale,h*scale);ctx.restore();return true;}
   // Yön sayfası yüklenene kadar yan görünüş (sağa giderken aynalanır)
   const im=eliteArtImage(id);if(!im.complete||!im.naturalWidth){ctx.restore();return false;}
@@ -1351,7 +1448,7 @@ function drawSpecialShip(s:Vec){
   const sp=specialById(activeSkin);if(!sp)return false;
   const src=`${sp.dir??sp.art}?r=${SHIP_ART_REV}`;let im=specialImages.get(src);if(!im){im=new Image();im.decoding='async';im.src=src;specialImages.set(src,im);}
   if(!im.complete||!im.naturalWidth)return false;
-  ctx.save();ctx.translate(s.x,s.y);ctx.globalAlpha=state.invulnerable&&Math.floor(performance.now()/120)%2?.55:1;ctx.shadowColor='#000b';ctx.shadowBlur=13;
+  ctx.save();ctx.translate(s.x,s.y);ctx.globalAlpha=(state.invulnerable&&Math.floor(performance.now()/120)%2?.55:1)*shipAlpha();ctx.shadowColor='#000b';ctx.shadowBlur=13;if(ghostTimer>0){ctx.filter='saturate(.35) brightness(1.35)';ctx.shadowColor='#5fffd0';}
   if(sp.dir){const f=shipDirectionFrame(player.angle),c=im.naturalWidth/4;ctx.drawImage(im,(f%4)*c,Math.floor(f/4)*c,c,c,-80,-86,160,160);ctx.restore();return true;}
   specialFacingDir=specialFacing(player.angle,specialFacingDir);
   if(specialFacingDir>0)ctx.scale(-1,1);ctx.drawImage(im,-78,-96,156,156);ctx.restore();return true;
@@ -1365,7 +1462,7 @@ function drawPlayerShip(){
   if(!directionalShipImage.complete||!directionalShipImage.naturalWidth){
     if(!playerShipImage.complete||!playerShipImage.naturalWidth){drawShip(player,player.angle,'#173f48',1.1);return;}
   }
-  ctx.save();ctx.translate(s.x,s.y);ctx.shadowColor='#000b';ctx.shadowBlur=13;ctx.globalAlpha=state.invulnerable&&Math.floor(performance.now()/120)%2?.55:1;
+  ctx.save();ctx.translate(s.x,s.y);ctx.shadowColor='#000b';ctx.shadowBlur=13;ctx.globalAlpha=(state.invulnerable&&Math.floor(performance.now()/120)%2?.55:1)*shipAlpha();if(ghostTimer>0){ctx.filter='saturate(.35) brightness(1.35)';ctx.shadowColor='#5fffd0';};
   if(directionalShipImage.complete&&directionalShipImage.naturalWidth){
     const frame=shipDirectionFrame(player.angle),sx=(frame%4)*256,sy=Math.floor(frame/4)*256;
     ctx.drawImage(directionalShipImage,sx,sy,256,256,-80,-86,160,160);
@@ -1481,12 +1578,15 @@ function draw(){
   drawSeaGlints(w,h);
   ctx.globalAlpha=.12;ctx.fillStyle=th.label;ctx.font='700 42px Cinzel';ctx.textAlign='center';for(const label of map.labels){const p=worldToScreen(label);ctx.fillText(label.text,p.x,p.y);}ctx.globalAlpha=1;
   drawCoordGrid();drawMapEdges();islands.forEach(drawIsland);drawFleetIsland();lootChests.forEach(drawLootChest);drawTreasureMark();sparkles.forEach(drawSparkle);mines.forEach(m=>{const p=worldToScreen(m);drawMineSprite(ctx,p.x,p.y,performance.now(),m.arm>0,m.life<5);});monsters.forEach(drawMonster);
-  wrecks.forEach(drawWreck);particles.forEach(p=>{if(UNDER.has(p.kind))drawParticle(p);});shots.forEach(drawShotShadow);
+  wrecks.forEach(drawWreck);drawAbilityFxUnder(ctx,worldToScreen);particles.forEach(p=>{if(UNDER.has(p.kind))drawParticle(p);});shots.forEach(drawShotShadow);
   wakes.forEach((_,o)=>drawWake(o));
   [...enemies].sort((a,b)=>a.y-b.y).forEach(e=>{const s=worldToScreen(e);if(e.boss)drawBossAura(e,s);if(!e.tower)drawHullWater(e,hullLength(e),shipMoving(e));const raster=e.tower?drawBastion(ctx,e.towerIndex??0,s.x,s.y):e.def?drawNpcShip(ctx,e.def.sprite,e.def.span,s.x,s.y,e.angle,performance.now()):false;if(!raster)drawShip(e,e.angle,e.color);const top=raster?(e.tower?TOWER_LABEL_OFFSET:shipLabelOffset(e.def!.span)):-42;if(e.boss){drawBossFlag(s,top);drawBossPlate(e,s,top);return;}const bw=e.tower||e.role==='heavy'?72:56;drawHealthBar(s.x,s.y+top,bw,e.hp/e.maxHp,e.tower?'#f09a4f':e.role==='heavy'?'#f0584a':'#4fd0da');ctx.fillStyle='#e6dccb';ctx.font='600 10px Inter';ctx.textAlign='center';ctx.shadowColor='#000';ctx.shadowBlur=3;ctx.fillText(e.name,s.x,s.y+top-7);ctx.shadowBlur=0;});
   if(selected&&targetExists(selected)){const t=worldToScreen(selected);ctx.strokeStyle='#f1c662';ctx.lineWidth=2;ctx.beginPath();ctx.arc(t.x,t.y,selected.kind==='monster'?selected.radius+10:34,0,7);ctx.stroke();}
-  drawHullWater(player,hullLength(player),shipMoving(player));drawPlayerShip();drawPlayerLabel();
+  drawHullWater(player,hullLength(player),shipMoving(player));
+  if(ghostTimer>0){const px=player.x,py=player.y;ghostTrail.forEach((p,i)=>{ghostFade=(i+1)/(ghostTrail.length+1)*.35;player.x=p.x;player.y=p.y;drawPlayerShip();});ghostFade=0;player.x=px;player.y=py;}
+  drawPlayerShip();drawPlayerLabel();
   particles.forEach(p=>{if(!UNDER.has(p.kind))drawParticle(p);});shots.forEach(drawShotBall);
+  drawAbilityFx(ctx,worldToScreen,innerWidth,innerHeight);
   if(consumableOn.shield){const p=worldToScreen(player),t=performance.now()/1000,g=ctx.createRadialGradient(p.x,p.y,30,p.x,p.y,62);g.addColorStop(0,'#9fe8ff00');g.addColorStop(.75,'#9fe8ff30');g.addColorStop(1,'#d4a64c88');ctx.fillStyle=g;ctx.beginPath();ctx.arc(p.x,p.y,62,0,Math.PI*2);ctx.fill();ctx.strokeStyle=`rgba(212,166,76,${.55+Math.sin(t*6)*.25})`;ctx.lineWidth=2;ctx.beginPath();ctx.arc(p.x,p.y,62,0,Math.PI*2);ctx.stroke();}
   if(destination){const d=worldToScreen(destination),p=worldToScreen(player);ctx.strokeStyle='#e7cf8d55';ctx.setLineDash([3,8]);ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(d.x,d.y);ctx.stroke();ctx.setLineDash([]);ctx.strokeStyle='#e7cf8d';ctx.beginPath();ctx.arc(d.x,d.y,9,0,7);ctx.stroke();}
   const ps=worldToScreen(player);ctx.strokeStyle=selected?'#e8cf934d':'#e8cf9328';ctx.setLineDash([4,7]);ctx.beginPath();ctx.arc(ps.x,ps.y,selected?effectiveRange():115,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
@@ -1539,4 +1639,4 @@ function drawMinimap(){const W=170,H=125,sx=(x:number)=>x/WORLD_WIDTH*W,sy=(y:nu
 let manualClock=false;
 let last=performance.now();function loop(now:number){const dt=Math.min(.033,(now-last)/1000);last=now;if(!manualClock){update(dt);draw();}requestAnimationFrame(loop);}renderQuickSlots();updateUI();requestAnimationFrame(loop);
 // Yalnızca geliştirme sunucusunda: tarayıcı testleri için durum erişimi.
-if(import.meta.env.DEV)(window as any).__ky={treasure,rollTreasurePart,manual:(on:boolean)=>{manualClock=on;},step:(dt:number)=>{update(dt);draw();},noFade:()=>{mapFade=0;},cinematic,makeShip,NPCS,MONSTERS,state,player,camera,enemies,monsters,respawn,enterMap,mapDef,fleetOwner,lootChests,sparkles,sinkEnemy,shots,particles,wrecks,select:(t:Target)=>{selected=t;state.attacking=true;},route:(v:Vec)=>{routeTarget=navigablePoint(v);destination=routeVia(routeTarget);},fleetNav,get routeTarget(){return routeTarget;},get selected(){return selected;},get destination(){return destination;}};
+if(import.meta.env.DEV)(window as any).__ky={elite:(id:EliteShipId)=>{activeEliteShip=id;activeShip=id;activeSkin=null;eliteAbility.cooldown=0;activateEliteAbility();},treasure,rollTreasurePart,manual:(on:boolean)=>{manualClock=on;},step:(dt:number)=>{update(dt);draw();},noFade:()=>{mapFade=0;},cinematic,makeShip,NPCS,MONSTERS,state,player,camera,enemies,monsters,respawn,enterMap,mapDef,fleetOwner,lootChests,sparkles,sinkEnemy,shots,particles,wrecks,select:(t:Target)=>{selected=t;state.attacking=true;},route:(v:Vec)=>{routeTarget=navigablePoint(v);destination=routeVia(routeTarget);},fleetNav,get routeTarget(){return routeTarget;},get selected(){return selected;},get destination(){return destination;}};
