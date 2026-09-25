@@ -4,7 +4,7 @@ export type MapKey='1/1'|'1/2'|'2/1'|'2/2'|'3/1'|'3/2'|'4/1'|'4/2'|'5/1'|'5/2'|'
 export type IslandLook='verdant'|'misty'|'coral'|'haven'|'crimson'|'storm'|'ice'|'toxic'|'lava'|'abyss';
 export type FleetTheme='verdant'|'coral'|'misty'|'crimson'|'ice'|'toxic'|'lava'|'storm'|'abyss';
 export type Weather='fog'|'snow'|'embers'|'spores'|'storm'|'motes'|'sparkle'|'dust'|null;
-export type WorldIsland={x:number;y:number;r:number;name:string;look:IslandLook;variant:0|1;flip?:boolean};
+export type WorldIsland={x:number;y:number;r:number;name:string;look:IslandLook;variant:0|1|2|3|4|5;flip?:boolean};
 
 export const WORLD_WIDTH=6000,WORLD_HEIGHT=4000;
 export const MAX_LEVEL=8;
@@ -141,17 +141,17 @@ export const fleetReward=(tier:number)=>({gold:300*tier,xp:Math.round(500*Math.p
 
 // ---------------------------------------------------------------- Denizler
 export type MapDef={key:MapKey;tier:number;name:string;description:string;safe:boolean;npcs:[string,string];monster:string;npcCount:number;heavyShare:number;islands:WorldIsland[];fleet:{x:number;y:number;name:string};labels:{text:string;x:number;y:number}[];spawn:{x:number;y:number}};
-const I=(x:number,y:number,r:number,name:string,look:IslandLook,variant:0|1,flip=false):WorldIsland=>({x,y,r,name,look,variant,flip});
-function sea(key:MapKey,name:string,description:string,opts:{islands:[number,number,number,string,0|1,boolean?][];fleet:[number,number,string];labels?:[string,number,number][];safe?:boolean;look?:IslandLook;count?:number;heavy?:number}):MapDef{
+const I=(x:number,y:number,r:number,name:string,look:IslandLook,variant:0|1|2|3|4|5,flip=false):WorldIsland=>({x,y,r,name,look,variant,flip});
+function sea(key:MapKey,name:string,description:string,opts:{islands:[number,number,number,string,0|1|2|3|4|5,boolean?][];fleet:[number,number,string];labels?:[string,number,number][];safe?:boolean;look?:IslandLook;count?:number;heavy?:number}):MapDef{
   const tier=tierOf(key),look=opts.look??THEMES[tier].look,sub=key.split('/')[1];
   // Her deniz en az altı doğal ada/çıkıntı taşır. Ek adalar sabit konumludur; kayıt/yükleme arasında değişmez.
   const source=[...opts.islands];
-  const extra:[[number,number,number,string,0|1,boolean?],[number,number,number,string,0|1,boolean?],[number,number,number,string,0|1,boolean?]]=[
-    [4300,720,145,`${name} Kuzey Kayalığı`,0,true],[4550,3000,165,`${name} Dış Resifi`,1,false],[3350,3350,135,`${name} Yalnız Kayası`,0,false]
+  const extra:[[number,number,number,string,0|1|2|3|4|5,boolean?],[number,number,number,string,0|1|2|3|4|5,boolean?],[number,number,number,string,0|1|2|3|4|5,boolean?]]=[
+    [4300,720,145,`${name} Kuzey Kayalığı`,3,true],[4550,3000,165,`${name} Dış Resifi`,4,false],[3350,3350,135,`${name} Yalnız Kayası`,5,false]
   ];
   for(const a of extra)if(source.length<6)source.push(a);
   return{key,tier,name,description,safe:!!opts.safe,npcs:[`n${tier}-${sub}-light`,`n${tier}-${sub}-heavy`],monster:`m${tier}-${sub}`,npcCount:opts.count??(7+Math.min(4,tier-1)),heavyShare:opts.heavy??(.3+tier*.03),
-    islands:source.map(([x,y,r,n,v,f])=>I(x,y,r,n,look,v,!!f)),fleet:{x:opts.fleet[0],y:opts.fleet[1],name:opts.fleet[2]},labels:(opts.labels??[]).map(([text,x,y])=>({text,x,y})),spawn:{x:opts.fleet[0],y:opts.fleet[1]+530}};
+    islands:source.map(([x,y,r,n,v,f],idx)=>I(x,y,r,n,look,(idx<3?idx:v) as 0|1|2|3|4|5,!!f)),fleet:{x:opts.fleet[0],y:opts.fleet[1],name:opts.fleet[2]},labels:(opts.labels??[]).map(([text,x,y])=>({text,x,y})),spawn:{x:opts.fleet[0],y:opts.fleet[1]+530}};
 }
 export const MAPS:Record<MapKey,MapDef>={
   '1/1':{...sea('1/1','Sığınak Koyu','Savaşa kapalı başlangıç denizi. Filo adanın lagününde gövde kendiliğinden onarılır; buradaki gemiler sen saldırmadıkça ateş açmaz.',
