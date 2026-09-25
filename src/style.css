@@ -517,7 +517,7 @@ body.shop-open .market-overlay,body.shop-open .ship-overlay,body.shop-open .load
 .dig-prompt em{display:block;width:0;height:100%;background:linear-gradient(90deg,#f1c662,#ffe3a3)}
 .event-row.treasure{border-color:#c9a06088}.event-row.treasure small{color:#e2c68a}
 /* Günlük ödül */
-.daily-window{pointer-events:auto;width:min(860px,94vw);padding:18px 20px;border:1px solid #d0a95b;border-radius:12px;background:linear-gradient(#0d2a31f5,#061519f5);box-shadow:0 20px 60px #000c}
+.daily-window{width:min(860px,94vw);padding:18px 20px;border:1px solid #d0a95b;border-radius:12px;background:linear-gradient(#0d2a31f5,#061519f5);box-shadow:0 20px 60px #000c}
 .daily-window header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #d0a95b33;padding-bottom:10px;margin-bottom:12px}
 .daily-window h2{margin:2px 0 0;color:#f3d496;font:700 20px Cinzel;letter-spacing:.1em}
 .daily-window header button{width:36px;height:36px;border:1px solid #b58d4d66;border-radius:50%;background:#10252b;color:#eacb90;font-size:22px;cursor:pointer}
