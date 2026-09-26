@@ -60,8 +60,7 @@ function drawBolt(ctx:CanvasRenderingContext2D,b:Fx,w2s:(v:Vec)=>Vec){
   const r=rng(b.seed+Math.floor(b.t/.045)*97),src={x:a.x,y:a.y-(b.ship?38:0)},len=Math.hypot(c.x-src.x,c.y-src.y);
   const main=jag(src,c,r,Math.min(90,len*.28),6);
   ctx.save();ctx.globalCompositeOperation='lighter';ctx.lineCap='round';ctx.lineJoin='round';ctx.globalAlpha=alpha;
-  // Dış elektrik aurası + mavi enerji gövdesi + beyaz sıcak çekirdek.
-  stroke(ctx,main,20,'rgba(55,95,255,.16)',34);stroke(ctx,main,12,'rgba(90,140,255,.35)',24);stroke(ctx,main,5,'rgba(150,200,255,.8)',12);stroke(ctx,main,2,'#ffffff',6);
+  stroke(ctx,main,12,'rgba(90,140,255,.35)',24);stroke(ctx,main,5,'rgba(150,200,255,.8)',12);stroke(ctx,main,2,'#ffffff',6);
   for(let i=0;i<3;i++){const p=main[4+Math.floor(r()*(main.length-8))],ang=Math.atan2(c.y-src.y,c.x-src.x)+(r()-.5)*1.8,l=30+r()*50;
     const br=jag(p,{x:p.x+Math.cos(ang)*l,y:p.y+Math.sin(ang)*l},r,22,3);stroke(ctx,br,3,'rgba(150,200,255,.7)',8);stroke(ctx,br,1.2,'#fff',0);}
   ctx.shadowBlur=0;glow(ctx,c.x,c.y,70,`rgba(220,235,255,${.9*alpha})`,'rgba(80,120,255,0)');
@@ -78,7 +77,7 @@ function shard(ctx:CanvasRenderingContext2D,x:number,y:number,h:number,ang:numbe
 function drawFrost(ctx:CanvasRenderingContext2D,f:Fx,w2s:(v:Vec)=>Vec){
   const s=w2s(f.a!),r=rng(f.seed),t=f.t,grow=Math.min(1,t/.35),fade=Math.min(1,(f.dur-t)/.5),a=grow*fade;
   ctx.save();
-  if(t<.6){const rr=40+t*260;ctx.strokeStyle=`rgba(200,240,255,${(1-t/.6)*.8})`;ctx.lineWidth=6;ctx.beginPath();ctx.ellipse(s.x,s.y+6,rr,rr*.62,0,0,TAU);ctx.stroke();ctx.strokeStyle=`rgba(120,205,255,${(1-t/.6)*.35})`;ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(s.x,s.y+6,rr*1.22,rr*.62*1.22,0,0,TAU);ctx.stroke();}
+  if(t<.6){const rr=40+t*260;ctx.strokeStyle=`rgba(200,240,255,${(1-t/.6)*.8})`;ctx.lineWidth=6;ctx.beginPath();ctx.ellipse(s.x,s.y+6,rr,rr*.62,0,0,TAU);ctx.stroke();}
   const g=ctx.createRadialGradient(s.x,s.y,10,s.x,s.y,78);g.addColorStop(0,`rgba(190,235,255,${.55*a})`);g.addColorStop(.7,`rgba(120,200,245,${.35*a})`);g.addColorStop(1,'rgba(120,200,245,0)');
   ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(s.x,s.y,78,56,0,0,TAU);ctx.fill();
   ctx.globalAlpha=a;
@@ -94,7 +93,7 @@ function drawMeteor(ctx:CanvasRenderingContext2D,f:Fx,w2s:(v:Vec)=>Vec){
   if(t<.45){const k=t/.45,x=s.x+(1-k)*140,y=s.y-(1-k)*420;
     const g=ctx.createLinearGradient(x+60,y-180,x,y);g.addColorStop(0,'rgba(255,120,20,0)');g.addColorStop(1,'rgba(255,190,60,.9)');
     ctx.strokeStyle=g;ctx.lineWidth=10;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(x+60,y-180);ctx.lineTo(x,y);ctx.stroke();
-    glow(ctx,x,y,34,'rgba(255,255,220,1)','rgba(255,70,5,0)');ctx.strokeStyle='rgba(255,190,80,.35)';ctx.lineWidth=3;ctx.beginPath();ctx.arc(x,y,28+Math.sin(t*30)*4,0,TAU);ctx.stroke();
+    glow(ctx,x,y,22,'rgba(255,255,200,1)','rgba(255,90,10,0)');
     ctx.strokeStyle='rgba(0,0,0,.25)';ctx.lineWidth=1;ctx.beginPath();ctx.ellipse(s.x,s.y+8,18*k,8*k,0,0,TAU);ctx.stroke();}
   else{const k=(t-.45)/.25;ctx.globalAlpha=Math.max(0,1-k);glow(ctx,s.x,s.y,40+k*80,'rgba(255,230,140,1)','rgba(255,70,0,0)');
     const r=rng(f.seed);for(let i=0;i<12;i++){const ang=r()*TAU,d=k*(60+r()*50);ctx.fillStyle=i%2?'#ffb040':'#ff5a14';ctx.beginPath();ctx.arc(s.x+Math.cos(ang)*d,s.y+Math.sin(ang)*d*.6-k*20,3,0,TAU);ctx.fill();}}
@@ -105,7 +104,6 @@ function drawLava(ctx:CanvasRenderingContext2D,f:Fx,w2s:(v:Vec)=>Vec){
   ctx.save();ctx.globalAlpha=a;
   const g=ctx.createRadialGradient(s.x,s.y,6,s.x,s.y,120);g.addColorStop(0,'rgba(255,210,90,.95)');g.addColorStop(.45,'rgba(240,80,20,.8)');g.addColorStop(.85,'rgba(90,20,10,.55)');g.addColorStop(1,'rgba(40,10,5,0)');
   ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(s.x,s.y,120,74,0,0,TAU);ctx.fill();
-  ctx.globalCompositeOperation='lighter';for(let j=0;j<3;j++){const rr=38+j*27+Math.sin(t*2.4+j)*5;ctx.strokeStyle=`rgba(255,${115+j*35},25,${.34-j*.07})`;ctx.lineWidth=5-j;ctx.beginPath();ctx.ellipse(s.x,s.y,rr,rr*.58,t*.15,0,TAU);ctx.stroke();}ctx.globalCompositeOperation='source-over';
   for(let i=0;i<9;i++){const ang=r()*TAU,d=r()*90,ph=(t*1.6+r())%1;ctx.fillStyle=`rgba(255,${190+r()*50},90,${(1-ph)*.9})`;ctx.beginPath();ctx.arc(s.x+Math.cos(ang)*d,s.y+Math.sin(ang)*d*.6,3+ph*7,0,TAU);ctx.fill();}
   for(let i=0;i<5;i++){const ph=(t*.5+i/5)%1,x=s.x+(r()-.5)*140;ctx.fillStyle=`rgba(60,50,50,${.35*(1-ph)})`;ctx.beginPath();ctx.arc(x,s.y-ph*90,8+ph*18,0,TAU);ctx.fill();}
   ctx.restore();
@@ -121,8 +119,6 @@ function drawTentacles(ctx:CanvasRenderingContext2D,f:Fx,w2s:(v:Vec)=>Vec){
   ctx.save();ctx.globalAlpha=a;
   const g=ctx.createRadialGradient(s.x,s.y+12,5,s.x,s.y+12,90);g.addColorStop(0,'rgba(60,10,70,.7)');g.addColorStop(1,'rgba(60,10,70,0)');ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(s.x,s.y+12,90,52,0,0,TAU);ctx.fill();
   ctx.strokeStyle=`rgba(200,140,230,.5)`;ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(s.x,s.y+12,70+Math.sin(t*6)*6,40,t,0,TAU);ctx.stroke();
-  // Kraken çıkışında köpük ve mor biyolüminesan su halkaları.
-  for(let j=0;j<2;j++){const rr=62+j*28+Math.sin(t*5+j)*5;ctx.strokeStyle=`rgba(${150+j*35},${115+j*20},220,${.28-j*.07})`;ctx.lineWidth=4-j;ctx.beginPath();ctx.ellipse(s.x,s.y+15,rr,rr*.52,0,0,TAU);ctx.stroke();}
   for(let i=0;i<4;i++){const ang=i/4*TAU+.4,bx=s.x+Math.cos(ang)*70,by=s.y+12+Math.sin(ang)*40,tx=s.x+Math.cos(ang)*18,ty=s.y-10-rise*30;
     tentacle(ctx,bx,by,bx+(tx-bx)*rise,by+(ty-by)*rise,Math.sin(t*4+i)*18,12);}
   ctx.restore();
@@ -130,7 +126,6 @@ function drawTentacles(ctx:CanvasRenderingContext2D,f:Fx,w2s:(v:Vec)=>Vec){
 function drawSteam(ctx:CanvasRenderingContext2D,f:Fx,w2s:(v:Vec)=>Vec){
   const s=w2s(f.a!),a=life(f,.2,.6),r=rng(f.seed),t=f.t;
   ctx.save();ctx.globalAlpha=a;
-  glow(ctx,s.x,s.y-38,82,'rgba(255,175,70,.16)','rgba(255,90,20,0)');
   for(let i=0;i<14;i++){const ph=(t*.7+i/14)%1,x=s.x+(r()-.5)*30+Math.sin(ph*6+i)*10,y=s.y-40-ph*110;ctx.fillStyle=`rgba(235,238,240,${.55*(1-ph)})`;ctx.beginPath();ctx.arc(x,y,10+ph*26,0,TAU);ctx.fill();}
   for(let i=0;i<8;i++){const ph=(t*1.8+r())%1,ang=r()*TAU;ctx.fillStyle=`rgba(255,${150+r()*80},40,${1-ph})`;ctx.fillRect(s.x+Math.cos(ang)*40*ph,s.y-10-ph*40+Math.sin(ang)*15,2.5,2.5);}
   // Dönen dişliler
@@ -141,7 +136,7 @@ function drawSteam(ctx:CanvasRenderingContext2D,f:Fx,w2s:(v:Vec)=>Vec){
 function drawMoon(ctx:CanvasRenderingContext2D,f:Fx,w2s:(v:Vec)=>Vec){
   const s=w2s(f.a!),a=life(f,.4,.6),x=s.x,y=s.y-120+Math.sin(f.t*2)*4;
   ctx.save();ctx.globalAlpha=a;glow(ctx,x,y,60,'rgba(255,60,60,.55)','rgba(255,0,0,0)');
-  ctx.fillStyle='#ff3b3b';ctx.shadowColor='#ff2020';ctx.shadowBlur=30;ctx.beginPath();ctx.arc(x,y,22,0,TAU);ctx.fill();ctx.strokeStyle='rgba(255,80,80,.3)';ctx.lineWidth=3;for(let i=0;i<3;i++){const rr=34+i*14+Math.sin(f.t*3+i)*4;ctx.beginPath();ctx.arc(x,y,rr,0,TAU);ctx.stroke();}
+  ctx.fillStyle='#ff3b3b';ctx.shadowColor='#ff2020';ctx.shadowBlur=24;ctx.beginPath();ctx.arc(x,y,22,0,TAU);ctx.fill();
   ctx.globalCompositeOperation='destination-out';ctx.shadowBlur=0;ctx.beginPath();ctx.arc(x+9,y-5,19,0,TAU);ctx.fill();
   ctx.restore();
 }
@@ -150,19 +145,14 @@ function drawDome(ctx:CanvasRenderingContext2D,f:Fx,w2s:(v:Vec)=>Vec){
   ctx.save();ctx.globalAlpha=a;
   const g=ctx.createRadialGradient(s.x-20,s.y-30,10,s.x,s.y,R);g.addColorStop(0,'rgba(200,255,250,.12)');g.addColorStop(.8,'rgba(80,220,220,.22)');g.addColorStop(1,'rgba(160,255,250,.55)');
   ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(s.x,s.y-6,R,R*.82,0,0,TAU);ctx.fill();
-  ctx.strokeStyle='rgba(190,255,250,.8)';ctx.lineWidth=2.5;ctx.shadowColor='#8ffff0';ctx.shadowBlur=14;ctx.beginPath();ctx.ellipse(s.x,s.y-6,R,R*.82,0,0,TAU);ctx.stroke();ctx.shadowBlur=0;
-  // Kubbe yüzeyinde dönen enerji düğümleri, kalkanın hacmini daha okunur yapar.
-  for(let i=0;i<8;i++){const q=i/8*TAU+t*.65,px=s.x+Math.cos(q)*R*.88,py=s.y-6+Math.sin(q)*R*.82;ctx.fillStyle='rgba(220,255,250,.65)';ctx.beginPath();ctx.arc(px,py,2.2,0,TAU);ctx.fill();}
+  ctx.strokeStyle='rgba(190,255,250,.8)';ctx.lineWidth=2.5;ctx.beginPath();ctx.ellipse(s.x,s.y-6,R,R*.82,0,0,TAU);ctx.stroke();
   for(let i=0;i<3;i++){ctx.strokeStyle=`rgba(220,255,255,${.35-i*.1})`;ctx.lineWidth=1.5;ctx.beginPath();ctx.ellipse(s.x,s.y-6,R*(.55+i*.14)+Math.sin(t*3+i)*3,R*.8*(.55+i*.14),0,Math.PI*1.1,Math.PI*1.9);ctx.stroke();}
   ctx.fillStyle='rgba(255,255,255,.6)';ctx.beginPath();ctx.ellipse(s.x-R*.4,s.y-R*.5,R*.16,R*.07,-.6,0,TAU);ctx.fill();
   if(end<.4){const k=1-end/.4,r=rng(f.seed);for(let i=0;i<14;i++){const ang=r()*TAU;ctx.fillStyle='rgba(180,240,255,.8)';ctx.beginPath();ctx.arc(s.x+Math.cos(ang)*R*(1+k*.6),s.y-6+Math.sin(ang)*R*.8*(1+k*.6),3,0,TAU);ctx.fill();}}
   ctx.restore();
 }
 function drawRipple(ctx:CanvasRenderingContext2D,f:Fx,w2s:(v:Vec)=>Vec){
-  const s=w2s(f.b!),k=f.t/f.dur,a=1-k;ctx.save();ctx.globalCompositeOperation='lighter';
-  // Tek çizgi yerine üç katmanlı su şok halkası: merkez köpüğü + ana halka + dış kırınım.
-  for(let i=0;i<3;i++){const kk=Math.max(0,Math.min(1,k-i*.08)),r=12+kk*(58+i*16);ctx.strokeStyle=`rgba(${205+i*12},255,255,${a*(.62-i*.13)})`;ctx.lineWidth=4-i;ctx.beginPath();ctx.ellipse(s.x,s.y,r,r*.55,0,0,TAU);ctx.stroke();}
-  glow(ctx,s.x,s.y,38+k*42,`rgba(220,255,255,${a*.22})`,'rgba(100,220,255,0)');ctx.restore();
+  const s=w2s(f.b!),k=f.t/f.dur;ctx.save();ctx.strokeStyle=`rgba(200,255,255,${1-k})`;ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(s.x,s.y,10+k*40,(10+k*40)*.6,0,0,TAU);ctx.stroke();ctx.restore();
 }
 function drawScythe(ctx:CanvasRenderingContext2D,f:Fx,w2s:(v:Vec)=>Vec){
   const s=w2s(targetOrLast(f)),k=f.t/f.dur,a=life(f,.15,.25),swing=-1.4+Math.min(1,k/.6)*2.6;
@@ -175,11 +165,9 @@ function drawScythe(ctx:CanvasRenderingContext2D,f:Fx,w2s:(v:Vec)=>Vec){
 }
 function targetOrLast(f:Fx){if(f.a){f.b={x:f.a.x,y:f.a.y};}return f.b!;}
 function drawSoul(ctx:CanvasRenderingContext2D,f:Fx,w2s:(v:Vec)=>Vec){
-  const k=Math.min(1,f.t/f.dur),from=w2s(f.b!),to=w2s(f.a!),x=from.x+(to.x-from.x)*k,y=from.y+(to.y-from.y)*k-Math.sin(k*Math.PI)*80,r=rng(f.seed);
-  ctx.save();ctx.globalAlpha=1-k*.55;ctx.globalCompositeOperation='lighter';glow(ctx,x,y,34,'rgba(225,255,240,.95)','rgba(50,255,160,0)');
-  // Ruh çekirdeği + arkada kıvrılan iki enerji kuyruğu.
-  ctx.strokeStyle='rgba(120,255,190,.45)';ctx.lineCap='round';for(let j=0;j<2;j++){ctx.lineWidth=5-j*2;ctx.beginPath();for(let i=0;i<8;i++){const q=Math.max(0,k-i*.035),xx=from.x+(to.x-from.x)*q,yy=from.y+(to.y-from.y)*q-Math.sin(q*Math.PI)*80+Math.sin(f.t*9+i+j)*7*(i/8);i?ctx.lineTo(xx,yy):ctx.moveTo(xx,yy);}ctx.stroke();}
-  ctx.fillStyle='rgba(235,255,245,.96)';ctx.beginPath();ctx.arc(x,y-4,7,0,TAU);ctx.fill();for(let i=0;i<7;i++){const a=r()*TAU,d=12+r()*24;ctx.fillStyle='rgba(150,255,205,.7)';ctx.fillRect(x+Math.cos(a)*d,y+Math.sin(a)*d,2,2);}ctx.restore();
+  const k=Math.min(1,f.t/f.dur),from=w2s(f.b!),to=w2s(f.a!),x=from.x+(to.x-from.x)*k,y=from.y+(to.y-from.y)*k-Math.sin(k*Math.PI)*80;
+  ctx.save();ctx.globalAlpha=1-k*.6;glow(ctx,x,y,22,'rgba(200,255,230,1)','rgba(80,255,170,0)');
+  ctx.fillStyle='rgba(220,255,240,.9)';ctx.beginPath();ctx.arc(x,y-4,7,0,TAU);ctx.fill();ctx.restore();
 }
 function drawBanner(ctx:CanvasRenderingContext2D,f:Fx,w2s:(v:Vec)=>Vec){
   const s=w2s(f.a!),a=life(f,.3,.5),t=f.t,rise=Math.min(1,t/.5),x=s.x+22,top=s.y-150;
@@ -210,7 +198,7 @@ function drawBreath(ctx:CanvasRenderingContext2D,f:Fx,w2s:(v:Vec)=>Vec){
 function drawRage(ctx:CanvasRenderingContext2D,f:Fx,w2s:(v:Vec)=>Vec){
   const s=w2s(f.a!),a=life(f,.2,.4),t=f.t,r=rng(f.seed);
   ctx.save();ctx.globalAlpha=a;ctx.globalCompositeOperation='lighter';
-  glow(ctx,s.x,s.y-20,125,'rgba(255,120,30,.38)','rgba(255,30,0,0)');ctx.strokeStyle='rgba(255,175,70,.38)';ctx.lineWidth=4;for(let j=0;j<2;j++){const rr=62+j*24+Math.sin(t*5+j)*5;ctx.beginPath();ctx.ellipse(s.x,s.y+4,rr,rr*.52,0,0,TAU);ctx.stroke();}
+  glow(ctx,s.x,s.y-20,110,'rgba(255,120,30,.35)','rgba(255,30,0,0)');
   for(let i=0;i<16;i++){const ang=i/16*TAU,ph=(t*2+r())%1,x=s.x+Math.cos(ang)*(56+Math.sin(t*5+i)*6),y=s.y+Math.sin(ang)*34-ph*50;ctx.fillStyle=`rgba(255,${80+r()*120},20,${(1-ph)*.85})`;ctx.beginPath();ctx.ellipse(x,y,6*(1-ph)+2,12*(1-ph)+3,0,0,TAU);ctx.fill();}
   ctx.restore();
 }
@@ -224,8 +212,7 @@ function drawVortex(ctx:CanvasRenderingContext2D,f:Fx,w2s:(v:Vec)=>Vec){
   ctx.save();ctx.globalAlpha=a;
   const g=ctx.createRadialGradient(s.x,s.y,4,s.x,s.y,R);g.addColorStop(0,'rgba(0,0,0,1)');g.addColorStop(.3,'rgba(40,0,70,.9)');g.addColorStop(.7,'rgba(140,60,220,.45)');g.addColorStop(1,'rgba(90,20,160,0)');
   ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(s.x,s.y,R,R*.62,0,0,TAU);ctx.fill();
-  glow(ctx,s.x,s.y,Math.max(12,R*.32),'rgba(190,120,255,.28)','rgba(90,20,160,0)');
-  for(let arm=0;arm<5;arm++){ctx.strokeStyle=`rgba(${180+arm*12},${125+arm*6},255,.72)`;ctx.lineWidth=arm===0?5:3;ctx.beginPath();for(let i=0;i<=30;i++){const u=i/30,ang=arm/4*TAU+t*4+u*5,rr=R*(1-u);const x=s.x+Math.cos(ang)*rr,y=s.y+Math.sin(ang)*rr*.62;i?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.stroke();}
+  for(let arm=0;arm<4;arm++){ctx.strokeStyle=`rgba(${190+arm*10},140,255,.7)`;ctx.lineWidth=3;ctx.beginPath();for(let i=0;i<=30;i++){const u=i/30,ang=arm/4*TAU+t*4+u*5,rr=R*(1-u);const x=s.x+Math.cos(ang)*rr,y=s.y+Math.sin(ang)*rr*.62;i?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.stroke();}
   for(let i=0;i<30;i++){const ph=(t*.8+r())%1,ang=r()*TAU+t*3,rr=R*1.4*(1-ph);ctx.fillStyle=`rgba(220,190,255,${ph})`;ctx.fillRect(s.x+Math.cos(ang)*rr,s.y+Math.sin(ang)*rr*.62,2,2);}
   if(f.dur-t<.35){const k=1-(f.dur-t)/.35;ctx.strokeStyle=`rgba(200,150,255,${1-k})`;ctx.lineWidth=8;ctx.beginPath();ctx.ellipse(s.x,s.y,R*(.3+k*1.6),R*.62*(.3+k*1.6),0,0,TAU);ctx.stroke();}
   ctx.restore();
@@ -239,7 +226,7 @@ function coralBranch(ctx:CanvasRenderingContext2D,x:number,y:number,h:number,col
 function drawCoral(ctx:CanvasRenderingContext2D,f:Fx,w2s:(v:Vec)=>Vec){
   const s=w2s(f.a!),a=life(f,.3,.6),grow=Math.min(1,f.t/.6),t=f.t;
   ctx.save();ctx.globalAlpha=a;
-  glow(ctx,s.x,s.y+6,165,'rgba(60,220,200,.22)','rgba(60,220,200,0)');ctx.strokeStyle='rgba(100,255,220,.28)';ctx.lineWidth=3;for(let j=0;j<2;j++){const rr=78+j*34+Math.sin(t*2+j)*4;ctx.beginPath();ctx.ellipse(s.x,s.y+12,rr,rr*.58,0,0,TAU);ctx.stroke();}
+  glow(ctx,s.x,s.y+6,150,'rgba(60,220,200,.18)','rgba(60,220,200,0)');
   const r=rng(f.seed);
   for(let i=0;i<9;i++){const ang=i/9*TAU+.3,rx=s.x+Math.cos(ang)*(95+r()*20),ry=s.y+10+Math.sin(ang)*(58+r()*12);coralBranch(ctx,rx,ry,(10+r()*10)*grow,i%2?'#ff7a3a':'#3ad6c8',rng(f.seed+i));}
   for(let i=0;i<12;i++){const ph=(t*.6+i/12)%1,x=s.x+Math.sin(i*2.1)*50;ctx.fillStyle=`rgba(120,255,160,${(1-ph)*.9})`;ctx.font='700 16px sans-serif';ctx.fillText('+',x,s.y-10-ph*80);}
@@ -254,10 +241,8 @@ function drawSun(ctx:CanvasRenderingContext2D,f:Fx,w2s:(v:Vec)=>Vec){
   ctx.restore();
 }
 function drawBlind(ctx:CanvasRenderingContext2D,f:Fx,w2s:(v:Vec)=>Vec){
-  const s=w2s(f.a!),a=life(f,.1,.3),t=f.t,pulse=.85+Math.sin(t*8)*.15;ctx.save();ctx.globalAlpha=a;ctx.globalCompositeOperation='lighter';
-  glow(ctx,s.x,s.y-70,52*pulse,'rgba(255,235,130,.42)','rgba(255,185,40,0)');ctx.translate(s.x,s.y-70);ctx.rotate(t*2);
-  ctx.fillStyle='#ffe27a';ctx.strokeStyle='#fff2b0';ctx.shadowColor='#ffc33a';ctx.shadowBlur=16;ctx.lineWidth=2;ctx.beginPath();for(let i=0;i<24;i++){const rr=i%2?8:17,g=i/24*TAU;i?ctx.lineTo(Math.cos(g)*rr,Math.sin(g)*rr):ctx.moveTo(Math.cos(g)*rr,Math.sin(g)*rr);}ctx.closePath();ctx.fill();ctx.stroke();
-  ctx.strokeStyle='rgba(255,238,150,.55)';ctx.lineWidth=2;for(let i=0;i<8;i++){const g=i/8*TAU;ctx.beginPath();ctx.moveTo(Math.cos(g)*22,Math.sin(g)*22);ctx.lineTo(Math.cos(g)*(38+8*pulse),Math.sin(g)*(38+8*pulse));ctx.stroke();}ctx.restore();
+  const s=w2s(f.a!),a=life(f,.1,.3),t=f.t;ctx.save();ctx.globalAlpha=a;ctx.translate(s.x,s.y-70);ctx.rotate(t*2);
+  ctx.fillStyle='#ffd24a';ctx.strokeStyle='#8a5a10';ctx.lineWidth=1.5;ctx.beginPath();for(let i=0;i<16;i++){const rr=i%2?7:13,g=i/16*TAU;i?ctx.lineTo(Math.cos(g)*rr,Math.sin(g)*rr):ctx.moveTo(Math.cos(g)*rr,Math.sin(g)*rr);}ctx.closePath();ctx.fill();ctx.stroke();ctx.restore();
 }
 const UNDER=new Set<Kind>(['lava','vortex','coral','ripple']);
 const DRAW:Record<Kind,(ctx:CanvasRenderingContext2D,f:Fx,w2s:(v:Vec)=>Vec)=>void>={bolt:drawBolt,frost:drawFrost,meteor:drawMeteor,lava:drawLava,tentacle:drawTentacles,steam:drawSteam,moon:drawMoon,dome:drawDome,ripple:drawRipple,

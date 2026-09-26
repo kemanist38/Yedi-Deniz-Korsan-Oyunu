@@ -2,9 +2,8 @@
 // Görseller tools/asset-studio içindeki 3B modellerden üretilir (npm run render).
 export type ChestKind='wood'|'gilded';
 
-const ASSET_REV='3d-20260926';
 const cache=new Map<string,HTMLImageElement>();
-function load(src:string){let image=cache.get(src);if(!image){image=new Image();image.decoding='async';image.src=src.startsWith('/assets/')?`${src}${src.includes('?')?'&':'?'}v=${ASSET_REV}`:src;cache.set(src,image);}return image;}
+function load(src:string){let image=cache.get(src);if(!image){image=new Image();image.decoding='async';image.src=src;cache.set(src,image);}return image;}
 const ready=(image:HTMLImageElement)=>image.complete&&image.naturalWidth>0;
 export function preload(srcs:string[]){srcs.forEach(load);}
 
@@ -18,14 +17,8 @@ export function drawNpcShip(ctx:CanvasRenderingContext2D,sprite:string,span:numb
   const step=Math.PI*2/SHIP.dirs,index=((Math.round(angle/step)%SHIP.dirs)+SHIP.dirs)%SHIP.dirs;
   // Kare boyu sayfadan okunur (NPC 192 px, boss 224 px); çapa karenin aynı oranındadır.
   const F=sheet.naturalWidth/SHIP.cols,size=shipDrawSize(span),k=size/F;void time;
-  ctx.save();
-  // Suya oturan yumuşak temas gölgesi geminin sprite gibi yüzmesini engeller; ikinci dar gölge gövde hacmini güçlendirir.
-  ctx.fillStyle='rgba(5,24,31,.25)';ctx.beginPath();ctx.ellipse(x,y+size*.13,size*.34,size*.105,angle,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle='rgba(3,16,22,.18)';ctx.beginPath();ctx.ellipse(x+Math.sin(angle)*4,y+size*.08,size*.23,size*.065,angle,0,Math.PI*2);ctx.fill();
-  ctx.shadowColor='#06151bcc';ctx.shadowBlur=14;ctx.shadowOffsetY=5;
+  ctx.save();ctx.shadowColor='#000a';ctx.shadowBlur=11;ctx.shadowOffsetY=3;
   ctx.drawImage(sheet,(index%SHIP.cols)*F,Math.floor(index/SHIP.cols)*F,F,F,x-F*SHIP.anchorX/SHIP.frame*k,y-F*SHIP.anchorY/SHIP.frame*k,size,size);
-  // Üstten gelen çok hafif sıcak ışık: rasterın detayını bozmadan güverteyi denizden ayırır.
-  ctx.globalCompositeOperation='screen';const shine=ctx.createRadialGradient(x-size*.12,y-size*.24,2,x,y,size*.48);shine.addColorStop(0,'rgba(255,236,194,.10)');shine.addColorStop(1,'rgba(255,236,194,0)');ctx.fillStyle=shine;ctx.beginPath();ctx.ellipse(x,y-size*.05,size*.34,size*.24,0,0,Math.PI*2);ctx.fill();
   ctx.restore();return true;
 }
 
@@ -35,38 +28,43 @@ export function drawMonsterSheet(ctx:CanvasRenderingContext2D,def:{sprite:string
   const F=256,fps=5,t=phase*fps,a=Math.floor(t)%8,b=(a+1)%8,blend=t-Math.floor(t);
   const size=def.span*def.radius/55,k=size/F,dx=x-128*k,dy=y-def.anchorY*k+Math.sin(phase*1.3)*1.5;
   ctx.save();
-  // Canavarın su altındaki kütlesini gösteren geniş gölge + yüzey bozulması, 3B ağırlık hissini artırır.
-  ctx.fillStyle='rgba(4,25,34,.28)';ctx.beginPath();ctx.ellipse(x,y+def.radius*.28,def.radius*.78,def.radius*.25,0,0,Math.PI*2);ctx.fill();
-  const water=ctx.createRadialGradient(x,y+def.radius*.18,def.radius*.12,x,y+def.radius*.18,def.radius*1.08);water.addColorStop(0,'rgba(225,249,247,.14)');water.addColorStop(.58,'rgba(210,246,243,.07)');water.addColorStop(1,'rgba(210,246,243,0)');ctx.fillStyle=water;ctx.beginPath();ctx.ellipse(x,y+def.radius*.18,def.radius*1.08,def.radius*.42,0,0,Math.PI*2);ctx.fill();
-  ctx.shadowColor='#04151dcc';ctx.shadowBlur=16;ctx.shadowOffsetY=5;
   ctx.drawImage(sheet,(a%4)*F,Math.floor(a/4)*F,F,F,dx,dy,size,size);
   ctx.globalAlpha=blend;ctx.drawImage(sheet,(b%4)*F,Math.floor(b/4)*F,F,F,dx,dy,size,size);
-  ctx.globalAlpha=.18;ctx.globalCompositeOperation='screen';const hi=ctx.createRadialGradient(x-size*.13,y-size*.18,2,x,y,size*.42);hi.addColorStop(0,'rgba(210,245,255,.8)');hi.addColorStop(1,'rgba(210,245,255,0)');ctx.fillStyle=hi;ctx.beginPath();ctx.ellipse(x,y-size*.06,size*.3,size*.2,0,0,Math.PI*2);ctx.fill();
   ctx.restore();return true;
 }
 
-// Profesyonel 3B raster adalar: her biyom ayrı 3x2 atlas ve 6 gerçek model silueti kullanır.
-// Dosyalar Asset Studio render hattı tarafından islands-<theme>.webp olarak üretilir.
-export function islandSheetUrl(look:string){return`/assets/islands-${look}.webp`;}
+// Adalar: görünüm başına 2 varyantlı sayfa (512 px). Çizim boyu = 2.36 × ada yarıçapı.
+export function islandSheetUrl(_look:string){return'/assets/islands-seven-seas-v1.webp';}
 export function drawIslandSprite(ctx:CanvasRenderingContext2D,island:{look:string;variant:number;r:number;flip?:boolean},x:number,y:number){
   const sheet=load(islandSheetUrl(island.look));if(!ready(sheet))return false;
-  const frame=((island.variant%6)+6)%6,cw=sheet.naturalWidth/3,ch=sheet.naturalHeight/2,size=island.r*2.55;
-  ctx.save();ctx.translate(x,y);if(island.flip)ctx.scale(-1,1);ctx.drawImage(sheet,(frame%3)*cw,Math.floor(frame/3)*ch,cw,ch,-size/2,-size/2,size,size);ctx.restore();return true;
+  const size=island.r*2.36;ctx.save();ctx.translate(x,y);if(island.flip)ctx.scale(-1,1);
+  const themes=['haven','coral','verdant','misty','ice','storm','abyss','lava'];
+  const frame=Math.max(0,themes.indexOf(island.look))*2+island.variant,cw=sheet.naturalWidth/4,ch=sheet.naturalHeight/4;
+  ctx.drawImage(sheet,(frame%4)*cw,Math.floor(frame/4)*ch,cw,ch,-size/2,-size/2,size,size);ctx.restore();return true;
 }
 
-// Her filo adası kendi biyomuna ait şeffaf 512 px 3B raster kaleyi kullanır.
-// Aynı ada resmi üstüne Canvas rengi bindirmek yerine kale, kaya ve biyom detayları render aşamasında modellenir.
-export const fleetBaseUrl=(theme:string)=>`/assets/fleet-base-${theme}.webp`;
+// Onaylı raster ada (1000 dünya birimi) ve bağımsız dört kule türü.
+export const fleetBaseUrl=(_theme:string)=>'/assets/fleet-base-approved-v1.webp';
 export const fleetTowerUrl=(_theme:string)=>'/assets/fleet-towers-approved-v1.webp';
 export function drawFleetBase(ctx:CanvasRenderingContext2D,theme:string,x:number,y:number){
-  const sheet=load(fleetBaseUrl(theme));if(!ready(sheet))return false;ctx.drawImage(sheet,x-500,y-500,1000,1000);return true;
+  // Approved raster base: transparent sea/lagoon and eight empty foundations.
+  const sheet=load(fleetBaseUrl(theme));if(!ready(sheet))return false;
+  ctx.drawImage(sheet,x-500,y-500,1000,1000);return true;
 }
-export function drawBastion(ctx:CanvasRenderingContext2D,slot:number,x:number,y:number,alpha=1){return drawBuiltTower(ctx,0,slot,x,y,alpha);}
+// Rakip adanın varsayılan top kuleleri; oyuncu kuleleriyle aynı yerleşim.
+export function drawBastion(ctx:CanvasRenderingContext2D,slot:number,x:number,y:number,alpha=1){
+  return drawBuiltTower(ctx,0,slot,x,y,alpha);
+}
+// Filonun diktiği tam kuleler (top, havan, zincir, fener): taş dikme kaidesinin merkezine oturur.
+// Dört eşit sütunlu sayfa; ayak çapası her sütunun ortasında, yüksekliğin %92'sinde.
 export function drawBuiltTower(ctx:CanvasRenderingContext2D,frame:number,slot:number,x:number,y:number,alpha=1){
   const sheet=load(fleetTowerUrl(''));if(slot<0||slot>=8||!ready(sheet))return false;
-  const cellW=sheet.naturalWidth/4,cellH=sheet.naturalHeight,width=110,height=width*cellH/cellW;ctx.save();ctx.globalAlpha=alpha;
-  ctx.drawImage(sheet,frame*cellW,0,cellW,cellH,x-width/2,y-height*.92+8,width,height);ctx.restore();return true;
+  const cellW=sheet.naturalWidth/4,cellH=sheet.naturalHeight,width=110,height=width*cellH/cellW;
+  ctx.save();ctx.globalAlpha=alpha;
+  ctx.drawImage(sheet,frame*cellW,0,cellW,cellH,x-width/2,y-height*.92+8,width,height);
+  ctx.restore();return true;
 }
+// Kuleler adanın görselinden bağımsızdır: surdaki yuvarlak kaidelerin üstüne dikilir (200 px çizim).
 export const TOWER_LABEL_OFFSET=-135;
 
 // Ganimet sandıkları: 2 kare (tahta, yaldızlı), 128 px.
