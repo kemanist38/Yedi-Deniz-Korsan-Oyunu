@@ -3,15 +3,15 @@ export type AbilityId='speed'|'mine';
 export type ArsenalStock={fire:number;grape:number;mine:number;powder:number;shield:number;explosive:number;breaker:number;leech:number;seeded:boolean;seededV2:boolean;ballsV1:boolean};
 
 export const ABILITIES:Record<AbilityId,{name:string;key:string;duration:number;cooldown:number;description:string;icon:string}>={
-  speed:{name:'Rüzgâr Hamlesi',key:'Z',duration:7,cooldown:28,description:'7 saniye boyunca azami hız %55 artar.',icon:'/assets/icon-speed-v1.webp'},
-  mine:{name:'Deniz Mayını',key:'C',duration:40,cooldown:4,description:'Kıç tarafına mayın bırakır; yaklaşan düşmanlara alan hasarı verir.',icon:'/assets/icon-mine-v1.webp'}
+  speed:{name:'Rüzgâr Hamlesi',key:'Z',duration:7,cooldown:28,description:'7 saniye boyunca azami hız %55 artar.',icon:'/assets/icon-speed-v1.webp?v=3d-20260926'},
+  mine:{name:'Deniz Mayını',key:'C',duration:40,cooldown:4,description:'Kıç tarafına mayın bırakır; yaklaşan düşmanlara alan hasarı verir.',icon:'/assets/icon-mine-v1.webp?v=3d-20260926'}
 };
 export const SPEED_BOOST=1.55;
 // Sarf malzemeleri (açık/kapalı): Kara Barut her salvoda 1 adet harcar ve hasarı %10 artırır;
 // Kalkan her alınan isabette 1 adet harcar ve gelen hasarı %10 düşürür.
 export const CONSUMABLES={
-  powder:{name:'Kara Barut',factor:1.1,icon:'/assets/icon-powder-v2.webp',description:'Açıkken her salvoda 1 adet harcar; top hasarı %10 artar.'},
-  shield:{name:'Kalkan',factor:.9,icon:'/assets/icon-shield-v1.webp',description:'Açıkken her isabette 1 adet harcar; gelen hasar %10 azalır.'}
+  powder:{name:'Kara Barut',factor:1.1,icon:'/assets/icon-powder-v2.webp?v=3d-20260926',description:'Açıkken her salvoda 1 adet harcar; top hasarı %10 artar.'},
+  shield:{name:'Kalkan',factor:.9,icon:'/assets/icon-shield-v1.webp?v=3d-20260926',description:'Açıkken her isabette 1 adet harcar; gelen hasar %10 azalır.'}
 } as const;
 export type ConsumableId=keyof typeof CONSUMABLES;
 
@@ -20,12 +20,12 @@ export const BALL_DAMAGE=20;
 export const CHAIN_FACTOR=1.25;
 // Özel gülleler: damage, demir gülleye (20) göre çarpandır.
 export const SPECIAL_AMMO={
-  fire:{name:'Ateş Güllesi',damage:2.5,reload:1.1,rangeFactor:1,burnSeconds:12,burnDps:250,blastRadius:0,blastFactor:0,towerFactor:1,leech:0,icon:'/assets/ammo-fire-v1.webp',description:'Gülle başı 50 hasar; hedef 12 saniye yanar ve isabetin %80\'i kadar ek hasar alır.'},
-  grape:{name:'Saçma',damage:2,reload:1,rangeFactor:.65,burnSeconds:0,burnDps:0,blastRadius:0,blastFactor:0,towerFactor:1,leech:0,icon:'/assets/ammo-grape-v1.webp',description:'Kısa menzilde çok yüksek hasar; menzil %35 azalır.'},
+  fire:{name:'Ateş Güllesi',damage:2.5,reload:1.1,rangeFactor:1,burnSeconds:12,burnDps:250,blastRadius:0,blastFactor:0,towerFactor:1,leech:0,icon:'/assets/ammo-fire-v1.webp?v=3d-20260926',description:'Gülle başı 50 hasar; hedef 12 saniye yanar ve isabetin %80\'i kadar ek hasar alır.'},
+  grape:{name:'Saçma',damage:2,reload:1,rangeFactor:.65,burnSeconds:0,burnDps:0,blastRadius:0,blastFactor:0,towerFactor:1,leech:0,icon:'/assets/ammo-grape-v1.webp?v=3d-20260926',description:'Kısa menzilde çok yüksek hasar; menzil %35 azalır.'},
   // Seafight'taki patlayıcı / Shellshock / Soul Eater güllelerinden uyarlandı
-  explosive:{name:'Patlayıcı Gülle',damage:3.75,reload:1.2,rangeFactor:1,burnSeconds:0,burnDps:0,blastRadius:120,blastFactor:.5,towerFactor:1,leech:0,icon:'/assets/ammo-explosive-v1.webp',description:'Çarptığı yerde patlar; 120 birim içindeki diğer düşmanlara %50 hasar verir.'},
-  breaker:{name:'Kule Kırıcı',damage:2.25,reload:1.15,rangeFactor:1,burnSeconds:0,burnDps:0,blastRadius:0,blastFactor:0,towerFactor:2.6,leech:0,icon:'/assets/ammo-breaker-v1.webp',description:'Kulelere ve ada tahkimatına 2,6 kat hasar; gemilere biraz daha az işler.'},
-  leech:{name:'Can Emici',damage:3,reload:1.1,rangeFactor:1,burnSeconds:0,burnDps:0,blastRadius:0,blastFactor:0,towerFactor:1,leech:.25,icon:'/assets/ammo-leech-v1.webp',description:'Verdiği hasarın %25\'i kadar gemini onarır.'}
+  explosive:{name:'Patlayıcı Gülle',damage:3.75,reload:1.2,rangeFactor:1,burnSeconds:0,burnDps:0,blastRadius:120,blastFactor:.5,towerFactor:1,leech:0,icon:'/assets/ammo-explosive-v1.webp?v=3d-20260926',description:'Çarptığı yerde patlar; 120 birim içindeki diğer düşmanlara %50 hasar verir.'},
+  breaker:{name:'Kule Kırıcı',damage:2.25,reload:1.15,rangeFactor:1,burnSeconds:0,burnDps:0,blastRadius:0,blastFactor:0,towerFactor:2.6,leech:0,icon:'/assets/ammo-breaker-v1.webp?v=3d-20260926',description:'Kulelere ve ada tahkimatına 2,6 kat hasar; gemilere biraz daha az işler.'},
+  leech:{name:'Can Emici',damage:3,reload:1.1,rangeFactor:1,burnSeconds:0,burnDps:0,blastRadius:0,blastFactor:0,towerFactor:1,leech:.25,icon:'/assets/ammo-leech-v1.webp?v=3d-20260926',description:'Verdiği hasarın %25\'i kadar gemini onarır.'}
 } as const;
 export type SpecialAmmo=keyof typeof SPECIAL_AMMO;
 
@@ -38,7 +38,7 @@ export const ELITE_POINTS_PER_BALL={grape:.1,fire:.2,breaker:.3,explosive:.4,lee
 export const ELITE_MAX_LEVEL=15;
 export const eliteLevelEp=(level:number)=>Math.round(1000*Math.pow(Math.max(0,level-1),1.5));
 export const eliteLevelFromEp=(ep:number)=>{let l=1;while(l<ELITE_MAX_LEVEL&&ep>=eliteLevelEp(l+1))l++;return l;};
-export const MINE={armSeconds:1,triggerRadius:46,blastRadius:95,baseDamage:4000,damagePerLevel:400,maxActive:5,icon:'/assets/icon-mine-v1.webp'};
+export const MINE={armSeconds:1,triggerRadius:46,blastRadius:95,baseDamage:4000,damagePerLevel:400,maxActive:5,icon:'/assets/icon-mine-v1.webp?v=3d-20260926'};
 
 // Dükkân birim fiyatları (altın). Oyuncu istediği adedi yazar; toplam = adet × birim fiyat.
 // Temel gülle (zincir) altınla, güçlü gülleler inciyle alınır; inci fiyatı sırasıyla artar.
