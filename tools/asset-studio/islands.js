@@ -50,10 +50,48 @@ export function buildFleetFortress(theme='verdant'){
  box(g,[15,6,12],[0,6,0],stone);box(g,[12,2,9],[0,10,0],trim);tower(g,-7,-5,1.15,p);tower(g,7,-5,1.15,p);tower(g,-7,5,1.15,p);tower(g,7,5,1.15,p);
  const keep=box(g,[7,8,6],[0,14,0],stone);keep.rotation.y=.08;
  const roof=new THREE.Mesh(new THREE.ConeGeometry(5.2,4,4),metal);roof.position.y=20;roof.rotation.y=Math.PI/4;g.add(roof);
- // Tema imzası
- if(theme==='lava'){for(const x of [-5,0,5])crystal(g,x,9,1.2,p.glow);}
- if(theme==='ice'){for(const x of [-6,-2,3,7])crystal(g,x,8+(x%2)*2,1.05,p.glow);}
- if(theme==='abyss'){for(const x of [-5,0,5])crystal(g,x,8,1.4,p.glow);}
- if(theme==='storm'){for(const x of [-5,5]){const rod=box(g,[.35,7,.35],[x,18,0],metal);rod.rotation.z=.08*x;}}
+ // Tema imzası: kale biyomları yalnız renkle değil gerçek 3B geometriyle ayrılır.
+ if(theme==='lava'){
+   const lava=mat({color:'#ff6a1c',emissive:'#ff3b0b',emissiveIntensity:1.9,roughness:.25});
+   for(const x of [-5,0,5])crystal(g,x,9,1.2,p.glow);
+   // Kalenin ön yamacından denize inen üç fiziksel lav kanalı.
+   for(const x of [-6,0,6]){const stream=box(g,[2.1,.38,15],[x,3.4,13],lava);stream.rotation.x=-.16;}
+   const crater=new THREE.Mesh(new THREE.TorusGeometry(7.2,1.15,8,28),lava);crater.rotation.x=Math.PI/2;crater.position.set(0,20.4,0);g.add(crater);
+ }
+ if(theme==='ice'){
+   const ice=mat({color:'#c7f5ff',emissive:'#77d9f1',emissiveIntensity:.55,transparent:true,opacity:.88,roughness:.18});
+   for(const x of [-7,-3,2,6])crystal(g,x,8+(x%2)*2,1.15,p.glow);
+   for(const [x,z,s] of [[-11,-2,1.4],[11,1,1.25],[-8,10,1],[9,9,1.1]]){const sp=new THREE.Mesh(new THREE.ConeGeometry(1.5*s,7*s,6),ice);sp.position.set(x,5*s,z);g.add(sp);}
+ }
+ if(theme==='abyss'){
+   const voidM=mat({color:'#21142f',emissive:'#7d3cff',emissiveIntensity:.72,roughness:.35});
+   for(const x of [-6,0,6])crystal(g,x,8,1.5,p.glow);
+   const ring=new THREE.Mesh(new THREE.TorusGeometry(8.5,.55,8,30),voidM);ring.rotation.x=Math.PI/2;ring.position.set(0,11.2,0);g.add(ring);
+ }
+ if(theme==='storm'){
+   for(const x of [-6,6]){const rod=box(g,[.38,9,.38],[x,19,0],metal);rod.rotation.z=.08*x;const tip=new THREE.Mesh(new THREE.ConeGeometry(.75,2.8,6),mat({color:'#bdefff',emissive:'#70cfff',emissiveIntensity:1.1}));tip.position.set(x,24,0);g.add(tip);}
+ }
+ if(theme==='coral'){
+   const coralM=mat({color:'#d96f63',roughness:.7}),pearl=mat({color:'#dff9f5',emissive:'#7de5d6',emissiveIntensity:.45,roughness:.22});
+   for(const sx of [-1,1])for(let k=0;k<3;k++){const x=sx*(10+k*2),z=-7+k*7;cyl(g,.45,4.5,[x,4.5,z],coralM,7);const branch=box(g,[2.8,.45,.45],[x+sx*1.1,5.4,z],coralM);branch.rotation.z=sx*.55;}
+   for(const x of [-5,0,5]){const q=new THREE.Mesh(new THREE.SphereGeometry(.7,12,9),pearl);q.position.set(x,12,7);g.add(q);}
+ }
+ if(theme==='misty'){
+   const ruin=mat({color:'#747b77',roughness:.98});
+   for(const x of [-10,10]){box(g,[2.2,8,2.2],[x,7,5],ruin);box(g,[5,.8,2.4],[x,11,5],ruin);}
+   for(const x of [-4,4]){const arch=new THREE.Mesh(new THREE.TorusGeometry(2.5,.5,7,16,Math.PI),ruin);arch.position.set(x,8,8);arch.rotation.z=Math.PI;g.add(arch);}
+ }
+ if(theme==='crimson'){
+   const red=mat({color:'#641d24',metalness:.5,roughness:.42}),gold=mat({color:'#c59b4a',metalness:.72,roughness:.28});
+   for(const sx of [-1,1]){const blade=new THREE.Mesh(new THREE.ConeGeometry(1.1,7,4),red);blade.position.set(sx*9,13,7);blade.rotation.z=sx*.22;g.add(blade);}
+   const crest=new THREE.Mesh(new THREE.TorusGeometry(4,.42,7,20),gold);crest.position.set(0,15,6.2);crest.rotation.x=Math.PI/2;g.add(crest);
+ }
+ if(theme==='toxic'){
+   const toxic=mat({color:'#8fd33f',emissive:'#79e82e',emissiveIntensity:.85,transparent:true,opacity:.82,roughness:.3});
+   for(const [x,z,s] of [[-10,-5,1.2],[9,-7,1],[12,5,.9],[-11,7,1]]){const pod=new THREE.Mesh(new THREE.SphereGeometry(1.8*s,12,8),toxic);pod.scale.y=.55;pod.position.set(x,5,z);g.add(pod);}
+ }
+ if(theme==='verdant'||theme==='haven'){
+   for(const [x,z,s] of [[-11,-7,.9],[11,-5,.8],[-12,7,.75],[12,8,.85]])tree(g,x,z,s,p.accent);
+ }
  g.userData.waterline=0;g.userData.cam={span:82,lookY:7};return g;
 }
