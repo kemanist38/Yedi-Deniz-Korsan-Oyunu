@@ -561,3 +561,24 @@ body.shop-open .market-overlay,body.shop-open .ship-overlay,body.shop-open .load
 .ship-menu header .ship-pages button.active{border-color:#f1c662;background:linear-gradient(#3a2a12,#1c140a);color:#ffe2a0;box-shadow:0 0 10px #f1c66244}
 .special-card.previewed{border-color:#e3b85e}
 .elite-ship-grid{align-content:start}
+
+
+/* Small pirate UI atlas: gold, pearl, location, compass, lock, rank star */
+.small-ui-icon{display:inline-block;flex:0 0 auto;background-image:url('/assets/ui-small-icons-v1.webp');background-size:300% 200%;background-repeat:no-repeat;background-color:transparent;vertical-align:middle}
+.icon-gold-new,.sprite.icon-gold{background-image:url('/assets/ui-small-icons-v1.webp');background-size:300% 200%;background-position:0 0}
+.icon-pearl-new,.sprite.icon-pearl{background-image:url('/assets/ui-small-icons-v1.webp');background-size:300% 200%;background-position:50% 0}
+.icon-location-new{background-position:100% 0}
+.icon-compass-new{background-position:0 100%}
+.icon-lock-new{background-position:50% 100%}
+.icon-rank-star-new{background-position:100% 100%}
+.recenter#recenterShip{display:grid;place-items:center}
+.recenter#recenterShip .icon-compass-new{width:30px;height:30px}
+.world-overlay .world-tile .wt-location{position:absolute;right:1px;top:-1px;width:30px;height:30px;filter:drop-shadow(0 1px 1px #0008)}
+.elite-lock{display:flex!important;align-items:center;justify-content:center;gap:4px}
+.elite-lock .icon-lock-new{width:15px;height:15px}
+.officer-rank-icons{display:flex!important;align-items:center;gap:2px;height:14px}
+.officer-rank-icons .icon-rank-star-new{width:13px;height:13px}
+.officer-rank-icons .empty{opacity:.2;filter:grayscale(1)}
+.officer-rank-icons .earned{opacity:1;filter:drop-shadow(0 1px 2px #0009)}
+@media(max-width:900px),(max-height:520px){.recenter#recenterShip .icon-compass-new{width:24px;height:24px}}
+@media(max-width:560px){.recenter#recenterShip .icon-compass-new{width:21px;height:21px}}
