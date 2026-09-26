@@ -366,7 +366,6 @@ body.shop-open .market-overlay,body.shop-open .ship-overlay,body.shop-open .load
 .menu-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
 .menu-grid button{display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:6px;min-height:118px;padding:10px 6px 8px;border:1px solid #8a6a3a;border-radius:8px;background:linear-gradient(#2a1e14,#140e09);color:#f0d9a8;font:700 11px Cinzel;letter-spacing:.04em;cursor:pointer;box-shadow:inset 0 0 12px #000a}
 .menu-grid button img,.menu-grid button .nav-img{display:block;width:72px;height:72px;object-fit:contain;filter:drop-shadow(0 3px 5px #000c)}
-.menu-grid .guild-nav{background:url(/assets/fleet-towers-approved-v1.webp) 0 50%/400% 100% no-repeat}
 .menu-grid button:hover{border-color:#e3b85e;filter:brightness(1.15)}
 /* Sol alt hızlı envanter (küçültülmüş), ortalama düğmesi ekran ortasında */
 .bottom-command{left:34px;bottom:10px;transform:scale(.86);transform-origin:bottom left}
