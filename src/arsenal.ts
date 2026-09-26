@@ -11,7 +11,7 @@ export const SPEED_BOOST=1.55;
 // Kalkan her alınan isabette 1 adet harcar ve gelen hasarı %10 düşürür.
 export const CONSUMABLES={
   powder:{name:'Kara Barut',factor:1.1,icon:'/assets/icon-powder-v4.webp',description:'Açıkken her salvoda 1 adet harcar; top hasarı %10 artar.'},
-  shield:{name:'Kalkan',factor:.9,icon:'/assets/icon-shield-v2.webp',description:'Açıkken her isabette 1 adet harcar; gelen hasar %10 azalır.'}
+  shield:{name:'Kalkan',factor:.9,icon:'/assets/icon-shield-v3.webp',description:'Açıkken her isabette 1 adet harcar; gelen hasar %10 azalır.'}
 } as const;
 export type ConsumableId=keyof typeof CONSUMABLES;
 
