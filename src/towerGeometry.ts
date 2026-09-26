@@ -1,13 +1,13 @@
 import type {TowerType} from './guild';
 
-// Approved tower art: 110 world units wide, feet anchored at the foundation.
-// Keep picking and firing aligned with the rendered tower, not its ground point.
+// Filo adası görselinden bağımsız kule geometrisi.
+// (x,y) her zaman kaide merkezidir; kule sonradan bu noktaya dikilir.
 type Point={x:number;y:number};
 export function towerContains(point:Point,tower:Point,built=true){
   const x=point.x-tower.x,y=point.y-tower.y;
-  return built?Math.abs(x)<=52&&y>=-132&&y<=18:Math.abs(x)<=46&&Math.abs(y)<=28;
+  return built?Math.abs(x)<=40&&y>=-120&&y<=12:Math.abs(x)<=46&&Math.abs(y)<=28;
 }
 export function towerMuzzle(tower:Point,type:TowerType='cannon'):Point{
-  const offset={cannon:{x:0,y:-82},mortar:{x:0,y:-106},chain:{x:16,y:-105},beacon:{x:0,y:-118}}[type];
+  const offset={cannon:{x:26,y:-76},mortar:{x:17,y:-96},chain:{x:24,y:-76},beacon:{x:0,y:-104}}[type];
   return{x:tower.x+offset.x,y:tower.y+offset.y};
 }

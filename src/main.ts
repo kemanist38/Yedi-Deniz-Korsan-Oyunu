@@ -873,7 +873,7 @@ function renderGuild(){
     ui('guildCreate').onclick=()=>{const name=(ui('guildName') as HTMLInputElement).value.trim(),tag=tagInput.value.trim(),te=tagError(tag);if(te){toast(te);return;}if(name.length<3){toast('Filo adı en az 3 harf olmalı');return;}const g:Guild={name,tag,role:'leader',treasury:0,donated:0,created:Date.now(),towers:{}};guild=g;for(const k of ownedFleetIslands())islandSlots(g,k);saveGuild(g);setupFleetIsland();rewardNotice(`[${tag}] ${name.toLocaleUpperCase('tr')} FİLOSU KURULDU`);renderGuild();};return;}
   const g=guild,islands=ownedFleetIslands(),map=mapDef(),here=hasFleetIsland()?map.fleet.name:'',allowed=canBuild(g.role);
   // Kule resmi: 4 karelik sayfada ilgili kareye yakınlaştırılmış (560% × 140%) kırpma
-  const art=(_slot:number,type:TowerType,ghost=false)=>`<i class="tower-art ${ghost?'ghost':''}" style="background-position:${TOWER_TYPES[type].frame/3*100}% 50%"></i>`;
+  const art=(_slot:number,type:TowerType,ghost=false)=>`<i class="tower-art tower-${type} ${ghost?'ghost':''}" aria-hidden="true"></i>`;
   const typeCards=(Object.keys(TOWER_TYPES) as TowerType[]).map(t=>{const d=TOWER_TYPES[t];return`<button class="tower-type ${buildType===t?'active':''}" data-type="${t}">${art(3,t)}<div><b>${d.name}</b><small>${d.desc}</small><em>Maliyet ×${d.cost} · Hasar ×${d.damage} · Menzil ×${d.range}</em></div></button>`;}).join('');
   const islandHtml=islands.length?islands.map(k=>{const m=MAPS[k],slots=islandSlots(g,k),cost=towerTypeCost(m.tier,buildType),built=slots.filter(Boolean).length;
     return`<article class="guild-island"><header><div><span class="eyebrow">${m.key} · Seviye ${m.tier}</span><h4>${m.fleet.name}</h4></div><b>${built} / ${TOWER_SLOTS} kule</b></header><div class="tower-slots">${slots.map((t,i)=>t?`<div class="tower-slot built">${art(i,t.type)}<small>${TOWER_TYPES[t.type].name}</small><em><span style="width:${Math.round(t.hp/t.maxHp*100)}%"></span></em></div>`:`<button class="tower-slot empty" data-build="${k}:${i}" ${!allowed||g.treasury<cost?'disabled':''}>${art(i,buildType,true)}<small>Kaide ${i+1}</small><b>${allowed?`DİK · ${cost} İnci`:'YETKİ YOK'}</b></button>`).join('')}</div></article>`;}).join('')
@@ -1474,7 +1474,7 @@ function drawMonster(m:Monster){const s=worldToScreen(m);if(drawMonsterSheet(ctx
 function drawFleetIsland(){
   if(!hasFleetIsland())return;const f=mapDef().fleet,s=worldToScreen(f),th=theme().fleet,owned=fleetOwner()==='player';
   const baseOk=drawFleetBase(ctx,th,s.x,s.y);
-  if(owned)for(const tw of [...ownTowers].sort((a,b)=>a.y-b.y)){const p=worldToScreen(tw);drawBuiltTower(ctx,TOWER_TYPES[tw.type].frame,tw.slot,p.x,p.y);}
+  if(owned)for(const tw of [...ownTowers].sort((a,b)=>a.y-b.y)){const p=worldToScreen(tw);drawBuiltTower(ctx,tw.type,tw.slot,p.x,p.y);}
   if(!baseOk){ctx.fillStyle='#4a7a3c';ctx.beginPath();ctx.arc(s.x,s.y,FLEET.islandR,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#3a3c42';ctx.lineWidth=18;ctx.beginPath();ctx.arc(s.x,s.y,FLEET.wallR,Math.PI/2+FLEET.gap/2,Math.PI/2-FLEET.gap/2+Math.PI*2);ctx.stroke();}
   ctx.textAlign='center';ctx.font='700 14px Cinzel';ctx.fillStyle=owned?'#9fe8dc':'#f0b8a8';ctx.shadowColor='#000';ctx.shadowBlur=6;ctx.fillText(f.name,s.x,s.y-FLEET.islandR-24);ctx.font='700 9px Inter';ctx.fillText(owned?'FİLO ADAN · LAGÜNDE ONARIM':fleetEnterable()?'RAKİP FİLO · TEST: GİRİŞ AÇIK (GÜNEY KANALI)':'RAKİP FİLO · GİRİŞ YASAK',s.x,s.y-FLEET.islandR-10);ctx.shadowBlur=0;
 }
