@@ -1,0 +1,40 @@
+name: Apply generated asset refresh
+
+on:
+  push:
+    branches:
+      - asset-refresh-2026-09-26
+    paths:
+      - .asset-upload/READY
+
+permissions:
+  contents: write
+
+jobs:
+  apply-assets:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout asset branch
+        uses: actions/checkout@v4
+        with:
+          ref: asset-refresh-2026-09-26
+          fetch-depth: 0
+
+      - name: Rebuild asset pack
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .asset-upload/assets.b64.part* | base64 --decode > /tmp/yedi-deniz-assets.zip
+          unzip -o /tmp/yedi-deniz-assets.zip -d .
+
+      - name: Commit refreshed assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .asset-upload
+          git rm .github/workflows/apply-generated-assets.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/assets
+          git commit -m "Refresh Yedi Deniz game UI assets"
+          git push origin HEAD:asset-refresh-2026-09-26
