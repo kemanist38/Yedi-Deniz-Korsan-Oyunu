@@ -2,7 +2,8 @@
 // Görseller tools/asset-studio içindeki 3B modellerden üretilir (npm run render).
 export type ChestKind='wood'|'gilded';
 
-const ASSET_REV='3d-20260926';\nconst cache=new Map<string,HTMLImageElement>();
+const ASSET_REV='3d-20260926';
+const cache=new Map<string,HTMLImageElement>();
 function load(src:string){let image=cache.get(src);if(!image){image=new Image();image.decoding='async';image.src=src.startsWith('/assets/')?`${src}${src.includes('?')?'&':'?'}v=${ASSET_REV}`:src;cache.set(src,image);}return image;}
 const ready=(image:HTMLImageElement)=>image.complete&&image.naturalWidth>0;
 export function preload(srcs:string[]){srcs.forEach(load);}
