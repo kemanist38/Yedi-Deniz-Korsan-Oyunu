@@ -11,6 +11,12 @@ on:
 permissions:
   contents: write
 
+# Aynı anda iki raster render çalışırsa WebP dosyaları rebase sırasında binary conflict oluşturur.
+# Yeni kaynak değişikliği geldiğinde eski render iptal edilir; yalnızca en güncel asset seti main'e yazılır.
+concurrency:
+  group: raster-assets-main
+  cancel-in-progress: true
+
 jobs:
   render:
     runs-on: ubuntu-latest
@@ -41,5 +47,14 @@ jobs:
           git add public/assets/islands-*.webp public/assets/fleet-base-*.webp public/assets/enemy-*.webp public/assets/ammo-*.webp public/assets/icon-*.webp public/assets/equip-atlas-v2.webp public/assets/ship-*.webp public/assets/monster-*.webp
           git diff --cached --quiet && exit 0
           git commit -m "Render professional 3D gameplay raster assets"
-          git pull --rebase origin main
+          # Kaynak kod ilerlediyse generated binary'leri rebase etmeye çalışma; en güncel main'i alıp
+          # bu run'ın ürettiği asset dosyalarını tekrar stage ederek tek temiz commit oluştur.
+          git fetch origin main
+          SOURCE_COMMIT=$(git rev-parse HEAD^)
+          GENERATED_COMMIT=$(git rev-parse HEAD)
+          git reset --hard origin/main
+          git checkout "$GENERATED_COMMIT" -- public/assets/islands-*.webp public/assets/fleet-base-*.webp public/assets/enemy-*.webp public/assets/ammo-*.webp public/assets/icon-*.webp public/assets/equip-atlas-v2.webp public/assets/ship-*.webp public/assets/monster-*.webp
+          git add public/assets
+          git diff --cached --quiet && exit 0
+          git commit -m "Render professional 3D gameplay raster assets"
           git push origin HEAD:main
