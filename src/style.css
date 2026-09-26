@@ -132,7 +132,7 @@ button{ font: inherit; }
 .talent:disabled{cursor:default}.talent:not(:disabled):hover{border-color:#f3d496;background:#13303a}
 .officer-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .officer{display:grid;grid-template-columns:64px 1fr;gap:8px;padding:10px;border:1px solid #5a4a3a66;border-radius:8px;background:#071a20}
-.officer>img{width:64px;height:64px;object-fit:contain;filter:grayscale(.8) brightness(.7)}
+.officer>img{width:64px;height:64px;object-fit:contain;filter:grayscale(.45) brightness(.82)}
 .officer.hired>img{filter:none}.officer.active{border-color:#6fd6c4;box-shadow:inset 0 0 18px #6fd6c418}
 .officer span{font:700 8px Inter;letter-spacing:.14em;color:#9b7b45;text-transform:uppercase}
 .officer h4{margin:2px 0;font:700 15px Cinzel;color:#f3d496}.officer small{display:block;font:500 11px Inter;color:#9fb4ae}
