@@ -1,7 +1,8 @@
 // Yedi Deniz — profesyonel 3B raster ada üreticisi.
 // Her tema 6 farklı siluet üretir; deniz rengi modele gömülmez, çıktı şeffaftır.
 import * as THREE from 'three';
-const mat=(o={})=>new THREE.MeshStandardMaterial({roughness:.86,metalness:0,...o});
+const mat=(o={})=>new THREE.MeshStandardMaterial({roughness:.72,metalness:.03,...o});
+const detailMat=(color,metalness=.12)=>mat({color,metalness,roughness:.5});
 const rock=(color,scale,pos,rot=0)=>{const m=new THREE.Mesh(new THREE.DodecahedronGeometry(1,1),mat({color}));m.scale.set(...scale);m.position.set(...pos);m.rotation.y=rot;return m;};
 const box=(g,s,p,m)=>{const x=new THREE.Mesh(new THREE.BoxGeometry(...s),m);x.position.set(...p);g.add(x);return x;};
 const cyl=(g,r,h,p,m,seg=10)=>{const x=new THREE.Mesh(new THREE.CylinderGeometry(r*.78,r,h,seg),m);x.position.set(...p);g.add(x);return x;};
@@ -26,8 +27,11 @@ export function buildIsland(theme='verdant',variant=0){
  // Tabanı tek bir daire değil, 7 parçalı asimetrik kıyı yapar.
  for(let i=0;i<7;i++){const a=i/7*Math.PI*2+(variant*.31),rr=R*(.38+(i%3)*.08),h=4+(i+variant)%4*1.2;g.add(rock(p.rock,[rr*.72,h,rr*.58],[Math.cos(a)*R*.42,-1+((i+variant)%2),Math.sin(a)*R*.34],a));}
  const cap=new THREE.Mesh(new THREE.CylinderGeometry(R*.72,R*.92,2.2,11),variant===2||variant===5?rockM:topM);cap.position.y=2.1;cap.rotation.y=variant*.37;g.add(cap);
- if(variant===0){for(const [x,z,s] of [[-5,-2,1.2],[4,2,1],[0,6,.9],[-1,-7,.8]])tree(g,x,z,s,p.accent);}
- if(variant===1){lighthouse(g,-2,0,1.25,p);for(const [x,z,s] of [[6,3,.8],[-7,-4,.7]])tree(g,x,z,s,p.accent);}
+ // Kıyı bandı ve küçük kayalar, atlas uzaktan küçültüldüğünde bile silueti zengin tutar.
+ const shore=new THREE.Mesh(new THREE.TorusGeometry(R*.73,1.15,7,22),sandM);shore.rotation.x=Math.PI/2;shore.position.y=2.75;shore.scale.z=.82;g.add(shore);
+ for(let i=0;i<10;i++){const a=i/10*Math.PI*2+variant*.23,rr=R*(.76+(i%2)*.08);g.add(rock(p.rock,[1.7+(i%3)*.45,.9+(i%2)*.35,1.3],[Math.cos(a)*rr,2.3,Math.sin(a)*rr*.76],a));}
+ if(variant===0){for(const [x,z,s] of [[-7,-3,1.25],[-3,4,1.05],[3,2,1.15],[7,-2,.95],[1,7,.9],[-1,-7,.85]])tree(g,x,z,s,p.accent);}
+ if(variant===1){lighthouse(g,-2,0,1.35,p);for(const [x,z,s] of [[6,3,.9],[-7,-4,.8],[6,-6,.75]])tree(g,x,z,s,p.accent);box(g,[5,.7,1.1],[3,3.2,5],detailMat(p.sand));}
  if(variant===2){tower(g,0,0,1.45,p);box(g,[7,1.2,1.3],[0,1.5,-4],rockM);box(g,[1.3,2.4,6],[-3.1,2,-4],rockM);}
  if(variant===3){ // hilal/resif: merkez boşluğu görsel olarak kum ve iki uçurumla açılır
    const lagoon=new THREE.Mesh(new THREE.TorusGeometry(8,2.1,8,28,Math.PI*1.45),sandM);lagoon.rotation.x=Math.PI/2;lagoon.rotation.z=.6;lagoon.position.y=3.35;g.add(lagoon);
