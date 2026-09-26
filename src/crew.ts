@@ -7,7 +7,7 @@ export type Bonus={damage:number;reload:number;range:number;speed:number;taken:n
 // Yetenek puanı ile açılan özel yetenekler. Hasar, dolum, menzil, hız, gövde ve tamir
 // geliştirmedeki İnci yükseltmelerinde kaldığı için burada tekrar edilmez.
 export const TALENTS:Record<TalentId,{name:string;max:number;per:string;icon:string;apply:(b:Bonus,rank:number)=>void}>={
-  firemaster:{name:'Ateş Ustası',max:3,per:'+%25 yanma hasarı',icon:'/assets/ammo-fire-v1.webp',apply:(b,r)=>{b.burn*=1+.25*r;}},
+  firemaster:{name:'Ateş Ustası',max:3,per:'+%25 yanma hasarı',icon:'/assets/ammo-fire-v2.webp',apply:(b,r)=>{b.burn*=1+.25*r;}},
   sapper:{name:'Mayın Uzmanı',max:4,per:'+%15 mayın hasarı',icon:'/assets/icon-mine-v1.webp',apply:(b,r)=>{b.mine*=1+.15*r;}},
   tough:{name:'Sağlam Omurga',max:5,per:'-%3 alınan hasar',icon:'/assets/icon-shield-v1.webp',apply:(b,r)=>{b.taken*=1-.03*r;}},
   windcaller:{name:'Fırtına Bilgesi',max:3,per:'-%10 yetenek bekleme',icon:'/assets/icon-speed-v1.webp',apply:(b,r)=>{b.cooldown*=1-.1*r;}},
