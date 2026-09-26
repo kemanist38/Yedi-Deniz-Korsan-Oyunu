@@ -14,7 +14,6 @@ import {buildEquip,buildPowderKeg,buildTreasureMap,buildInventoryPlaque} from '.
 import {SHIPS,MONSTERS,BOSSES} from './catalog.js';
 const ALL_SHIPS=[...SHIPS,...BOSSES];
 import {buildCrab,buildSerpent,buildJelly,buildTurtle,buildHydra} from './monsters.js';
-import {buildIsland,buildFleetFortress} from './islands.js';
 import * as T from './textures.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 
@@ -67,8 +66,6 @@ window.renderChests=({frame=128,span=28}={})=>{
   return{...exportCanvas(sheet(frames,2)),frame,anchor:anchorOf(cam,frame)};
 };
 function cameraAt(span,elevDeg){const e=elevDeg*Math.PI/180,c=new THREE.OrthographicCamera(-span/2,span/2,span/2,-span/2,1,1200);c.position.set(0,Math.sin(e)*500,Math.cos(e)*500);c.lookAt(0,0,0);c.updateMatrixWorld();c.updateProjectionMatrix();return c;}
-window.renderIslandAtlas=(theme,{frame=320,span=68}={})=>{const frames=[];for(let variant=0;variant<6;variant++){const scene=stage(),obj=buildIsland(theme,variant);prepare(obj);scene.add(obj);const cam=camera(span,obj.userData.cam?.lookY??4);frames.push(shot(scene,cam,frame));}return{...exportCanvas(sheet(frames,3)),frame,cols:3,rows:2,variants:6};};
-window.renderFleetFortress=(theme,{frame=512,span=88}={})=>{const scene=stage(),obj=buildFleetFortress(theme);prepare(obj);scene.add(obj);const cam=camera(span,obj.userData.cam?.lookY??7);return{...exportCanvas(shot(scene,cam,frame)),frame,theme};};
 window.renderSeaTile=()=>exportCanvas(paintSeaTile());
 window.renderVfxAtlas=()=>({...exportCanvas(paintVfxAtlas()),cell:128,cols:8,rows:6});
 window.renderWorldScroll=()=>exportCanvas(paintWorldScroll());

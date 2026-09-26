@@ -4,7 +4,7 @@ export type MapKey='1/1'|'1/2'|'2/1'|'2/2'|'3/1'|'3/2'|'4/1'|'4/2'|'5/1'|'5/2'|'
 export type IslandLook='verdant'|'misty'|'coral'|'haven'|'crimson'|'storm'|'ice'|'toxic'|'lava'|'abyss';
 export type FleetTheme='verdant'|'coral'|'misty'|'crimson'|'ice'|'toxic'|'lava'|'storm'|'abyss';
 export type Weather='fog'|'snow'|'embers'|'spores'|'storm'|'motes'|'sparkle'|'dust'|null;
-export type WorldIsland={x:number;y:number;r:number;name:string;look:IslandLook;variant:0|1|2|3|4|5;flip?:boolean};
+export type WorldIsland={x:number;y:number;r:number;name:string;look:IslandLook;variant:0|1;flip?:boolean};
 
 export const WORLD_WIDTH=6000,WORLD_HEIGHT=4000;
 export const MAX_LEVEL=8;
@@ -32,18 +32,15 @@ export const LEVEL_XP=[0,2000,5000,10000,18000,30000,48000,72000,105000];
 export const xpNeed=(level:number)=>level>=MAX_LEVEL?Infinity:LEVEL_XP[level];
 
 type Theme={name:string;sea:[string,string];tint:string;look:IslandLook;fleet:FleetTheme;weather:Weather;label:string};
-// Tüm denizlerde aynı, sakin açık mavi zemin kullanılır. Biyom kimliği ada/kale/NPC tasarımından gelir;
-// pahalı tam-ekran hava parçacıkları kapalıdır. Böylece oyuncu ve savaş efektleri ön planda kalır.
-const SEA:['#4f9fb4','#2f728a']=['#4f9fb4','#2f728a'];
 export const THEMES:Record<number,Theme>={
-  1:{name:'Güvenli Harita',sea:SEA,tint:'#8fd8df',look:'haven',fleet:'verdant',weather:null,label:'#d7f0f2'},
-  2:{name:'İnciyolu Denizi',sea:SEA,tint:'#8fd8df',look:'coral',fleet:'coral',weather:null,label:'#d7f0f2'},
-  3:{name:'Azurya Denizi',sea:SEA,tint:'#8fd8df',look:'verdant',fleet:'misty',weather:null,label:'#d7f0f2'},
-  4:{name:'Hayalet Denizi',sea:SEA,tint:'#8fd8df',look:'misty',fleet:'crimson',weather:null,label:'#d7f0f2'},
-  5:{name:'Buzmahzen Denizi',sea:SEA,tint:'#8fd8df',look:'ice',fleet:'ice',weather:null,label:'#d7f0f2'},
-  6:{name:'Fırtına Denizi',sea:SEA,tint:'#8fd8df',look:'storm',fleet:'toxic',weather:null,label:'#d7f0f2'},
-  7:{name:'Karanlık Uçurum Denizi',sea:SEA,tint:'#8fd8df',look:'abyss',fleet:'abyss',weather:null,label:'#d7f0f2'},
-  8:{name:'Alev Denizi',sea:SEA,tint:'#8fd8df',look:'lava',fleet:'lava',weather:null,label:'#d7f0f2'},
+  1:{name:'Güvenli Harita',sea:['#12505a','#0a2f38'],tint:'#6fd6c4',look:'haven',fleet:'verdant',weather:null,label:'#b7d9d1'},
+  2:{name:'İnciyolu Denizi',sea:['#0f6068','#063a44'],tint:'#8ff0dc',look:'coral',fleet:'coral',weather:'sparkle',label:'#c8f4ea'},
+  3:{name:'Azurya Denizi',sea:['#14566e','#083343'],tint:'#82cbdc',look:'verdant',fleet:'misty',weather:'sparkle',label:'#c8eaf0'},
+  4:{name:'Hayalet Denizi',sea:['#24443f','#0a2225'],tint:'#9fb8b4',look:'misty',fleet:'crimson',weather:'fog',label:'#c8d4ce'},
+  5:{name:'Buzmahzen Denizi',sea:['#3e6d86','#17304a'],tint:'#bfe6ff',look:'ice',fleet:'ice',weather:'snow',label:'#e8f6ff'},
+  6:{name:'Fırtına Denizi',sea:['#1d3546','#0a1c2b'],tint:'#9fb4e0',look:'storm',fleet:'toxic',weather:'storm',label:'#c8d4f0'},
+  7:{name:'Karanlık Uçurum Denizi',sea:['#202737','#090f1e'],tint:'#a79bdb',look:'abyss',fleet:'lava',weather:'motes',label:'#d8c0ff'},
+  8:{name:'Alev Denizi',sea:['#343d3e','#121e24'],tint:'#ff8a3a',look:'lava',fleet:'storm',weather:'embers',label:'#ffc090'},
 };
 
 // ---------------------------------------------------------------- NPC gemileri
@@ -63,8 +60,8 @@ const npc=(id:string,name:string,role:'light'|'heavy',tier:number,sprite=`/asset
 };
 const NPC_LIST:Omit<NpcDef,'portrait'>[]=[
   npc('n1-1-light','Kaçak Balıkçı','light',1),npc('n1-1-heavy','Kıyı Yağmacısı','heavy',1,undefined,104),
-  npc('n1-2-light','Kaçakçı Gözcü','light',1),npc('n1-2-heavy','Yağmacılar','heavy',1,undefined,104),
-  npc('n2-1-light','Mercan Avcısı','light',2),npc('n2-1-heavy','Kızıl Savaş Gemisi','heavy',2,undefined,104),
+  npc('n1-2-light','Kaçakçı Gözcü','light',1,'/assets/enemy-scout-v1.webp'),npc('n1-2-heavy','Yağmacılar','heavy',1,'/assets/enemy-raider-v1.webp',104),
+  npc('n2-1-light','Mercan Avcısı','light',2),npc('n2-1-heavy','Kızıl Savaş Gemisi','heavy',2,'/assets/enemy-warship-v1.webp',104),
   npc('n2-2-light','İnci Dalgıcı','light',2),npc('n2-2-heavy','Resif Fırkateyni','heavy',2),
   npc('n3-1-light','Sis Hayaleti','light',3),npc('n3-1-heavy','Sisli Brik','heavy',3,undefined,104),
   npc('n3-2-light','Kemik Kayığı','light',3),npc('n3-2-heavy','Batık Kalyon','heavy',3,undefined,124),
@@ -88,13 +85,13 @@ const mon=(id:string,name:string,tier:number,radius=54,sprite=`/assets/monster-$
   return{id,name,sprite,span,frame:256,anchorY,radius,tier,hp,damage:Math.round(1500*dmgScale(tier)),reload:2.8-t*.08,gold:r.gold,xp:r.xp};};
 const MONSTER_LIST:Omit<MonsterDef,'portrait'>[]=[
   mon('m1-1','Yosun Yengeci',1,50),mon('m1-2','Kıyı Yılanı',1,56),
-  mon('m2-1','Derinlik Leviathanı',2,54),mon('m2-2','İnci Denizanası',2,50),
+  mon('m2-1','Derinlik Leviathanı',2,54,'/assets/leviathan-v1.webp',132,130.9),mon('m2-2','İnci Denizanası',2,50),
   mon('m3-1','Sis Yılanı',3,58),mon('m3-2','Kemik Hidrası',3,56),
   mon('m4-1','Kızıl Yengeç',4,54),mon('m4-2','Pas Kaplumbağası',4,58),
-  mon('m5-1','Buz Yılanı',5,60,'/assets/monster-m3-1.webp'),mon('m5-2','Buzul Kaplumbağası',5,60,'/assets/monster-m4-2.webp'),
-  mon('m6-1','Zehir Denizanası',6,54,'/assets/monster-m2-2.webp'),mon('m6-2','Bataklık Hidrası',6,60),
+  mon('m5-1','Buz Yılanı',5,60),mon('m5-2','Buzul Kaplumbağası',5,60),
+  mon('m6-1','Zehir Denizanası',6,54),mon('m6-2','Bataklık Hidrası',6,60),
   mon('m7-1','Magma Yengeci',7,58),mon('m7-2','Alev Yılanı',7,62),
-  mon('m8-1','Fırtına Leviathanı',8,62),mon('m8-2','Kasırga Denizanası',8,58),
+  mon('m8-1','Fırtına Leviathanı',8,62,'/assets/leviathan-storm-v1.webp',132,130.9),mon('m8-2','Kasırga Denizanası',8,58),
 ];
 export const MONSTERS:Record<string,MonsterDef>=Object.fromEntries(MONSTER_LIST.map((m,i)=>[m.id,{...m,portrait:NPC_LIST.length+i}]));
 // Portre atlasının son karesi (eski Hayalet Amiral) şimdilik kullanılmıyor; yeni boss eklenince kullanılabilir.
@@ -132,40 +129,24 @@ export function coordLabel(p:{x:number;y:number}){const g=gridCell(p);return`${c
 // Filo adası görseli (fleet-base-approved-v1, 1000 birim): güneyden kanalla girilen lagün kalesi. Seyir alanı src/fleetMask.ts
 // maskesinden gelir; kuleler görseldeki 8 sur kulesinin üzerindedir. lagoon: lagünün ortası (rota hedefi).
 export const FLEET={islandR:500,wallR:370,gap:.56,lagoon:{x:0,y:60,r:150},channelW:70,keep:{x:0,y:-280},
-  // 512 px şeffaf 3B biyom kalesi 1000 dünya birimine oturur. Kule slotları raster kalenin dış savunma halkasına hizalıdır.
-  // Slot sırası kayıtlı filo kuleleriyle uyumluluk için korunur; yalnızca görsel oturma noktaları kaleye yaklaştırılmıştır.
-  towers:[[-218,-326],[-340,-170],[-315,58],[-116,205],[140,205],[322,58],[338,-174],[226,-326]] as [number,number][],
-  base:{frame:512,span:1000},tower:{frame:256,span:120,anchorY:0}};
+  // Approved v1 base, 1000 world units. Preserve slot order for saved guild towers.
+  towers:[[-230,-360],[-364,-189],[-328,70],[-121,214],[146,214],[337,70],[361,-193],[242,-360]] as [number,number][],
+  base:{frame:1024,span:1000},tower:{frame:256,span:120,anchorY:0}};
 // Kuleler filo savaşı ölçeğinde: tek gemi yıkamaz, saldırı kesilince hızla onarılır.
 export const fleetTower=(tier:number)=>{return{hp:Math.round(150000*hpScale(tier)),damage:Math.round(1050*dmgScale(tier)),reload:2.2,range:460,ownDamage:Math.round(1500*hpScale(tier))};};
 export const fleetReward=(tier:number)=>({gold:300*tier,xp:Math.round(500*Math.pow(tier,1.2))});
 
 // ---------------------------------------------------------------- Denizler
 export type MapDef={key:MapKey;tier:number;name:string;description:string;safe:boolean;npcs:[string,string];monster:string;npcCount:number;heavyShare:number;islands:WorldIsland[];fleet:{x:number;y:number;name:string};labels:{text:string;x:number;y:number}[];spawn:{x:number;y:number}};
-const I=(x:number,y:number,r:number,name:string,look:IslandLook,variant:0|1|2|3|4|5,flip=false):WorldIsland=>({x,y,r,name,look,variant,flip});
-function sea(key:MapKey,name:string,description:string,opts:{islands:[number,number,number,string,0|1|2|3|4|5,boolean?][];fleet:[number,number,string];labels?:[string,number,number][];safe?:boolean;look?:IslandLook;count?:number;heavy?:number}):MapDef{
+const I=(x:number,y:number,r:number,name:string,look:IslandLook,variant:0|1,flip=false):WorldIsland=>({x,y,r,name,look,variant,flip});
+function sea(key:MapKey,name:string,description:string,opts:{islands:[number,number,number,string,0|1,boolean?][];fleet:[number,number,string];labels?:[string,number,number][];safe?:boolean;look?:IslandLook;count?:number;heavy?:number}):MapDef{
   const tier=tierOf(key),look=opts.look??THEMES[tier].look,sub=key.split('/')[1];
-  // Her deniz en az altı doğal ada/çıkıntı taşır. Ek adalar sabit konumludur; kayıt/yükleme arasında değişmez.
-  const source=[...opts.islands];
-  const extra:[[number,number,number,string,0|1|2|3|4|5,boolean?],[number,number,number,string,0|1|2|3|4|5,boolean?],[number,number,number,string,0|1|2|3|4|5,boolean?]]=[
-    [4300,720,145,`${name} Kuzey Kayalığı`,3,true],[4550,3000,165,`${name} Dış Resifi`,4,false],[3350,3350,135,`${name} Yalnız Kayası`,5,false]
-  ];
-  for(const a of extra)if(source.length<6)source.push(a);
   return{key,tier,name,description,safe:!!opts.safe,npcs:[`n${tier}-${sub}-light`,`n${tier}-${sub}-heavy`],monster:`m${tier}-${sub}`,npcCount:opts.count??(7+Math.min(4,tier-1)),heavyShare:opts.heavy??(.3+tier*.03),
-    islands:source.map(([x,y,r,n,v,f],idx)=>I(x,y,r,n,look,(idx<3?idx:v) as 0|1|2|3|4|5,!!f)),fleet:{x:opts.fleet[0],y:opts.fleet[1],name:opts.fleet[2]},labels:(opts.labels??[]).map(([text,x,y])=>({text,x,y})),spawn:{x:opts.fleet[0],y:opts.fleet[1]+530}};
+    islands:opts.islands.map(([x,y,r,n,v,f])=>I(x,y,r,n,look,v,!!f)),fleet:{x:opts.fleet[0],y:opts.fleet[1],name:opts.fleet[2]},labels:(opts.labels??[]).map(([text,x,y])=>({text,x,y})),spawn:{x:opts.fleet[0],y:opts.fleet[1]+530}};
 }
 export const MAPS:Record<MapKey,MapDef>={
   '1/1':{...sea('1/1','Sığınak Koyu','Savaşa kapalı başlangıç denizi. Filo adanın lagününde gövde kendiliğinden onarılır; buradaki gemiler sen saldırmadıkça ateş açmaz.',
-    {islands:[[640,700,170,'Martı Kayası',0],[2520,820,190,'Yosunlu Burun',1,true],[2560,2560,160,'Sakin Resif',2]],fleet:[1500,1900,'Sığınak Filo Adası'],labels:[['SAKİN SULAR',1600,700]],safe:true,count:6,heavy:.25}),
-    // Başlangıç denizi de altı farklı 3B ada silueti kullanır; ilk üç adanın özel biyom kimliği korunur.
-    islands:[
-      I(640,700,170,'Martı Kayası','haven',0),
-      I(2520,820,190,'Yosunlu Burun','verdant',1,true),
-      I(2560,2560,160,'Sakin Resif','coral',2),
-      I(4300,720,145,'Sığınak Kuzey Kayalığı','haven',3,true),
-      I(4550,3000,165,'Sığınak Dış Resifi','coral',4),
-      I(3350,3350,135,'Sığınak Yalnız Kayası','verdant',5)
-    ]},
+    {islands:[[640,700,170,'Martı Kayası',1],[2520,820,190,'Yosunlu Burun',0,true],[2560,2560,160,'Sakin Resif',1]],fleet:[1500,1900,'Sığınak Filo Adası'],labels:[['SAKİN SULAR',1600,700]],safe:true,count:6,heavy:.25}),islands:[I(640,700,170,'Martı Kayası','haven',1),I(2520,820,190,'Yosunlu Burun','verdant',0,true),I(2560,2560,160,'Sakin Resif','coral',1)]},
   '1/2':sea('1/2','Martı Kıyıları','Kaçakçıların ve Yağmacıların ilk av sahası. Kıyı Yılanı sığlıklarda dolaşır.',{safe:true,islands:[[700,650,180,'Fırtına Burnu',0],[2500,700,210,'Ölü Adam Adası',1],[650,2500,200,'Sis Kayalıkları',0,true]],fleet:[2150,2150,'Martı Filo Adası'],labels:[['KIYI SULARI',1400,1000]]}),
   '2/1':sea('2/1','Mercan Geçidi','Mercan resifleri arasında savaş gemileri devriye gezer. Derinlik Leviathanı buradadır.',{islands:[[650,700,190,'Mercan Kalesi',0],[2550,600,160,'Pembe Resif',1],[600,2550,170,'Deniz Kabuğu',1,true]],fleet:[2050,2100,'Mercan Filo Adası'],labels:[['MERCAN GEÇİDİ',1300,900]]}),
   '2/2':sea('2/2','İnci Resifleri','İnci dalgıçlarının ve resif fırkateynlerinin sığ, parlak suları.',{islands:[[2550,700,180,'İnci Adası',1],[700,650,200,'Lagün Adası',0,true],[2600,2550,150,'Midye Kayası',0]],fleet:[1150,2100,'İnci Filo Adası'],labels:[['İNCİ SIĞLIĞI',1900,1000]]}),

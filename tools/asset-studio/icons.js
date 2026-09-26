@@ -33,14 +33,6 @@ function cutlass(steel,gold,grip){
 
 export function buildIcon(name){
   const root=new THREE.Group();
-  // Ortak premium ikon sunumu: objeyi koyu bir disk içine hapsetmeden 3B ürün renderı gibi okunmasını sağlar.
-  // Pirinç halo, zemindeki temas gölgesi ve küçük perçinler tüm menü/mühimmat ailesini aynı sanat dilinde toplar.
-  const premiumFrame=()=>{const g=new THREE.Group(),brass=std({color:'#c99b43',metalness:.9,roughness:.28});
-    const ring=new THREE.Mesh(new THREE.TorusGeometry(6.25,.18,10,64),brass);ring.rotation.x=Math.PI/2;ring.position.set(0,-.25,-1.8);g.add(ring);
-    const inner=new THREE.Mesh(new THREE.TorusGeometry(5.72,.055,8,64),std({color:'#f1d18a',metalness:.7,roughness:.24}));inner.rotation.x=Math.PI/2;inner.position.set(0,-.2,-1.72);g.add(inner);
-    for(let i=0;i<8;i++){const a=i/8*Math.PI*2,n=new THREE.Mesh(new THREE.SphereGeometry(.18,10,8),brass);n.position.set(Math.cos(a)*6.25,-.18,Math.sin(a)*6.25-1.8);g.add(n);}
-    const shadow=new THREE.Mesh(new THREE.CircleGeometry(5.35,48),new THREE.MeshBasicMaterial({color:'#071217',transparent:true,opacity:.24,depthWrite:false}));shadow.rotation.x=-Math.PI/2;shadow.scale.y=.38;shadow.position.set(0,-.38,-.8);g.add(shadow);return g;};
-  root.add(premiumFrame());
   if(name==='ammo-fire'){
     const mats=[0,1,2].map(i=>std({map:hammered(10+i,{base:'#2a2422',light:'#6e5a50'}),bumpMap:bump(20+i),bumpScale:2,metalness:.6,roughness:.55,emissive:'#ff5a10',emissiveMap:emberTexture(30+i),emissiveIntensity:2.4}));
     [[-1.9,0,0],[1.9,0,0],[0,0,-1.7],[0,2.9,-.6]].forEach(([x,y,z],i)=>{const b=new THREE.Mesh(new THREE.SphereGeometry(2,32,24),mats[i%3]);b.position.set(x,y+2,z);b.rotation.set(i,i*2,0);root.add(b);});
