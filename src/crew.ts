@@ -11,19 +11,19 @@ export const TALENTS:Record<TalentId,{name:string;max:number;per:string;icon:str
   sapper:{name:'Mayın Uzmanı',max:4,per:'+%15 mayın hasarı',icon:'/assets/icon-mine-v2.webp',apply:(b,r)=>{b.mine*=1+.15*r;}},
   tough:{name:'Sağlam Omurga',max:5,per:'-%3 alınan hasar',icon:'/assets/icon-shield-v3.webp',apply:(b,r)=>{b.taken*=1-.03*r;}},
   windcaller:{name:'Fırtına Bilgesi',max:3,per:'-%10 yetenek bekleme',icon:'/assets/icon-speed-v2.webp',apply:(b,r)=>{b.cooldown*=1-.1*r;}},
-  plunder:{name:'Yağma Ustası',max:5,per:'+%10 sandık altını',icon:'/assets/officer-quartermaster-v1.webp',apply:(b,r)=>{b.chestGold*=1+.1*r;}},
+  plunder:{name:'Yağma Ustası',max:5,per:'+%10 sandık altını',icon:'/assets/icon-market-v2.webp',apply:(b,r)=>{b.chestGold*=1+.1*r;}},
   scavenger:{name:'Enkaz Avcısı',max:3,per:'+%8 yaldızlı sandık şansı',icon:'/assets/icon-chest-v2.webp',apply:(b,r)=>{b.gilded+=.08*r;}},
   bounty:{name:'Ödül Avcısı',max:5,per:'+%5 batırma altını',icon:'/assets/icon-attack-v2.webp',apply:(b,r)=>{b.bounty+=.05*r;}},
 };
 const isTalent=(id:string):id is TalentId=>id in TALENTS;
 
 export const OFFICERS:Record<OfficerId,{name:string;title:string;icon:string;per:string;apply:(b:Bonus,rank:number)=>void}>={
-  gunner:{name:'Topçu Başı',title:'Barut ve gülle ustası',icon:'/assets/gunner-vignette-v1.webp',per:'+%5 top hasarı',apply:(b,r)=>{b.damage*=1+.05*r;}},
-  helmsman:{name:'Serdümen',title:'Dümenin efendisi',icon:'/assets/officer-helmsman-v1.webp',per:'+%4 hız',apply:(b,r)=>{b.speed*=1+.04*r;}},
-  carpenter:{name:'Marangoz',title:'Gövdenin bekçisi',icon:'/assets/officer-carpenter-v1.webp',per:'+%20 tamir hızı',apply:(b,r)=>{b.repair*=1+.2*r;}},
-  lookout:{name:'Gözcü',title:'Ufku okuyan göz',icon:'/assets/officer-lookout-v1.webp',per:'+12 menzil',apply:(b,r)=>{b.range+=12*r;}},
-  quartermaster:{name:'Levazımcı',title:'Ganimet defteri',icon:'/assets/officer-quartermaster-v1.webp',per:'+%12 sandık altını',apply:(b,r)=>{b.chestGold*=1+.12*r;}},
-  surgeon:{name:'Cerrah',title:'Yaraları saran el',icon:'/assets/officer-surgeon-v1.webp',per:'-%4 alınan hasar',apply:(b,r)=>{b.taken*=1-.04*r;}},
+  gunner:{name:'Topçu Başı',title:'Barut ve gülle ustası',icon:'/assets/crew-gunner-v1.webp',per:'+%5 top hasarı',apply:(b,r)=>{b.damage*=1+.05*r;}},
+  helmsman:{name:'Serdümen',title:'Dümenin efendisi',icon:'/assets/crew-helmsman-v1.webp',per:'+%4 hız',apply:(b,r)=>{b.speed*=1+.04*r;}},
+  carpenter:{name:'Marangoz',title:'Gövdenin bekçisi',icon:'/assets/crew-carpenter-v1.webp',per:'+%20 tamir hızı',apply:(b,r)=>{b.repair*=1+.2*r;}},
+  lookout:{name:'Gözcü',title:'Ufku okuyan göz',icon:'/assets/crew-lookout-v1.webp',per:'+12 menzil',apply:(b,r)=>{b.range+=12*r;}},
+  quartermaster:{name:'Levazımcı',title:'Ganimet defteri',icon:'/assets/crew-quartermaster-v1.webp',per:'+%12 sandık altını',apply:(b,r)=>{b.chestGold*=1+.12*r;}},
+  surgeon:{name:'Cerrah',title:'Yaraları saran el',icon:'/assets/crew-surgeon-v1.webp',per:'-%4 alınan hasar',apply:(b,r)=>{b.taken*=1-.04*r;}},
 };
 export const OFFICER_MAX_RANK=5;
 export const officerCost=(rank:number)=>rank===0?150:Math.round(150*Math.pow(1.75,rank));
