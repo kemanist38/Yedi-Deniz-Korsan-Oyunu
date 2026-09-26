@@ -1569,12 +1569,21 @@ function drawSeaGlints(w:number,h:number){const t=performance.now()/1000,C=70,vw
     const s=worldToScreen({x:gx*C+f*C*2.1%C,y:gy*C+(f*7.3%1)*C}),len=5+f*10,a=b*(dark?.25:.55);
     ctx.fillStyle=`rgba(255,250,225,${a})`;ctx.beginPath();ctx.ellipse(s.x,s.y,len,1.2,0,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.ellipse(s.x,s.y,1.1,len*.35,0,0,Math.PI*2);ctx.fill();}
   ctx.restore();}
+function drawSeaThemeLayer(w:number,h:number){
+  const th=theme(),t=performance.now()/1000,accent=th.weather==='embers'?'#ff7a3d':th.weather==='snow'?'#c7efff':th.weather==='storm'?'#9db9ff':th.tint;
+  ctx.save();
+  const glow=ctx.createRadialGradient(w*.32+Math.sin(t*.18)*w*.08,h*.28,0,w*.32,h*.28,Math.max(w,h)*.72);
+  glow.addColorStop(0,accent+'22');glow.addColorStop(1,accent+'00');ctx.globalCompositeOperation='screen';ctx.fillStyle=glow;ctx.fillRect(0,0,w,h);
+  ctx.globalCompositeOperation='source-over';ctx.strokeStyle=accent;ctx.lineWidth=1;ctx.globalAlpha=th.weather==='storm'?.12:.07;
+  for(let i=0;i<14;i++){const y=((i*83+t*18)%(h+160))-80,phase=t*.35+i*1.7;ctx.beginPath();ctx.moveTo(-60,y);ctx.bezierCurveTo(w*.28,y+Math.sin(phase)*18,w*.72,y+Math.cos(phase*.8)*24,w+60,y+Math.sin(phase+1.2)*16);ctx.stroke();}
+  ctx.restore();
+}
 function draw(){
-  const w=innerWidth,h=innerHeight,map=mapDef(),th=theme();const sea=ctx.createLinearGradient(0,0,0,h);sea.addColorStop(0,th.sea[0]);sea.addColorStop(1,th.sea[1]);ctx.fillStyle=sea;ctx.fillRect(0,0,w,h);
+  const w=innerWidth,h=innerHeight,map=mapDef(),th=theme();const sea=ctx.createLinearGradient(0,0,0,h);sea.addColorStop(0,th.sea[0]);sea.addColorStop(.56,th.sea[0]);sea.addColorStop(1,th.sea[1]);ctx.fillStyle=sea;ctx.fillRect(0,0,w,h);drawSeaThemeLayer(w,h);
   ctx.save();ctx.translate(w/2,h/2);ctx.scale(camera.zoom,camera.zoom);ctx.translate(-w/2,-h/2);
-  const pattern=seaTilePattern(ctx);if(pattern){const vw=w/camera.zoom,vh=h/camera.zoom;pattern.setTransform(new DOMMatrix().translateSelf(-camera.x+w/2+Math.sin(performance.now()/5200)*14,-camera.y+h/2+performance.now()/260%1024).scaleSelf(2,2));ctx.globalAlpha=.2;ctx.fillStyle=pattern;ctx.fillRect(w/2-vw/2,h/2-vh/2,vw,vh);
+  const pattern=seaTilePattern(ctx);if(pattern){const vw=w/camera.zoom,vh=h/camera.zoom;pattern.setTransform(new DOMMatrix().translateSelf(-camera.x+w/2+Math.sin(performance.now()/5200)*14,-camera.y+h/2+performance.now()/260%1024).scaleSelf(2,2));ctx.globalAlpha=.24;ctx.fillStyle=pattern;ctx.fillRect(w/2-vw/2,h/2-vh/2,vw,vh);
     // İkinci dalga katmanı: farklı ölçek ve ters yönde akış; iki katmanın girişimi denize canlı bir kıpırtı verir
-    const t=performance.now();pattern.setTransform(new DOMMatrix().translateSelf(-camera.x*1.04+w/2-t/190%1536,-camera.y*1.04+h/2+Math.cos(t/4100)*20).scaleSelf(3.1,3.1).rotateSelf(24));ctx.globalAlpha=.12;ctx.fillRect(w/2-vw/2,h/2-vh/2,vw,vh);ctx.globalAlpha=1;}
+    const t=performance.now();pattern.setTransform(new DOMMatrix().translateSelf(-camera.x*1.04+w/2-t/190%1536,-camera.y*1.04+h/2+Math.cos(t/4100)*20).scaleSelf(3.1,3.1).rotateSelf(24));ctx.globalAlpha=.14;ctx.fillRect(w/2-vw/2,h/2-vh/2,vw,vh);ctx.globalAlpha=1;}
   drawSeaGlints(w,h);
   ctx.globalAlpha=.12;ctx.fillStyle=th.label;ctx.font='700 42px Cinzel';ctx.textAlign='center';for(const label of map.labels){const p=worldToScreen(label);ctx.fillText(label.text,p.x,p.y);}ctx.globalAlpha=1;
   drawCoordGrid();drawMapEdges();islands.forEach(drawIsland);drawFleetIsland();lootChests.forEach(drawLootChest);drawTreasureMark();sparkles.forEach(drawSparkle);mines.forEach(m=>{const p=worldToScreen(m);drawMineSprite(ctx,p.x,p.y,performance.now(),m.arm>0,m.life<5);});monsters.forEach(drawMonster);

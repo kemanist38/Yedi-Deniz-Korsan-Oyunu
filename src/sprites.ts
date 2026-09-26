@@ -34,7 +34,7 @@ export function drawMonsterSheet(ctx:CanvasRenderingContext2D,def:{sprite:string
 }
 
 // Adalar: görünüm başına 2 varyantlı sayfa (512 px). Çizim boyu = 2.36 × ada yarıçapı.
-export function islandSheetUrl(_look:string){return'/assets/islands-seven-seas-v1.webp';}
+export function islandSheetUrl(_look:string){return'/assets/islands-seven-seas-v2.webp';}
 export function drawIslandSprite(ctx:CanvasRenderingContext2D,island:{look:string;variant:number;r:number;flip?:boolean},x:number,y:number){
   const sheet=load(islandSheetUrl(island.look));if(!ready(sheet))return false;
   const size=island.r*2.36;ctx.save();ctx.translate(x,y);if(island.flip)ctx.scale(-1,1);
@@ -43,13 +43,14 @@ export function drawIslandSprite(ctx:CanvasRenderingContext2D,island:{look:strin
   ctx.drawImage(sheet,(frame%4)*cw,Math.floor(frame/4)*ch,cw,ch,-size/2,-size/2,size,size);ctx.restore();return true;
 }
 
-// Onaylı raster ada (1000 dünya birimi) ve bağımsız dört kule türü.
-export const fleetBaseUrl=(_theme:string)=>'/assets/fleet-base-approved-v1.webp';
+// Harita temasına göre değişen 4×2 filo adası atlası; kuleler ayrı raster olarak kalır.
+const FLEET_BASE_THEMES=['verdant','coral','misty','crimson','ice','storm','abyss','lava'];
+export const fleetBaseUrl=(_theme:string)=>'/assets/fleet-bases-v2.webp';
 export const fleetTowerUrl=(_theme:string)=>'/assets/fleet-towers-approved-v1.webp';
 export function drawFleetBase(ctx:CanvasRenderingContext2D,theme:string,x:number,y:number){
-  // Approved raster base: transparent sea/lagoon and eight empty foundations.
   const sheet=load(fleetBaseUrl(theme));if(!ready(sheet))return false;
-  ctx.drawImage(sheet,x-500,y-500,1000,1000);return true;
+  const frame=Math.max(0,FLEET_BASE_THEMES.indexOf(theme)),cw=sheet.naturalWidth/4,ch=sheet.naturalHeight/2;
+  ctx.drawImage(sheet,(frame%4)*cw,Math.floor(frame/4)*ch,cw,ch,x-500,y-500,1000,1000);return true;
 }
 // Rakip adanın varsayılan top kuleleri; oyuncu kuleleriyle aynı yerleşim.
 export function drawBastion(ctx:CanvasRenderingContext2D,slot:number,x:number,y:number,alpha=1){

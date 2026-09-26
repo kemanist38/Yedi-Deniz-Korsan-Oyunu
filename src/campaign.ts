@@ -38,9 +38,9 @@ export const THEMES:Record<number,Theme>={
   3:{name:'Azurya Denizi',sea:['#14566e','#083343'],tint:'#82cbdc',look:'verdant',fleet:'misty',weather:'sparkle',label:'#c8eaf0'},
   4:{name:'Hayalet Denizi',sea:['#24443f','#0a2225'],tint:'#9fb8b4',look:'misty',fleet:'crimson',weather:'fog',label:'#c8d4ce'},
   5:{name:'Buzmahzen Denizi',sea:['#3e6d86','#17304a'],tint:'#bfe6ff',look:'ice',fleet:'ice',weather:'snow',label:'#e8f6ff'},
-  6:{name:'Fırtına Denizi',sea:['#1d3546','#0a1c2b'],tint:'#9fb4e0',look:'storm',fleet:'toxic',weather:'storm',label:'#c8d4f0'},
-  7:{name:'Karanlık Uçurum Denizi',sea:['#202737','#090f1e'],tint:'#a79bdb',look:'abyss',fleet:'lava',weather:'motes',label:'#d8c0ff'},
-  8:{name:'Alev Denizi',sea:['#343d3e','#121e24'],tint:'#ff8a3a',look:'lava',fleet:'storm',weather:'embers',label:'#ffc090'},
+  6:{name:'Fırtına Denizi',sea:['#1d3546','#0a1c2b'],tint:'#9fb4e0',look:'storm',fleet:'storm',weather:'storm',label:'#c8d4f0'},
+  7:{name:'Karanlık Uçurum Denizi',sea:['#202737','#090f1e'],tint:'#a79bdb',look:'abyss',fleet:'abyss',weather:'motes',label:'#d8c0ff'},
+  8:{name:'Alev Denizi',sea:['#343d3e','#121e24'],tint:'#ff8a3a',look:'lava',fleet:'lava',weather:'embers',label:'#ffc090'},
 };
 
 // ---------------------------------------------------------------- NPC gemileri
@@ -128,10 +128,10 @@ export function coordLabel(p:{x:number;y:number}){const g=gridCell(p);return`${c
 // tools/asset-studio/fleet-raster-mask.py ile seyir maskesi yeniden üretilir.
 // Filo adası görseli (fleet-base-approved-v1, 1000 birim): güneyden kanalla girilen lagün kalesi. Seyir alanı src/fleetMask.ts
 // maskesinden gelir; kuleler görseldeki 8 sur kulesinin üzerindedir. lagoon: lagünün ortası (rota hedefi).
-export const FLEET={islandR:500,wallR:370,gap:.56,lagoon:{x:0,y:60,r:150},channelW:70,keep:{x:0,y:-280},
-  // Approved v1 base, 1000 world units. Preserve slot order for saved guild towers.
-  towers:[[-230,-360],[-364,-189],[-328,70],[-121,214],[146,214],[337,70],[361,-193],[242,-360]] as [number,number][],
-  base:{frame:1024,span:1000},tower:{frame:256,span:120,anchorY:0}};
+export const FLEET={islandR:410,wallR:305,gap:.56,lagoon:{x:0,y:58,r:112},channelW:55,keep:{x:0,y:-220},
+  // V2 temalı filo adaları: sekiz kule yuvasının sırası korunur, böylece kayıtlı kuleler doğru slota taşınır.
+  towers:[[-180,-286],[-286,-145],[-278,48],[-116,188],[120,188],[278,48],[286,-145],[180,-286]] as [number,number][],
+  base:{frame:512,span:1000},tower:{frame:256,span:120,anchorY:0}};
 // Kuleler filo savaşı ölçeğinde: tek gemi yıkamaz, saldırı kesilince hızla onarılır.
 export const fleetTower=(tier:number)=>{return{hp:Math.round(150000*hpScale(tier)),damage:Math.round(1050*dmgScale(tier)),reload:2.2,range:460,ownDamage:Math.round(1500*hpScale(tier))};};
 export const fleetReward=(tier:number)=>({gold:300*tier,xp:Math.round(500*Math.pow(tier,1.2))});
