@@ -404,3 +404,8 @@ h3.pearl-title{color:#f3d496!important;border-color:#9e513b66!important}
 .rank-row.top1>b{background:radial-gradient(circle at 35% 30%,#fff3c0,#e8b43a 55%,#9a6a14)}
 .rank-row.top2>b{background:radial-gradient(circle at 35% 30%,#ffffff,#c4c8d2 55%,#7a7e88)}
 .rank-row.top3>b{background:radial-gradient(circle at 35% 30%,#ffd9b0,#c7834a 55%,#7a4420)}
+.quality-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:6px}
+.quality-row span{margin-right:6px;font:600 12px Inter,sans-serif;color:#e9d6bd}
+.quality-row button{padding:6px 12px;border:1px solid #a8763f;border-radius:5px;background:#2a1c1a;color:#d9c3a0;font:700 10px Inter,sans-serif;cursor:pointer}
+.quality-row button.on{background:#5a3a1c;border-color:#f1c662;color:#ffe1af}
+.quality-note{margin:0 0 10px!important;font-size:11px!important;color:#b8a080!important}
