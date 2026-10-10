@@ -120,6 +120,8 @@ const canvas = document.querySelector<HTMLCanvasElement>('#sea')!;
 const ctx = canvas.getContext('2d',{alpha:false})!;
 const minimap = document.querySelector<HTMLCanvasElement>('#minimap')!;
 const mini = minimap.getContext('2d')!;
+// Mini harita da cihaz piksel oranında çizilir (çizim kodu 188×133 koordinatlarıyla çalışmaya devam eder)
+{const k=Math.min(3,Math.max(1,devicePixelRatio||1));minimap.width=188*k;minimap.height=133*k;}
 const playerShipImage=new Image();playerShipImage.src='/assets/starter-ship-v2.webp';
 document.documentElement.style.setProperty('--starter-ship',`url("${playerShipImage.src}")`);
 // Başlangıç gemisi "Yedi Deniz": 8 yönlü sayfa (4 × 2, 256 px; elitlerle aynı kare sırası)
@@ -287,7 +289,13 @@ let eventPanelClock=0,towersDestroyedHere=0,uiClock=0,eventPanelHtml='',combatTa
 let mapFade=0;
 
 // Retina ekranlarda çizim yoğunluğu 1,5× ile sınırlı: piksel yükü 2×'e göre %44 daha az, görüntü yine keskin
-function resize(){ const d=Math.min(devicePixelRatio,1.5); canvas.width=innerWidth*d; canvas.height=innerHeight*d; ctx.setTransform(d,0,0,d,0,0); }
+// Çözünürlük: cihaz piksel oranı (telefonlarda 2–3) en çok 2,5'e kadar kullanılır, toplam piksel ~2,4 milyonla sınırlanır;
+// küçük ekranlı telefonlarda keskin, büyük masaüstü ekranlarda yine hızlı kalır.
+// Uyarlanır çözünürlük: oyun akıcı değilse (FPS < 45) tavan 2,5 → 2 → 1,5'e iner; telefon güçlüyse keskin kalır.
+let dprCap=2.5,fpsFrames=0,fpsClock=0,slowChecks=0;
+function watchFps(dt:number){fpsFrames++;fpsClock+=dt;if(fpsClock<2)return;const fps=fpsFrames/fpsClock;fpsFrames=0;fpsClock=0;
+  if(fps<45&&dprCap>1.5&&Math.min(devicePixelRatio,dprCap)>1.5){if(++slowChecks>=2){dprCap=Math.max(1.5,dprCap-.5);slowChecks=0;resize();}}else slowChecks=0;}
+function resize(){ const d=Math.max(1,Math.min(devicePixelRatio,dprCap,Math.sqrt(2_400_000/(innerWidth*innerHeight)))); canvas.width=innerWidth*d; canvas.height=innerHeight*d; ctx.setTransform(d,0,0,d,0,0); }
 addEventListener('resize',resize); resize();
 const settings=loadSettings();setAudio(settings.sound,settings.volume,settings.music);
 let rebinding:ActionId|null=null;
@@ -2233,7 +2241,7 @@ function drawCoordRulers(){
 let lastCoord='';
 function updateCoordBadge(){const text=`${siege?'KALE':currentMap} - ${coordLabel(player)}`;if(text!==lastCoord){lastCoord=text;ui('mapCoord').textContent=text;}}
 function drawMinimap(){const W=188,H=133,sx=(x:number)=>x/WORLD_WIDTH*W,sy=(y:number)=>y/WORLD_HEIGHT*H,th=theme();
-  mini.clearRect(0,0,W,H);void th;
+  mini.setTransform(minimap.width/W,0,0,minimap.height/H,0,0);mini.clearRect(0,0,W,H);void th;
   for(const dir of ['north','south','east','west'] as Dir[]){const to=neighbor(currentMap,dir);if(!to)continue;mini.fillStyle=state.level>=MAPS[to].tier?'#6fd6c4aa':'#e07a5f88';if(dir==='north')mini.fillRect(W/2-14,0,28,2);if(dir==='south')mini.fillRect(W/2-14,H-2,28,2);if(dir==='west')mini.fillRect(0,H/2-12,2,24);if(dir==='east')mini.fillRect(W-2,H/2-12,2,24);}
   mini.save();mini.scale(W/WORLD_WIDTH,H/WORLD_HEIGHT);
   for(const i of islands)drawIslandSprite(mini,i,i.x,i.y);
@@ -2253,7 +2261,7 @@ function drawMinimap(){const W=188,H=133,sx=(x:number)=>x/WORLD_WIDTH*W,sy=(y:nu
   const vw=innerWidth/camera.zoom,vh=innerHeight/camera.zoom;mini.strokeStyle=freeLook?'#ffe09bee':'#ffe09b88';mini.lineWidth=1.2;mini.strokeRect(sx(camera.x-vw/2),sy(camera.y-vh/2),vw/WORLD_WIDTH*W,vh/WORLD_HEIGHT*H);}
 // manualClock (yalnızca geliştirme): tanıtım videosu kare kare çekilirken oyun dışarıdan adımlanır
 let manualClock=false;
-let last=performance.now();function loop(now:number){const dt=Math.min(.033,(now-last)/1000);last=now;if(!manualClock){update(dt);draw();}requestAnimationFrame(loop);}fitCannonsToCapacity();saveAccount();renderQuickSlots();updateUI();requestAnimationFrame(loop);
+let last=performance.now();function loop(now:number){const raw=(now-last)/1000,dt=Math.min(.033,raw);last=now;if(raw<1)watchFps(raw);if(!manualClock){update(dt);draw();}requestAnimationFrame(loop);}fitCannonsToCapacity();saveAccount();renderQuickSlots();updateUI();requestAnimationFrame(loop);
 // Açılış ekranı (index.html #splash): sayfa yüklenince ve en az 2 sn gösterildikten sonra söner
 {const splash=document.getElementById('splash');if(splash){const shown=performance.now();let done=false;
   const hide=()=>{if(done)return;done=true;setTimeout(()=>{splash.classList.add('gone');setTimeout(()=>splash.remove(),700);},Math.max(0,2000-(performance.now()-shown)));};
