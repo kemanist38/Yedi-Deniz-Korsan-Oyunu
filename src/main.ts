@@ -293,11 +293,16 @@ let mapFade=0;
 // küçük ekranlı telefonlarda keskin, büyük masaüstü ekranlarda yine hızlı kalır.
 // Uyarlanır çözünürlük: oyun akıcı değilse (FPS < 45) tavan 2,5 → 2 → 1,5'e iner; telefon güçlüyse keskin kalır.
 let dprCap=2.5,fpsFrames=0,fpsClock=0,slowChecks=0;
+// Ayarlar → Görüntü kalitesi: Otomatik (uyarlanır), Yüksek (her zaman en keskin), Pil tasarrufu (1,5×)
+const qualityCap=()=>settings.quality==='high'?3:settings.quality==='saver'?1.5:dprCap;
 function watchFps(dt:number){fpsFrames++;fpsClock+=dt;if(fpsClock<2)return;const fps=fpsFrames/fpsClock;fpsFrames=0;fpsClock=0;
-  if(fps<45&&dprCap>1.5&&Math.min(devicePixelRatio,dprCap)>1.5){if(++slowChecks>=2){dprCap=Math.max(1.5,dprCap-.5);slowChecks=0;resize();}}else slowChecks=0;}
-function resize(){ const d=Math.max(1,Math.min(devicePixelRatio,dprCap,Math.sqrt(2_400_000/(innerWidth*innerHeight)))); canvas.width=innerWidth*d; canvas.height=innerHeight*d; ctx.setTransform(d,0,0,d,0,0); }
-addEventListener('resize',resize); resize();
+  if(settings.quality==='auto'&&fps<45&&dprCap>1.5&&Math.min(devicePixelRatio,dprCap)>1.5){if(++slowChecks>=2){dprCap=Math.max(1.5,dprCap-.5);slowChecks=0;resize();}}else slowChecks=0;}
+function resize(){ const d=Math.max(1,Math.min(devicePixelRatio,qualityCap(),settings.quality==='high'?99:Math.sqrt(2_400_000/(innerWidth*innerHeight)))); canvas.width=innerWidth*d; canvas.height=innerHeight*d; ctx.setTransform(d,0,0,d,0,0);
+  // Boyut değişince ayarlar sıfırlanır: büyük görseller küçültülürken yüksek kaliteli yumuşatma (daha keskin gemi/ada)
+  ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high'; }
+addEventListener('resize',resize);
 const settings=loadSettings();setAudio(settings.sound,settings.volume,settings.music);
+resize();
 let rebinding:ActionId|null=null;
 const held=(action:ActionId,...extra:string[])=>keys.has(settings.binds[action])||extra.some(k=>keys.has(k));
 function closeAllOverlays(){ui('menuOverlay').classList.remove('open');closeMentorship();closePearlShop();closeWorldMap();closeQuestLog();closeEliteShips();closeShipMenu();closeMarket();closeCaptainProfile();closeDevelopment();closeCrew();closeGuild();closeSettings();closeLoadout();}
@@ -1306,11 +1311,12 @@ function closeSettings(){rebinding=null;ui('settingsOverlay').classList.remove('
 function refreshBindHints(){document.querySelectorAll<HTMLElement>('[data-bind]').forEach(el=>{el.textContent=keyLabel(settings.binds[el.dataset.bind as ActionId]);});}
 function renderSettings(){
   const groups=[...new Set(ACTIONS.map(a=>a.group))];
-  ui('settingsPanel').innerHTML=`<section class="settings-block"><h3>SES</h3><div class="sound-row"><button id="soundToggle" class="${settings.sound?'on':''}">${settings.sound?'SES AÇIK':'SES KAPALI'}</button><label>Efekt sesi<input id="soundVolume" type="range" min="0" max="100" value="${Math.round(settings.volume*100)}" ${settings.sound?'':'disabled'}/></label><label>Müzik sesi<input id="musicVolume" type="range" min="0" max="100" value="${Math.round(settings.music*100)}" ${settings.sound?'':'disabled'}/></label></div></section><section class="settings-block"><h3>GÖRÜNÜM</h3><label class="settings-check"><input type="checkbox" id="hideOthersInsignia" ${settings.hideOthersInsignia?'checked':''}/><span>Diğer oyuncuların güverte işaretlerini ve rütbe rozetlerini gizle</span></label></section>
+  ui('settingsPanel').innerHTML=`<section class="settings-block"><h3>SES</h3><div class="sound-row"><button id="soundToggle" class="${settings.sound?'on':''}">${settings.sound?'SES AÇIK':'SES KAPALI'}</button><label>Efekt sesi<input id="soundVolume" type="range" min="0" max="100" value="${Math.round(settings.volume*100)}" ${settings.sound?'':'disabled'}/></label><label>Müzik sesi<input id="musicVolume" type="range" min="0" max="100" value="${Math.round(settings.music*100)}" ${settings.sound?'':'disabled'}/></label></div></section><section class="settings-block"><h3>GÖRÜNÜM</h3><div class="quality-row"><span>Görüntü kalitesi</span>${(['auto','high','saver'] as const).map(q=>`<button data-quality="${q}" class="${settings.quality===q?'on':''}">${q==='auto'?'OTOMATİK':q==='high'?'YÜKSEK':'PİL TASARRUFU'}</button>`).join('')}</div><p class="quality-note">${settings.quality==='auto'?'Cihazın hızına göre en keskin görüntü seçilir.':settings.quality==='high'?'Her zaman en keskin görüntü (zayıf cihazda yavaşlayabilir).':'Daha az pil ve ısınma, biraz daha yumuşak görüntü.'}</p><label class="settings-check"><input type="checkbox" id="hideOthersInsignia" ${settings.hideOthersInsignia?'checked':''}/><span>Diğer oyuncuların güverte işaretlerini ve rütbe rozetlerini gizle</span></label></section>
   <section class="settings-block keybinds-block"><h3>KLAVYE KISAYOLLARI <button id="resetBinds">VARSAYILANA DÖN</button></h3><p>Değiştirmek istediğin eyleme tıkla, sonra yeni tuşa bas. ESC iptal eder. Ok tuşları her zaman haritayı kaydırmak için de çalışır.</p>${groups.map(g=>`<h4>${g}</h4><div class="bind-grid">${ACTIONS.filter(a=>a.group===g).map(a=>`<button class="bind ${rebinding===a.id?'listening':''}" data-rebind="${a.id}"><span>${a.label}</span><kbd>${rebinding===a.id?'TUŞA BAS…':keyLabel(settings.binds[a.id])}</kbd></button>`).join('')}</div>`).join('')}</section>`;
   ui('soundToggle').onclick=()=>{settings.sound=!settings.sound;setAudio(settings.sound,settings.volume,settings.music);saveSettings(settings);renderSettings();};
   (ui('soundVolume') as HTMLInputElement).oninput=e=>{settings.volume=Number((e.target as HTMLInputElement).value)/100;setAudio(settings.sound,settings.volume,settings.music);saveSettings(settings);};
   (ui('musicVolume') as HTMLInputElement).oninput=e=>{settings.music=Number((e.target as HTMLInputElement).value)/100;setAudio(settings.sound,settings.volume,settings.music);saveSettings(settings);};
+  document.querySelectorAll<HTMLButtonElement>('[data-quality]').forEach(b=>b.onclick=()=>{settings.quality=b.dataset.quality as typeof settings.quality;dprCap=2.5;saveSettings(settings);resize();renderSettings();});
   (ui('hideOthersInsignia') as HTMLInputElement).onchange=e=>{settings.hideOthersInsignia=(e.target as HTMLInputElement).checked;saveSettings(settings);};
   ui('resetBinds').onclick=()=>{settings.binds={...DEFAULT_BINDS};saveSettings(settings);renderQuickSlots();refreshBindHints();renderSettings();toast('Kısayollar varsayılana döndü');};
   document.querySelectorAll<HTMLButtonElement>('[data-rebind]').forEach(b=>b.onclick=()=>{rebinding=b.dataset.rebind as ActionId;renderSettings();});
